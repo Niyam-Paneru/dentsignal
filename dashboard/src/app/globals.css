@@ -1,0 +1,160 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.625rem;
+  
+  /* === DENTAL AI COLOR PSYCHOLOGY SYSTEM === */
+  /* Based on research: Navy + Teal + Charcoal + White */
+  
+  /* Primary: Deep Navy Blue - Trust, Authority, HIPAA-ready */
+  --navy-primary: #1B3A7C;
+  --navy-light: #2A5BAE;
+  --navy-dark: #0F2347;
+  
+  /* Secondary: Medical Teal - Innovation + Healthcare */
+  --teal-accent: #0099CC;
+  --teal-light: #00B8E6;
+  --teal-dark: #0077A3;
+  
+  /* Neutrals */
+  --charcoal-dark: #1A202C;
+  --text-primary: #2D3748;
+  --text-secondary: #718096;
+  --text-muted: #A0AEC0;
+  
+  /* Backgrounds */
+  --bg-main: #F8F9FA;
+  --bg-card: #FFFFFF;
+  --bg-section: #E8EBF0;
+  
+  /* Status Colors */
+  --success-green: #27AE60;
+  --success-dark: #1E8449;
+  --warning-amber: #F59E0B;
+  --error-red: #DC3545;
+  --error-dark: #C82333;
+  
+  /* Semantic Variables (Tailwind compatible) */
+  --background: #F8F9FA;
+  --foreground: #2D3748;
+  --card: #FFFFFF;
+  --card-foreground: #2D3748;
+  --popover: #FFFFFF;
+  --popover-foreground: #2D3748;
+  --primary: #1B3A7C;
+  --primary-foreground: #FFFFFF;
+  --secondary: #E8EBF0;
+  --secondary-foreground: #2D3748;
+  --muted: #E8EBF0;
+  --muted-foreground: #718096;
+  --accent: #0099CC;
+  --accent-foreground: #FFFFFF;
+  --destructive: #DC3545;
+  --border: #E8EBF0;
+  --input: #E8EBF0;
+  --ring: #0099CC;
+  
+  /* Charts - Teal gradient for dental data viz */
+  --chart-1: #0099CC;
+  --chart-2: #27AE60;
+  --chart-3: #1B3A7C;
+  --chart-4: #F59E0B;
+  --chart-5: #00B8E6;
+  
+  /* Sidebar - Navy theme for authority */
+  --sidebar: #1B3A7C;
+  --sidebar-foreground: #FFFFFF;
+  --sidebar-primary: #0099CC;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #2A5BAE;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-ring: #0099CC;
+}
+
+.dark {
+  /* Dark mode - Charcoal base with teal accents */
+  --background: #1A202C;
+  --foreground: #F8F9FA;
+  --card: #2D3748;
+  --card-foreground: #F8F9FA;
+  --popover: #2D3748;
+  --popover-foreground: #F8F9FA;
+  --primary: #0099CC;
+  --primary-foreground: #FFFFFF;
+  --secondary: #4A5568;
+  --secondary-foreground: #F8F9FA;
+  --muted: #4A5568;
+  --muted-foreground: #A0AEC0;
+  --accent: #0099CC;
+  --accent-foreground: #FFFFFF;
+  --destructive: #DC3545;
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.15);
+  --ring: #0099CC;
+  --chart-1: #00B8E6;
+  --chart-2: #27AE60;
+  --chart-3: #0099CC;
+  --chart-4: #F59E0B;
+  --chart-5: #1B3A7C;
+  --sidebar: #0F2347;
+  --sidebar-foreground: #F8F9FA;
+  --sidebar-primary: #0099CC;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #1B3A7C;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-ring: #0099CC;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
