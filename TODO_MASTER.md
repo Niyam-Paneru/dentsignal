@@ -1,29 +1,102 @@
 # 📋 Dental AI Voice Agent - Master TODO List
 
-> Last Updated: December 15, 2025
+> Last Updated: December 18, 2025
 
 ---
 
-## 🚨 IMMEDIATE: Deployment Setup
+## 🚨 IMMEDIATE: Deployment (In Progress)
 
-### YOU DO (Manual - requires browser/accounts):
-- [ ] **Activate DigitalOcean $200** → https://education.github.com/pack (5 min)
-- [ ] **Activate Namecheap domain** → Same link, register dentalvoice.ai or similar (10 min)
-- [ ] **Get PAN card** (Nepal requirement for USD payments)
-- [ ] **Open Global IME bank account**
-- [ ] **Get USD eCard**
-- [ ] **Fund Twilio account** ($25 minimum to demo)
+### Deployment Status
+- [x] GitHub repo created: `Niyam-Paneru/dentsignal` ✅ (Dec 16)
+- [x] Vercel deployment live: `dentsignal.vercel.app` ✅ (Dec 16)
+- [x] Domain configured: `dentsignal.me` ✅ (Dec 16)
+- [ ] **DigitalOcean App Platform** - Deploy backend API
+- [ ] Update `NEXT_PUBLIC_API_URL` in Vercel to production URL
+- [ ] Configure Twilio webhooks to production API
 
-### ALREADY HAVE:
+### API Keys (All Active)
 - [x] Deepgram API key ✅
 - [x] OpenAI API key ✅
-- [x] Twilio account (just needs funding) ✅
+- [x] Twilio account (funded) ✅
+- [x] Gemini API key ✅
+- [x] HuggingFace API key ✅
 
-### DONE BY AI (Code/Config):
-- [x] Created Dockerfile ✅ (Dec 15)
-- [x] Created docker-compose.yml ✅ (Dec 15)
-- [x] Created .env.production.example ✅ (Dec 15)
-- [x] Created DEPLOY_DIGITALOCEAN.md guide ✅ (Dec 15)
+---
+
+## 🔥 HIGH PRIORITY: Automation to Reduce Manual Work
+
+**Goal: Customers paying $199/month should NOT do manual work**
+
+### Phase 1: Immediate Automations (Week 1-2)
+- [ ] **Auto-Onboarding (CRITICAL)**
+  - Supabase Edge Function for account provisioning
+  - Auto-create clinic, AI config, dashboard access
+  - Welcome email with setup instructions
+  - 2-min Loom video: "How to forward calls"
+  - **Result: Customer live in 15 minutes, not 2 days**
+
+- [ ] **Auto Call Forwarding Setup**
+  - Auto-generate forwarding instructions per phone carrier
+  - Include: *72 + DentSignal number
+  - Test call option built into onboarding
+  - **Result: Eliminates 90% of "how do I set this up?" tickets**
+
+### Phase 2: Advanced Automations (Month 2-3)
+- [ ] **Auto Appointment Reminders (SMS)**
+  - Booking confirmation (same day)
+  - 2 days before reminder
+  - 24 hours before (anxiety check)
+  - 3 hours before
+  - **Result: Reduces no-shows from 25% → 10%**
+
+- [ ] **Auto Insurance Verification**
+  - Real-time insurance database lookup
+  - Cache common insurances (Delta Dental, Blue Cross, etc.)
+  - Fallback to human for unknown plans
+  - **Result: Reduces staff interruptions by 40%**
+
+- [ ] **Auto Call Quality Scoring**
+  - Post-call GPT-4o-mini analysis
+  - Score: greeting, questions asked, booking success
+  - Tag: "great_call", "needs_improvement", "missed_booking"
+  - Weekly email digest to customer
+  - **Result: Proves ROI, reduces churn**
+
+### Phase 3: Enterprise Automations (Month 4-6)
+- [ ] **Auto Revenue Recovery Reports**
+  - Monthly automated email with ROI metrics
+  - Calls answered, appointments booked, revenue recovered
+  - Charts and top-performing calls
+  - **Result: Reduces churn from 15% → 5%**
+
+- [ ] **Self-Service AI Customization**
+  - Customer dashboard → Settings → AI Personality
+  - Greeting style (formal/warm/casual)
+  - Custom greetings per location
+  - A/B testing framework
+  - **Result: Eliminates 80% of "can you change this?" tickets**
+
+---
+
+## ✅ COMPLETED: Recent Updates (Dec 18, 2025)
+
+### AI Training Enhancements
+- [x] Added 8 advanced objection handling scripts ✅
+- [x] Added emergency triage decision tree (1-10 pain scale) ✅
+- [x] Added transfer decision tree (when to/not to transfer) ✅
+- [x] Added 7-Second Rule for first impressions ✅
+- [x] Added conversion data by demographics ✅
+- [x] Integrated all research into prompt_builder.py ✅
+
+### Landing Page Updates
+- [x] Added visible pricing section ($149/$199/$399 tiers) ✅
+- [x] Added competitor comparison table (vs Weave, RevenueWell) ✅
+- [x] Professional tier marked as "Most Popular" ✅
+
+### Branding
+- [x] Rebranded from "Dental AI" to "DentSignal" ✅ (Dec 16)
+- [x] Domain: dentsignal.me ✅
+- [x] Updated all code references ✅
 
 ---
 

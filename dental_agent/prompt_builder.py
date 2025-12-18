@@ -27,7 +27,15 @@ if TYPE_CHECKING:
     from db import Client
 
 # Import the research-based dental scripts
-from dental_scripts import build_dental_system_prompt, GREETINGS
+from dental_scripts import (
+    build_dental_system_prompt, 
+    GREETINGS,
+    OBJECTION_HANDLERS,
+    EMERGENCY_TRIAGE,
+    TRANSFER_DECISION_TREE,
+    CONVERSION_BY_DEMOGRAPHICS,
+    SEVEN_SECOND_RULE,
+)
 
 # -----------------------------------------------------------------------------
 # Available Deepgram Voices (Aura-2)
@@ -305,12 +313,115 @@ class PromptBuilder:
         """
         self.clinic = clinic
     
+    def get_enhanced_instructions(self) -> str:
+        """
+        Build enhanced instructions including objection handling, emergency triage,
+        and transfer decision tree from research data.
+        
+        Returns:
+            Formatted string with advanced conversation handling
+        """
+        # Build objection handling section from the new research data
+        objection_section = """
+
+## Advanced Objection Handling (Research-Based)
+
+When patients raise objections, use these proven responses:
+
+### "Your AI sounds like a robot"
+{sounds_like_robot}
+
+### "I need to check my schedule first"
+{check_schedule}
+
+### "How much does this cost?"
+First ask: "Great question. The cost depends on a few things. Tell me—are you looking at a cleaning, a filling, or something else?"
+Then after they answer: Provide range with value context, mention insurance coverage.
+
+### "I'm scared of the dentist"  
+{dental_fear}
+
+### "I'll try another dentist first"
+{trying_competitors}
+
+### "I don't have insurance"
+{no_insurance}
+
+### "I can't come in during business hours"
+{scheduling_conflict}
+
+### "I'll call back later"
+{call_back_later}
+
+## Emergency Triage Protocol
+
+Ask these questions IN ORDER for pain calls:
+1. "Where is the pain? Is it top or bottom, left or right?"
+2. "On a scale from 1 to 10, how would you rate it?"
+3. "How long has it been hurting?"
+4. "Can you bite down on that tooth?"
+5. "Any swelling in your face or jaw?"
+
+DECISION TREE:
+- Pain 8-10 + Swelling = SAME-DAY EMERGENCY (schedule immediately)
+- Pain 6-7 no swelling = URGENT within 24 hours
+- Pain 3-5 sensitivity = Routine 1-2 weeks
+- Post-op complications = Transfer to dentist directly
+
+HOME CARE TIPS (while they wait):
+- "You can take ibuprofen or acetaminophen every 6 hours"
+- "Avoid chewing on that side, stay away from very hot or cold foods"
+- "If swelling gets worse or you have trouble breathing/swallowing, go to ER immediately"
+
+## Transfer Decision Tree
+
+TRANSFER TO HUMAN IF:
+- Patient asks clinical question beyond your scope
+- Patient is angry and you can't de-escalate
+- Insurance verification requires human judgment
+- Patient explicitly asks for human
+- Call exceeds 8 minutes (frustration may be building)
+- Same patient has called 3+ times without booking
+
+DO NOT TRANSFER IF:
+- Patient just needs reassurance (you can provide this)
+- Patient needs appointment booking (you excel at this)
+- Patient is nervous (transfer can make it worse)
+- Simple questions you can answer
+
+TRANSFER SCRIPT: "That's a great question about your specific situation. Let me connect you with [Name]—they can give you exact details. I'm going to transfer you now, okay?"
+
+## The 7-Second Rule (Critical)
+
+Patients decide within 7 SECONDS if they'll stay or hang up:
+- Seconds 1-2: Is this a robot? (Sound natural!)
+- Seconds 3-4: Does this person care? (Be warm, not rushed)
+- Seconds 5-7: Can they help me? (Address their need immediately)
+
+FIRST QUESTION MATTERS MOST:
+❌ WRONG: "Can you tell me your date of birth?" (Makes them feel like a number)
+✅ RIGHT: "Hi there! What brings you in today?" (Shows you care about THEM)
+
+DATA: 80% of hangups happen in first 15 seconds. 45% who hang up NEVER call back.
+""".format(
+            sounds_like_robot=OBJECTION_HANDLERS.get("sounds_like_robot", {}).get("correct_response", ""),
+            check_schedule=OBJECTION_HANDLERS.get("check_schedule", {}).get("correct_response", ""),
+            dental_fear=OBJECTION_HANDLERS.get("dental_fear", {}).get("correct_response", ""),
+            trying_competitors=OBJECTION_HANDLERS.get("trying_competitors", {}).get("correct_response", ""),
+            no_insurance=OBJECTION_HANDLERS.get("no_insurance", {}).get("correct_response", ""),
+            scheduling_conflict=OBJECTION_HANDLERS.get("scheduling_conflict", {}).get("correct_response", ""),
+            call_back_later=OBJECTION_HANDLERS.get("call_back_later", {}).get("correct_response_first_try", ""),
+        )
+        
+        return objection_section
+    
     def build_system_prompt(self, available_slots: Optional[str] = None) -> str:
         """
         Build the complete system prompt using research-based dental scripts.
         
         This uses the CARES framework and professional dental receptionist
-        patterns from our research.
+        patterns from our research, plus enhanced objection handling,
+        emergency triage, and the 7-second rule.
         
         Args:
             available_slots: Optional formatted string of available slots.
@@ -328,6 +439,12 @@ class PromptBuilder:
         else:
             dentist_names = ["our dentist"]
         
+        # Get enhanced instructions from research data
+        enhanced_instructions = self.get_enhanced_instructions()
+        
+        # Combine clinic custom instructions with enhanced instructions
+        combined_instructions = (self.clinic.custom_instructions or "") + enhanced_instructions
+        
         # Use the research-based prompt builder
         prompt = build_dental_system_prompt(
             clinic_name=self.clinic.name,
@@ -338,7 +455,7 @@ class PromptBuilder:
             services=self.clinic.services or "general dentistry, cleanings, and exams",
             insurance=self.clinic.insurance_accepted or "",
             dentist_names=dentist_names,
-            custom_instructions=self.clinic.custom_instructions or "",
+            custom_instructions=combined_instructions,
             available_slots=available_slots or DEFAULT_AVAILABLE_SLOTS,
         )
         

@@ -158,28 +158,86 @@ SCENARIO_SCRIPTS = {
 }
 
 # -----------------------------------------------------------------------------
-# Objection Handling Scripts
+# Objection Handling Scripts (Research-Based - December 2025)
+# Based on advanced training data and market intelligence research
 # -----------------------------------------------------------------------------
 
 OBJECTION_HANDLERS = {
+    # Objection 1: "Your AI sounds like a robot"
+    "sounds_like_robot": {
+        "why_they_say_it": "Expected human, previous bad IVR experience, voice sounds robotic",
+        "wrong_response": "I am not a robot, I'm an advanced language model...",  # Defensive, confirms it IS a robot
+        "correct_response": """I totally get it—I would think the same thing! I'm actually trained specifically for dental offices. But if you'd prefer to speak with our team right now, I can transfer you. Otherwise, I can help you book an appointment in just 2 minutes. What works better for you?""",
+        "why_it_works": "Gives choice, shows confidence, moves forward",
+    },
+    
+    # Objection 2: "I need to check my schedule first"  
+    "check_schedule": {
+        "why_they_say_it": "Want to buy but need to verify, testing commitment, genuinely need to check",
+        "wrong_response": "Okay, call us back",  # Lost lead, they'll forget
+        "correct_response": """Totally makes sense. Here's what I can do—I'll hold a spot for you for 24 hours. We have Tuesday 2 PM or Thursday 10 AM. When you know your schedule, text me back and I'll confirm. What's the best number for that text?""",
+        "why_it_works": "Holds psychological commitment, increases follow-through 60%",
+        "data_point": "Patients who save the AI number show up 3.2x more often",
+    },
+    
+    # Objection 3: "How much does this cost?"
+    "cost_question": {
+        "why_they_say_it": "Price is primary concern, testing budget, comparing options",
+        "wrong_response": "It costs $1,200 for a crown",  # They hang up without context
+        "correct_response_discovery": """Great question. The cost depends on a few things. Tell me—are you looking at a cleaning, a filling, or something else?""",
+        "correct_response_after_discovery": """Perfect. Crowns typically range from $1,200 to $1,500 depending on the material you choose. But here's the thing—without getting it done, that tooth could get infected, which costs WAY more to fix. Plus, your insurance usually covers 50-80% of the crown cost. Can I verify your insurance real quick?""",
+        "why_it_works": "Discovery first, then price with value context",
+        "data_point": "This converts 50% vs direct pricing at 20%",
+    },
+    
+    # Objection 4: "I'm scared of the dentist"
+    "dental_fear": {
+        "why_they_say_it": "Dental anxiety (affects 36% of population), previous bad experience, fear of pain/judgment",
+        "wrong_response": "Don't worry, it won't hurt",  # Invalidates fear, sounds dismissive
+        "correct_response": """Thank you for telling me that. You're definitely not alone—a LOT of our patients have felt the same way. In fact, Dr. [Name] specializes in working with nervous patients. Here's what happens: You're always in control. We explain everything BEFORE we do it. You can raise your hand anytime and we pause—no questions asked. Some patients even listen to music or podcasts during their appointment so they're focused on something else. Would any of that help?""",
+        "why_it_works": "Validate, normalize, empower, give options",
+        "critical_note": "Anxious patients are LOYAL patients if handled right. They refer others.",
+    },
+    
+    # Objection 5: "I'll try another dentist first"
+    "trying_competitors": {
+        "why_they_say_it": "Shopping around (normal), not sure about you yet, wants to compare",
+        "wrong_response": "Okay, here's our number if you change your mind",  # Weak, lets them leave
+        "correct_response": """That makes total sense! Shopping around is smart. But let me tell you what makes us different. Dr. [Name] has 15+ years in cosmetic dentistry, we offer same-day emergency appointments, AND we have payment plans so cost is never a barrier. Plus, you can try us free for the first visit—if you don't like us, no pressure. At least you'll know. Can we get you in next week?""",
+        "why_it_works": "Differentiate, reduce risk, move toward commitment",
+    },
+    
+    # Objection 6: "I don't have insurance"
+    "no_insurance": {
+        "why_they_say_it": "Cost concern, ashamed (don't have benefits), think they can't afford it",
+        "wrong_response": "That's going to be expensive then",  # Assumes worst
+        "correct_response": """No problem at all! Actually, a lot of our patients don't have insurance and we have a few options for you. First, we offer a 10% cash discount for paying upfront. Second, we have payment plans with zero interest—so you can spread payments over a few months. Third, preventive care like cleanings and exams is way cheaper than fixing problems later. Can I show you how this works?""",
+        "why_it_works": "Normalize, give options, reduce shame",
+    },
+    
+    # Objection 7: "I can't come in during business hours"
+    "scheduling_conflict": {
+        "why_they_say_it": "Work conflict, childcare issue, genuinely busy",
+        "wrong_response": "We only have business hours",  # Dismissive, lose lead
+        "correct_response": """No problem, a lot of our patients are in the same boat. We have early morning appointments starting at 7 AM, evening appointments until 7 PM, and Saturday hours. When's usually easiest for you?""",
+        "why_it_works": "Solve for them, make it easy",
+    },
+    
+    # Objection 8: "I'll call back later"
+    "call_back_later": {
+        "why_they_say_it": "Not ready to commit, will forget, needs time to think",
+        "wrong_response": "Okay, we look forward to it",  # You'll never hear from them again
+        "correct_response_first_try": """Totally understand! Before you go though, can I ask—is there anything holding you back that I could help clarify right now? Sometimes people have a quick question and then they're ready to book.""",
+        "correct_response_if_still_hesitant": """No problem. I want to make sure you get the appointment time that works best. We do fill up quickly, so can I at least hold a spot for you tentatively? No obligation—just want to make sure you have it available. What's your phone number?""",
+        "why_it_works": "Hold spot = psychological commitment = more likely to follow up",
+    },
+    
+    # Legacy format for backward compatibility
     "too_expensive": [
         "I completely understand - dental care is an investment in your health.",
         "Let me tell you about our payment options.",
         "We also have a membership plan for uninsured patients that includes cleanings and exams with a discount on other services.",
         "Many patients find that addressing issues early actually saves money by preventing more extensive treatment later.",
-    ],
-    "dental_fear": [
-        "I hear you, and you're not alone. Many of our patients feel the same way.",
-        "Dr. [Name] is known for being especially gentle and patient.",
-        "We can take breaks anytime you need, and you're always in control.",
-        "Some patients like to bring headphones or we have TVs on the ceiling to help you relax.",
-        "We also offer sedation options if you'd like to discuss those with the doctor.",
-    ],
-    "no_time": [
-        "I understand your schedule is busy. We do have early morning and evening appointments available.",
-        "For routine cleanings, we can often complete everything in 45 minutes to an hour.",
-        "We also have Saturday hours if that works better for you.",
-        "Your dental health is important - let's find a time that works with your schedule.",
     ],
     "want_to_think": [
         "Of course! I understand you want to think it over.",
@@ -192,7 +250,138 @@ OBJECTION_HANDLERS = {
         "We always encourage patients to feel comfortable with their care decisions.",
         "When you're ready, we're here to help.",
     ],
+    "no_time": [
+        "I understand your schedule is busy. We do have early morning and evening appointments available.",
+        "For routine cleanings, we can often complete everything in 45 minutes to an hour.",
+        "We also have Saturday hours if that works better for you.",
+        "Your dental health is important - let's find a time that works with your schedule.",
+    ],
 }
+
+# -----------------------------------------------------------------------------
+# Emergency Triage Decision Tree (Research-Based)
+# -----------------------------------------------------------------------------
+
+EMERGENCY_TRIAGE = {
+    "questions_in_order": [
+        "Where is the pain? Is it top or bottom, left or right?",
+        "On a scale from 1 to 10, with 10 being the worst pain you've ever felt, how would you rate it?",
+        "How long has it been hurting?",
+        "Can you bite down on that tooth?",
+        "Any swelling in your face or jaw?",
+    ],
+    "decision_tree": {
+        "pain_8_10_with_swelling": {
+            "urgency": "SAME-DAY EMERGENCY",
+            "action": "Schedule immediately, check for abscess",
+            "script": "I'm scheduling you for an emergency appointment TODAY. This sounds like it needs immediate attention.",
+        },
+        "pain_6_7_no_swelling": {
+            "urgency": "URGENT (within 24 hours)",
+            "action": "Next available slot tomorrow or same-day if available",
+            "script": "Let me get you in as soon as possible. I'm checking our urgent care slots now.",
+        },
+        "pain_3_5_sensitivity": {
+            "urgency": "ROUTINE (1-2 weeks)",
+            "action": "Standard scheduling with preference for sooner",
+            "script": "This sounds like something we should look at soon, but not an emergency. I have openings this week.",
+        },
+        "post_op_complications": {
+            "urgency": "CALL DENTIST DIRECTLY",
+            "action": "Transfer to dentist's personal line or on-call",
+            "script": "Since you just had a procedure, let me connect you directly with Dr. [Name]'s team.",
+        },
+    },
+    "home_care_tips": {
+        "pain_management": "You can take ibuprofen or acetaminophen every 6 hours—that should help with the pain.",
+        "avoid": "Try to avoid chewing on that side and stay away from very hot or cold foods.",
+        "emergency_warning": "If the swelling gets worse, or if you have trouble breathing or swallowing, please go to the emergency room immediately.",
+    },
+}
+
+# -----------------------------------------------------------------------------
+# Transfer Decision Tree
+# -----------------------------------------------------------------------------
+
+TRANSFER_DECISION_TREE = {
+    "should_transfer": [
+        "Patient asks clinical question beyond scope",
+        "Patient is angry/upset and AI can't de-escalate further",
+        "Insurance verification requires human judgment",
+        "Patient explicitly asks for human",
+        "AI confidence score < 60% on what patient needs",
+        "Call duration > 8 minutes (frustration may be building)",
+        "Patient has contacted 3+ times without booking",
+    ],
+    "should_not_transfer": [
+        "Patient just needs reassurance",
+        "Patient needs appointment booking (AI excels here)",
+        "Patient is nervous (human transfer can make it worse)",
+        "Patient has simple question",
+        "Patient is just gathering info",
+    ],
+    "transfer_script": """That's a great question about your specific situation. Let me connect you with {staff_name}—they can give you exact details. I'm going to transfer you now, okay?""",
+    "transfer_with_context": """I'm transferring you to {staff_name}. I'll let them know you're calling about {reason} so you don't have to repeat yourself.""",
+}
+
+# -----------------------------------------------------------------------------
+# Conversion Data by Demographics (for tone adjustment)
+# -----------------------------------------------------------------------------
+
+CONVERSION_BY_DEMOGRAPHICS = {
+    "by_age": {
+        "18_25_gen_z": {"conversion": 0.35, "notes": "Skeptical of AI, fast-talking", "pace": "faster"},
+        "25_40_millennials": {"conversion": 0.45, "notes": "Tech-comfortable, appreciate efficiency", "pace": "normal"},
+        "40_60_gen_x": {"conversion": 0.52, "notes": "Values politeness, slower pace", "pace": "slower"},
+        "60_plus_boomers": {"conversion": 0.58, "notes": "Relieved someone answered, appreciates warmth", "pace": "slowest"},
+    },
+    "by_call_reason": {
+        "emergency_tooth_pain": {"conversion": 0.78, "action": "Escalate immediately, they WILL book"},
+        "existing_patient_cleaning": {"conversion": 0.52, "action": "Already trust you"},
+        "new_patient_inquiry": {"conversion": 0.40, "action": "Skeptical, comparing options"},
+        "insurance_question": {"conversion": 0.35, "action": "Just gathering info"},
+        "price_inquiry_only": {"conversion": 0.18, "action": "Not ready to commit"},
+    },
+    "by_time_of_day": {
+        "8_9am": {"conversion": 0.48, "notes": "Calling before work"},
+        "12_1pm": {"conversion": 0.42, "notes": "Lunch break decision"},
+        "3_4pm": {"conversion": 0.35, "notes": "After-school calls"},
+        "6_11pm": {"conversion": 0.65, "notes": "Emergencies, higher value - NEVER send to voicemail"},
+    },
+}
+
+# -----------------------------------------------------------------------------
+# The 7-Second Rule (First Impression Data)
+# -----------------------------------------------------------------------------
+
+SEVEN_SECOND_RULE = """
+## The 7-Second Rule: Patients decide within 7 seconds if they'll stay or hang up
+
+### Seconds 1-2: Recognition of voice
+"Is this a robot?"
+→ If YES (obvious robot voice): Hang up immediately 90% of the time
+→ If NO (natural voice): Proceed
+
+### Seconds 3-4: Professionalism assessment
+"Does this person sound like they care?"
+→ If NO (rushed, monotone): Hang up 70% of the time
+→ If YES (warm, attentive): Proceed
+
+### Seconds 5-7: First question relevance
+"Can this person help me?"
+→ If AI asks irrelevant question first: Hang up 60%
+→ If AI addresses their need immediately: Stay 85%
+
+### Critical Data Points:
+- 75% of voicemail recipients never call back
+- 80% of call hangups happen in first 15 seconds
+- 45% of hangers-up will NEVER try calling back
+- 55% will try competitor next instead
+
+### First Question Matters Most:
+❌ BAD: "Can you tell me your date of birth?" (Makes patient feel like a number)
+✅ GOOD: "Hi there! What brings you in today?" (Shows you care about THEM)
+"""
 
 # -----------------------------------------------------------------------------
 # Dental Terminology Guide
