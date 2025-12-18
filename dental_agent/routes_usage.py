@@ -32,6 +32,8 @@ router = APIRouter(prefix="/api/usage", tags=["Usage Tracking"])
 
 class UsageRecordResponse(BaseModel):
     """Response model for a usage record."""
+    model_config = {"from_attributes": True}
+    
     id: int
     clinic_id: int
     usage_type: str
@@ -43,12 +45,11 @@ class UsageRecordResponse(BaseModel):
     total_cost: float
     created_at: datetime
 
-    class Config:
-        from_attributes = True
-
 
 class UsageSummaryResponse(BaseModel):
     """Response model for monthly usage summary."""
+    model_config = {"from_attributes": True}
+    
     clinic_id: int
     billing_month: str
     
@@ -75,9 +76,6 @@ class UsageSummaryResponse(BaseModel):
     # Status
     is_finalized: bool
     usage_percentage: float  # Percentage of included minutes used
-
-    class Config:
-        from_attributes = True
 
 
 class RecordUsageRequest(BaseModel):

@@ -54,7 +54,7 @@ class LeadInput(BaseModel):
 
 class BatchCreateRequest(BaseModel):
     """Request to create a batch of leads."""
-    leads: List[LeadInput] = Field(..., min_items=1, max_items=1000)
+    leads: List[LeadInput] = Field(..., min_length=1, max_length=1000)
     client_id: int = 1
 
 

@@ -84,6 +84,8 @@ class ClinicUpdate(BaseModel):
 
 class ClinicResponse(BaseModel):
     """Response model for clinic data."""
+    model_config = {"from_attributes": True}
+    
     id: int
     name: str
     email: str
@@ -96,9 +98,6 @@ class ClinicResponse(BaseModel):
     services: Optional[str]
     is_active: bool
     created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 # -----------------------------------------------------------------------------
@@ -116,6 +115,8 @@ class InboundCallCreate(BaseModel):
 
 class InboundCallResponse(BaseModel):
     """Response model for inbound call data."""
+    model_config = {"from_attributes": True}
+    
     id: int
     clinic_id: int
     from_number: str
@@ -127,9 +128,6 @@ class InboundCallResponse(BaseModel):
     summary: Optional[str]
     started_at: datetime
     ended_at: Optional[datetime]
-
-    class Config:
-        from_attributes = True
 
 
 # -----------------------------------------------------------------------------

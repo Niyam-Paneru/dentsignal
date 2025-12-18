@@ -43,8 +43,8 @@ class AppointmentConfirmationRequest(BaseModel):
     """Appointment confirmation SMS request."""
     to_number: str
     patient_name: str
-    appointment_date: str = Field(..., example="Monday, December 16th")
-    appointment_time: str = Field(..., example="2:30 PM")
+    appointment_date: str = Field(..., json_schema_extra={"example": "Monday, December 16th"})
+    appointment_time: str = Field(..., json_schema_extra={"example": "2:30 PM"})
     clinic_name: str
     clinic_address: Optional[str] = None
     clinic_phone: Optional[str] = None

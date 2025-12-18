@@ -253,7 +253,8 @@ class ConversationFSM:
         elif context.state == CallState.OFFER_SLOT:
             if any(word in user_lower for word in ["yes", "yeah", "sure", "works", "good", "perfect", "ok", "okay"]):
                 # Book the slot
-                tomorrow = datetime.utcnow() + timedelta(days=1)
+                from datetime import timezone
+                tomorrow = datetime.now(timezone.utc) + timedelta(days=1)
                 context.booked_slot = tomorrow.replace(hour=10, minute=0, second=0, microsecond=0)
                 context.state = CallState.CONFIRM
                 response = self.get_confirmation(context) + " Is there anything else I can help you with?"
