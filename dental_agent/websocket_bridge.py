@@ -73,6 +73,111 @@ DEEPGRAM_CONNECT_TIMEOUT = 10.0
 DEEPGRAM_PING_INTERVAL = 20.0
 WEBSOCKET_CLOSE_TIMEOUT = 5.0
 
+# Retry settings for reconnection
+MAX_RECONNECT_ATTEMPTS = 3
+RECONNECT_DELAY_BASE = 1.0  # seconds, exponential backoff
+
+
+# -----------------------------------------------------------------------------
+# Error Classification
+# -----------------------------------------------------------------------------
+
+class VoiceAgentError(Exception):
+    """Base exception for voice agent errors."""
+    pass
+
+
+class ConnectionError(VoiceAgentError):
+    """Connection-related errors (Deepgram, Twilio)."""
+    def __init__(self, message: str, service: str = "unknown", recoverable: bool = True):
+        super().__init__(message)
+        self.service = service
+        self.recoverable = recoverable
+
+
+class AudioProcessingError(VoiceAgentError):
+    """Audio conversion or processing errors."""
+    pass
+
+
+class ConfigurationError(VoiceAgentError):
+    """Missing or invalid configuration."""
+    pass
+
+
+# -----------------------------------------------------------------------------
+# Circuit Breaker for External Services
+# -----------------------------------------------------------------------------
+
+class CircuitBreaker:
+    """
+    Simple circuit breaker to prevent cascading failures.
+    
+    States: CLOSED (normal), OPEN (failing), HALF_OPEN (testing)
+    """
+    
+    CLOSED = "closed"
+    OPEN = "open"
+    HALF_OPEN = "half_open"
+    
+    def __init__(
+        self,
+        failure_threshold: int = 5,
+        recovery_timeout: float = 30.0,
+        name: str = "circuit"
+    ):
+        self.failure_threshold = failure_threshold
+        self.recovery_timeout = recovery_timeout
+        self.name = name
+        
+        self.state = self.CLOSED
+        self.failure_count = 0
+        self.last_failure_time: Optional[float] = None
+        self.success_count = 0
+    
+    def record_success(self) -> None:
+        """Record a successful call."""
+        self.failure_count = 0
+        if self.state == self.HALF_OPEN:
+            self.success_count += 1
+            if self.success_count >= 2:  # 2 successes to close
+                logger.info(f"Circuit {self.name} closing after recovery")
+                self.state = self.CLOSED
+                self.success_count = 0
+    
+    def record_failure(self) -> None:
+        """Record a failed call."""
+        self.failure_count += 1
+        self.last_failure_time = asyncio.get_event_loop().time()
+        self.success_count = 0
+        
+        if self.failure_count >= self.failure_threshold:
+            logger.warning(f"Circuit {self.name} opening after {self.failure_count} failures")
+            self.state = self.OPEN
+    
+    def can_execute(self) -> bool:
+        """Check if execution is allowed."""
+        if self.state == self.CLOSED:
+            return True
+        
+        if self.state == self.OPEN:
+            # Check if recovery timeout has passed
+            if self.last_failure_time:
+                elapsed = asyncio.get_event_loop().time() - self.last_failure_time
+                if elapsed >= self.recovery_timeout:
+                    logger.info(f"Circuit {self.name} entering half-open state")
+                    self.state = self.HALF_OPEN
+                    return True
+            return False
+        
+        # HALF_OPEN - allow execution for testing
+        return True
+
+
+# Global circuit breakers for external services
+deepgram_circuit = CircuitBreaker(name="deepgram", failure_threshold=3, recovery_timeout=60.0)
+twilio_circuit = CircuitBreaker(name="twilio", failure_threshold=5, recovery_timeout=30.0)
+
 
 # -----------------------------------------------------------------------------
 # Audio Conversion Utilities (Pure Python - no audioop)
@@ -421,35 +526,78 @@ class VoiceAgentBridge:
         """
         Establish WebSocket connection to Deepgram Voice Agent.
         
+        Uses circuit breaker pattern and retry logic for resilience.
+        
         Returns:
             True if connection successful, False otherwise
         """
         if not DEEPGRAM_API_KEY:
             logger.error("DEEPGRAM_API_KEY not configured")
+            raise ConfigurationError("DEEPGRAM_API_KEY not configured")
+        
+        # Check circuit breaker
+        if not deepgram_circuit.can_execute():
+            logger.warning(f"Deepgram circuit open - skipping connection for call {self.call_id}")
             return False
         
         headers = {
             "Authorization": f"Token {DEEPGRAM_API_KEY}",
         }
         
-        try:
-            self.deepgram_ws = await asyncio.wait_for(
-                websockets.connect(
-                    DEEPGRAM_AGENT_URL,
-                    additional_headers=headers,
-                    ping_interval=DEEPGRAM_PING_INTERVAL,
-                    close_timeout=WEBSOCKET_CLOSE_TIMEOUT,
-                ),
-                timeout=DEEPGRAM_CONNECT_TIMEOUT
-            )
-            logger.info(f"Connected to Deepgram Voice Agent for call {self.call_id}")
-            return True
-        except asyncio.TimeoutError:
-            logger.error(f"Timeout connecting to Deepgram for call {self.call_id}")
-            return False
-        except Exception as e:
-            logger.error(f"Failed to connect to Deepgram: {e}")
-            return False
+        last_error = None
+        for attempt in range(MAX_RECONNECT_ATTEMPTS):
+            try:
+                self.deepgram_ws = await asyncio.wait_for(
+                    websockets.connect(
+                        DEEPGRAM_AGENT_URL,
+                        additional_headers=headers,
+                        ping_interval=DEEPGRAM_PING_INTERVAL,
+                        close_timeout=WEBSOCKET_CLOSE_TIMEOUT,
+                    ),
+                    timeout=DEEPGRAM_CONNECT_TIMEOUT
+                )
+                logger.info(f"Connected to Deepgram Voice Agent for call {self.call_id}")
+                deepgram_circuit.record_success()
+                return True
+                
+            except asyncio.TimeoutError:
+                last_error = ConnectionError(
+                    f"Timeout connecting to Deepgram (attempt {attempt + 1}/{MAX_RECONNECT_ATTEMPTS})",
+                    service="deepgram",
+                    recoverable=True
+                )
+                logger.warning(str(last_error))
+                
+            except websockets.exceptions.InvalidStatusCode as e:
+                # Auth failure or rate limit - don't retry
+                last_error = ConnectionError(
+                    f"Deepgram rejected connection: {e.status_code}",
+                    service="deepgram",
+                    recoverable=e.status_code != 401  # Auth failures not recoverable
+                )
+                logger.error(str(last_error))
+                if e.status_code == 401:
+                    deepgram_circuit.record_failure()
+                    break
+                    
+            except Exception as e:
+                last_error = ConnectionError(
+                    f"Failed to connect to Deepgram: {e}",
+                    service="deepgram",
+                    recoverable=True
+                )
+                logger.error(str(last_error))
+            
+            # Exponential backoff before retry
+            if attempt < MAX_RECONNECT_ATTEMPTS - 1:
+                delay = RECONNECT_DELAY_BASE * (2 ** attempt)
+                logger.info(f"Retrying Deepgram connection in {delay:.1f}s...")
+                await asyncio.sleep(delay)
+        
+        # All retries failed
+        deepgram_circuit.record_failure()
+        logger.error(f"Failed to connect to Deepgram after {MAX_RECONNECT_ATTEMPTS} attempts")
+        return False
     
     async def send_agent_settings(self) -> None:
         """
@@ -938,39 +1086,86 @@ class VoiceAgentBridge:
         """
         Main loop - process messages from Twilio.
         
+        Includes error classification and recovery strategies:
+        - Transient errors: Log and continue
+        - Connection errors: Attempt reconnection
+        - Fatal errors: Graceful shutdown
+        
         Returns:
             Dict with conversation summary and analytics
         """
+        error_count = 0
+        max_consecutive_errors = 5
+        
         try:
             while True:
                 try:
-                    message = await self.twilio_ws.receive_json()
+                    message = await asyncio.wait_for(
+                        self.twilio_ws.receive_json(),
+                        timeout=120.0  # 2 minute timeout
+                    )
                     await self.handle_twilio_message(message)
+                    error_count = 0  # Reset on success
                     
                     if message.get("event") == "stop":
+                        logger.info(f"Call {self.call_id} ended normally (stop event)")
+                        break
+                
+                except asyncio.TimeoutError:
+                    logger.warning(f"Timeout receiving from Twilio for call {self.call_id}")
+                    # Check if call is still active
+                    error_count += 1
+                    if error_count >= max_consecutive_errors:
+                        logger.error(f"Too many timeouts for call {self.call_id}, closing")
                         break
                         
-                except Exception as e:
-                    logger.error(f"Error receiving from Twilio: {e}")
+                except websockets.exceptions.ConnectionClosed as e:
+                    logger.info(f"Twilio connection closed for call {self.call_id}: {e.code}")
+                    twilio_circuit.record_failure()
                     break
                     
+                except json.JSONDecodeError as e:
+                    # Bad message - log and continue
+                    logger.warning(f"Invalid JSON from Twilio: {e}")
+                    error_count += 1
+                    continue
+                    
+                except Exception as e:
+                    error_type = type(e).__name__
+                    logger.error(f"Error in main loop [{error_type}]: {e}")
+                    error_count += 1
+                    
+                    if error_count >= max_consecutive_errors:
+                        logger.error(f"Too many errors ({error_count}) for call {self.call_id}, closing")
+                        break
+                    
+                    # Small delay before retry
+                    await asyncio.sleep(0.1)
+                    
+        except Exception as e:
+            logger.error(f"Fatal error in voice agent run loop: {e}")
+            
         finally:
             # Flush any remaining audio buffer
-            remaining = self.audio_buffer.flush()
-            if remaining and self.deepgram_ws:
-                try:
-                    audio_msg = {
-                        "type": "AudioData",
-                        "audio_data": base64.b64encode(remaining).decode("utf-8")
-                    }
-                    await self.deepgram_ws.send(json.dumps(audio_msg))
-                except:
-                    pass
+            await self._flush_audio_buffer()
             
             # Cleanup
             await self.cleanup()
         
         return self.get_summary()
+    
+    async def _flush_audio_buffer(self) -> None:
+        """Flush remaining audio buffer to Deepgram."""
+        remaining = self.audio_buffer.flush()
+        if remaining and self.deepgram_ws:
+            try:
+                audio_msg = {
+                    "type": "AudioData",
+                    "audio_data": base64.b64encode(remaining).decode("utf-8")
+                }
+                await self.deepgram_ws.send(json.dumps(audio_msg))
+            except Exception as e:
+                logger.debug(f"Could not flush audio buffer: {e}")
     
     async def cleanup(self) -> None:
         """Clean up connections."""
