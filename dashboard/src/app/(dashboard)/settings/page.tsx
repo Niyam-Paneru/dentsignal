@@ -24,9 +24,11 @@ import {
   Save,
   Play,
   Volume2,
-  Loader2
+  Loader2,
+  Phone
 } from 'lucide-react'
 import { getClinicSettings, getClinic, updateClinicSettings } from '@/lib/api/dental'
+import { CallForwardingGuide } from '@/components/dashboard/call-forwarding-guide'
 
 interface ClinicData {
   name: string
@@ -120,10 +122,14 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue="clinic" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:grid-cols-none">
+        <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:grid-cols-none">
           <TabsTrigger value="clinic" className="gap-2">
             <Building2 className="h-4 w-4" />
             <span className="hidden sm:inline">Clinic</span>
+          </TabsTrigger>
+          <TabsTrigger value="forwarding" className="gap-2">
+            <Phone className="h-4 w-4" />
+            <span className="hidden sm:inline">Forwarding</span>
           </TabsTrigger>
           <TabsTrigger value="agent" className="gap-2">
             <Bot className="h-4 w-4" />
@@ -142,6 +148,11 @@ export default function SettingsPage() {
             <span className="hidden sm:inline">Security</span>
           </TabsTrigger>
         </TabsList>
+
+        {/* Call Forwarding Setup */}
+        <TabsContent value="forwarding">
+          <CallForwardingGuide twilioNumber={clinic?.twilio_number || '(904) 867-9643'} />
+        </TabsContent>
 
         {/* Clinic Settings */}
         <TabsContent value="clinic">

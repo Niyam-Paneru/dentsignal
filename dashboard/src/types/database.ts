@@ -94,6 +94,8 @@ export interface DashboardStats {
   missedCalls: number
   callsTrend: number // percentage change from previous period
   bookingsTrend: number
+  revenueRecovered: number // estimated revenue from booked appointments
+  avgCallDuration: string // average call duration
 }
 
 export interface CallTrendData {

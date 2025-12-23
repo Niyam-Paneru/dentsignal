@@ -512,8 +512,13 @@ export default function HomePage() {
       <footer className="bg-[#1A202C] py-8 text-white">
         <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 sm:flex-row">
           <div className="flex items-center gap-2">
-            <Stethoscope className="h-5 w-5 text-[#0099CC]" />
-            <span className="font-semibold">DentSignal</span>
+            <Image
+              src="/logo.png"
+              alt="DentSignal"
+              width={120}
+              height={30}
+              className="h-8 w-auto brightness-0 invert"
+            />
           </div>
           <p className="text-sm text-[#718096]">
             © 2025 DentSignal. All rights reserved.

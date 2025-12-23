@@ -81,7 +81,9 @@ export default function CallsPage() {
   const filteredCalls = calls.filter((call) => {
     const matchesSearch = 
       (call.caller_phone || '').includes(searchQuery) ||
-      (call.call_reason || '').toLowerCase().includes(searchQuery.toLowerCase())
+      (call.call_reason || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (call.transcript || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (call.summary || '').toLowerCase().includes(searchQuery.toLowerCase())
     const matchesOutcome = outcomeFilter === 'all' || call.outcome === outcomeFilter
     return matchesSearch && matchesOutcome
   })
@@ -107,7 +109,7 @@ export default function CallsPage() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search by phone or reason..."
+            placeholder="Search by phone, reason, or transcript..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"

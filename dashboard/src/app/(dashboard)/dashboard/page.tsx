@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Phone, CalendarCheck, TrendingUp, PhoneMissed, ArrowUpRight, ArrowDownRight, Loader2, Building2 } from 'lucide-react'
+import { Phone, CalendarCheck, TrendingUp, PhoneMissed, ArrowUpRight, ArrowDownRight, Loader2, Building2, DollarSign, Clock } from 'lucide-react'
 import { RecentCallsTable } from '@/components/dashboard/recent-calls-table'
 import { CallsChart } from '@/components/dashboard/calls-chart'
+import { OnboardingProgress } from '@/components/dashboard/onboarding-progress'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { getDashboardStats, getRecentCalls, getCallTrends, getClinic } from '@/lib/api/dental'
+import { getDashboardStats, getRecentCalls, getCallTrends, getClinic, getClinicSettings } from '@/lib/api/dental'
 import type { DashboardStats, RecentCall, CallTrendData, Clinic } from '@/types/database'
 
 function StatCard({ 
@@ -54,6 +55,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [noClinic, setNoClinic] = useState(false)
   const [dateRange, setDateRange] = useState(7)
+  const [hasCustomGreeting, setHasCustomGreeting] = useState(false)
+  const [hasForwarding, setHasForwarding] = useState(false)
 
   useEffect(() => {
     async function loadData() {
@@ -68,14 +71,19 @@ export default function DashboardPage() {
         }
         setClinic(clinicData)
         
-        const [statsData, callsData, trendsData] = await Promise.all([
+        const [statsData, callsData, trendsData, settingsData] = await Promise.all([
           getDashboardStats(dateRange),
           getRecentCalls(5),
-          getCallTrends(dateRange)
+          getCallTrends(dateRange),
+          getClinicSettings()
         ])
         setStats(statsData)
         setRecentCalls(callsData)
         setChartData(trendsData)
+        
+        // Check onboarding status
+        setHasCustomGreeting(!!settingsData?.greeting_template)
+        setHasForwarding(!!clinicData?.twilio_number)
       } catch (error) {
         console.error('Failed to load dashboard data:', error)
       } finally {
@@ -134,6 +142,14 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      {/* Onboarding Progress - shows until complete */}
+      <OnboardingProgress
+        clinicName={clinic?.name}
+        hasForwardingSetup={hasForwarding}
+        hasCustomGreeting={hasCustomGreeting}
+        hasFirstCall={stats.totalCalls > 0}
+      />
+
       {/* Header */}
       <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
         <div>
@@ -152,7 +168,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <StatCard
           title="Total Calls"
           value={stats.totalCalls}
@@ -170,6 +186,16 @@ export default function DashboardPage() {
           value={`${stats.successRate}%`}
           trend={5}
           icon={TrendingUp}
+        />
+        <StatCard
+          title="Revenue Recovered"
+          value={`$${stats.revenueRecovered.toLocaleString()}`}
+          icon={DollarSign}
+        />
+        <StatCard
+          title="Avg Call Duration"
+          value={stats.avgCallDuration}
+          icon={Clock}
         />
         <StatCard
           title="Missed Calls"

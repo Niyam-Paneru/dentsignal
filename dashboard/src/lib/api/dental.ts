@@ -36,6 +36,8 @@ export async function getDashboardStats(days: number = 7): Promise<DashboardStat
       missedCalls: 0,
       callsTrend: 0,
       bookingsTrend: 0,
+      revenueRecovered: 0,
+      avgCallDuration: '0:00',
     }
   }
 
@@ -57,6 +59,8 @@ export async function getDashboardStats(days: number = 7): Promise<DashboardStat
       missedCalls: 0,
       callsTrend: 0,
       bookingsTrend: 0,
+      revenueRecovered: 0,
+      avgCallDuration: '0:00',
     }
   }
 
@@ -64,6 +68,17 @@ export async function getDashboardStats(days: number = 7): Promise<DashboardStat
   const bookedAppointments = calls?.filter(c => c.outcome === 'booked').length || 0
   const missedCalls = calls?.filter(c => c.outcome === 'missed').length || 0
   const successRate = totalCalls > 0 ? Math.round((bookedAppointments / totalCalls) * 100) : 0
+  
+  // Calculate revenue recovered: avg dental appointment = $350
+  const avgAppointmentValue = 350
+  const revenueRecovered = bookedAppointments * avgAppointmentValue
+  
+  // Calculate average call duration
+  const totalDuration = calls?.reduce((sum, c) => sum + (c.duration_seconds || 0), 0) || 0
+  const avgDurationSeconds = totalCalls > 0 ? Math.round(totalDuration / totalCalls) : 0
+  const avgMins = Math.floor(avgDurationSeconds / 60)
+  const avgSecs = avgDurationSeconds % 60
+  const avgCallDuration = `${avgMins}:${avgSecs.toString().padStart(2, '0')}`
 
   return {
     totalCalls,
@@ -72,6 +87,8 @@ export async function getDashboardStats(days: number = 7): Promise<DashboardStat
     missedCalls,
     callsTrend: 15, // TODO: Calculate from previous period
     bookingsTrend: 12,
+    revenueRecovered,
+    avgCallDuration,
   }
 }
 
