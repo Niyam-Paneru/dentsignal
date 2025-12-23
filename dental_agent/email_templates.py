@@ -43,8 +43,8 @@ class BaseEmail:
                     <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                         <!-- Header -->
                         <tr>
-                            <td style="background-color: {self.PRIMARY_COLOR}; padding: 24px; text-align: center;">
-                                <img src="https://dentsignal.me/logo-white.png" alt="DentSignal" height="40" style="display: inline-block;">
+                            <td style="background: linear-gradient(to bottom, #0a1628, #1e40af); padding: 24px; text-align: center;">
+                                <img src="https://dentsignal.me/logo.png" alt="DentSignal" height="50" style="display: inline-block;">
                             </td>
                         </tr>
         """
