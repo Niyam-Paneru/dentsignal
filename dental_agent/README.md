@@ -75,16 +75,18 @@ AI Voice Agent system for dental clinics - handles both **inbound** calls (patie
 | File | Purpose |
 |------|---------|
 | `api_main.py` | FastAPI REST API (leads, calls, webhooks) |
-| `routes_inbound.py` | **NEW** - Inbound call handling + WebSocket |
-| `routes_admin.py` | **NEW** - Clinic management API |
-| `routes_sms.py` | **NEW** - SMS automation API |
-| `routes_analytics.py` | **NEW** - Call analytics API |
-| `websocket_bridge.py` | **NEW** - Twilio ↔ Deepgram audio bridge |
-| `prompt_builder.py` | **NEW** - Per-clinic prompt generation |
-| `ai_providers.py` | **NEW** - Multi-provider AI (50% cost savings!) |
-| `call_analytics.py` | **NEW** - Sentiment analysis & quality scoring |
-| `post_call_workflow.py` | **NEW** - Automated post-call actions |
-| `models.py` | **NEW** - Pydantic models for API |
+| `routes_inbound.py` | Inbound call handling + WebSocket |
+| `routes_admin.py` | Clinic management API |
+| `routes_sms.py` | SMS automation API |
+| `routes_analytics.py` | Call analytics API |
+| `routes_calendar.py` | **NEW** - Calendar & appointment scheduling API |
+| `calendar_service.py` | **NEW** - Google Calendar + Calendly integration |
+| `websocket_bridge.py` | Twilio ↔ Deepgram audio bridge |
+| `prompt_builder.py` | Per-clinic prompt generation |
+| `ai_providers.py` | Multi-provider AI (50% cost savings!) |
+| `call_analytics.py` | Sentiment analysis & quality scoring |
+| `post_call_workflow.py` | Automated post-call actions |
+| `models.py` | Pydantic models for API |
 | `twilio_service.py` | Twilio call management, TwiML, and SMS |
 | `deepgram_service.py` | Speech-to-text and intent detection |
 | `tasks.py` | Celery background tasks (calls, retries) |
@@ -387,13 +389,17 @@ dental_agent/
 - [x] **Review request SMS** (post-visit Google review ask)
 - [x] **Bulk SMS campaigns** (recall reminders to multiple patients)
 
-### 📅 Phase 4: Calendar & Booking (NEXT)
-- [ ] Google Calendar integration
-- [ ] Calendly integration
-- [ ] Real-time availability checking during calls
-- [ ] No-show tracking and follow-up
+### ✅ Phase 4: Calendar & Booking (COMPLETE)
+- [x] **Google Calendar integration** - Service account auth, busy times, create/cancel events
+- [x] **Calendly integration** - API key auth, list events, get availability
+- [x] **Real-time availability checking during calls** - Voice agent can check slots and speak them naturally
+- [x] **No-show tracking and follow-up** - Mark no-shows, auto-SMS follow-up, reschedule tracking
 
-### 🎯 Phase 5: Advanced Patient Engagement
+**Files added:**
+- `calendar_service.py` - Unified calendar service (Google Calendar + Calendly)
+- `routes_calendar.py` - API endpoints for availability, appointments, no-shows
+
+### 🎯 Phase 5: Advanced Patient Engagement (NEXT)
 - [ ] Treatment plan follow-ups ("Time for your crown fitting!")
 - [ ] Birthday/holiday greetings (patient retention)
 - [ ] Insurance verification pre-call

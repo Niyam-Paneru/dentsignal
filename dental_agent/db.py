@@ -323,6 +323,182 @@ class InboundCall(SQLModel, table=True):
 
 
 # -----------------------------------------------------------------------------
+# Appointment and Calendar Models
+# -----------------------------------------------------------------------------
+
+class AppointmentStatus(str, enum.Enum):
+    """Status of an appointment."""
+    SCHEDULED = "scheduled"
+    CONFIRMED = "confirmed"
+    COMPLETED = "completed"
+    NO_SHOW = "no_show"
+    CANCELLED = "cancelled"
+    RESCHEDULED = "rescheduled"
+
+
+class AppointmentType(str, enum.Enum):
+    """Types of dental appointments."""
+    CLEANING = "cleaning"
+    CHECKUP = "checkup"
+    EMERGENCY = "emergency"
+    CONSULTATION = "consultation"
+    FILLING = "filling"
+    CROWN = "crown"
+    ROOT_CANAL = "root_canal"
+    EXTRACTION = "extraction"
+    WHITENING = "whitening"
+    INVISALIGN = "invisalign"
+    OTHER = "other"
+
+
+class Patient(SQLModel, table=True):
+    """Patient model for tracking patient information."""
+    __tablename__ = "patients"
+    
+    id: Optional[int] = Field(default=None, primary_key=True)
+    clinic_id: int = Field(foreign_key="clients.id", index=True)
+    
+    # Personal info
+    first_name: str
+    last_name: str
+    phone: str = Field(index=True)
+    email: Optional[str] = None
+    date_of_birth: Optional[datetime] = None
+    
+    # Dental info
+    insurance_provider: Optional[str] = None
+    insurance_id: Optional[str] = None
+    is_new_patient: bool = Field(default=True)
+    
+    # History
+    notes: Optional[str] = None
+    no_show_count: int = Field(default=0)
+    
+    # Timestamps
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    last_visit: Optional[datetime] = None
+    
+    def __repr__(self) -> str:
+        return f"<Patient id={self.id} name={self.first_name} {self.last_name}>"
+
+
+class Appointment(SQLModel, table=True):
+    """Appointment model for scheduling."""
+    __tablename__ = "appointments"
+    
+    id: Optional[int] = Field(default=None, primary_key=True)
+    clinic_id: int = Field(foreign_key="clients.id", index=True)
+    patient_id: Optional[int] = Field(default=None, foreign_key="patients.id", index=True)
+    
+    # Scheduling
+    scheduled_time: datetime = Field(index=True)
+    duration_minutes: int = Field(default=60)
+    appointment_type: AppointmentType = Field(default=AppointmentType.CHECKUP)
+    
+    # Status
+    status: AppointmentStatus = Field(default=AppointmentStatus.SCHEDULED)
+    
+    # Provider (dentist)
+    provider_name: Optional[str] = None
+    
+    # Calendar integration
+    calendar_provider: Optional[str] = None  # "google", "calendly", "manual"
+    calendar_event_id: Optional[str] = None  # External calendar event ID
+    
+    # Source tracking
+    source: str = Field(default="phone")  # "phone", "website", "walk-in", "ai"
+    inbound_call_id: Optional[int] = Field(default=None, foreign_key="inbound_calls.id")
+    
+    # Patient info (for quick access without join)
+    patient_name: Optional[str] = None
+    patient_phone: Optional[str] = None
+    patient_email: Optional[str] = None
+    is_new_patient: bool = Field(default=False)
+    
+    # Notes
+    notes: Optional[str] = None
+    reason: Optional[str] = None  # Reason for visit
+    
+    # Reminders
+    reminder_24h_sent: bool = Field(default=False)
+    reminder_2h_sent: bool = Field(default=False)
+    confirmation_sent: bool = Field(default=False)
+    
+    # Timestamps
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    confirmed_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    cancelled_at: Optional[datetime] = None
+    
+    def __repr__(self) -> str:
+        return f"<Appointment id={self.id} patient={self.patient_name} time={self.scheduled_time} status={self.status}>"
+
+
+class NoShowRecord(SQLModel, table=True):
+    """Record of no-show appointments for tracking and follow-up."""
+    __tablename__ = "no_show_records"
+    
+    id: Optional[int] = Field(default=None, primary_key=True)
+    appointment_id: int = Field(foreign_key="appointments.id", index=True)
+    patient_id: Optional[int] = Field(default=None, foreign_key="patients.id", index=True)
+    clinic_id: int = Field(foreign_key="clients.id", index=True)
+    
+    # Original appointment info
+    scheduled_time: datetime
+    appointment_type: Optional[AppointmentType] = None
+    
+    # Follow-up tracking
+    followed_up: bool = Field(default=False)
+    followup_call_made: bool = Field(default=False)
+    followup_sms_sent: bool = Field(default=False)
+    followup_notes: Optional[str] = None
+    rescheduled_appointment_id: Optional[int] = None  # If patient rescheduled
+    
+    # Timestamps
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    followed_up_at: Optional[datetime] = None
+    
+    def __repr__(self) -> str:
+        return f"<NoShowRecord id={self.id} appointment_id={self.appointment_id}>"
+
+
+class CalendarIntegration(SQLModel, table=True):
+    """Calendar integration settings per clinic."""
+    __tablename__ = "calendar_integrations"
+    
+    id: Optional[int] = Field(default=None, primary_key=True)
+    clinic_id: int = Field(foreign_key="clients.id", unique=True, index=True)
+    
+    # Provider
+    provider: str = Field(default="manual")  # "google", "calendly", "manual"
+    is_active: bool = Field(default=True)
+    
+    # Google Calendar settings
+    google_calendar_id: Optional[str] = None
+    google_credentials_json: Optional[str] = None  # Encrypted in production
+    
+    # Calendly settings
+    calendly_api_key: Optional[str] = None
+    calendly_user_uri: Optional[str] = None
+    calendly_event_type_uri: Optional[str] = None
+    
+    # General settings
+    slot_duration_minutes: int = Field(default=60)
+    buffer_minutes: int = Field(default=15)
+    business_hours_json: Optional[str] = None  # JSON string
+    
+    # Timestamps
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    last_sync: Optional[datetime] = None
+    
+    def __repr__(self) -> str:
+        return f"<CalendarIntegration clinic_id={self.clinic_id} provider={self.provider}>"
+
+
+# -----------------------------------------------------------------------------
 # Engine and Session Management
 # -----------------------------------------------------------------------------
 
