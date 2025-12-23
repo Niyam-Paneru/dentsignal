@@ -12,7 +12,6 @@ import {
   Users,
   Calculator,
   Shield,
-  ChevronDown,
   Headphones
 } from 'lucide-react'
 import { ROICalculator } from '@/components/landing/roi-calculator'
@@ -34,6 +33,9 @@ export default function HomePage() {
             />
           </div>
           <nav className="flex items-center gap-3">
+            <Link href="/pricing">
+              <Button variant="ghost" className="text-[#2D3748] hover:text-[#1B3A7C]">Pricing</Button>
+            </Link>
             <Link href="/login">
               <Button variant="ghost" className="text-[#2D3748] hover:text-[#1B3A7C]">Sign In</Button>
             </Link>
@@ -227,237 +229,61 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Pricing Section - New */}
+      {/* Pricing Preview Section */}
       <section className="bg-white py-20" id="pricing">
         <div className="container mx-auto px-4">
           <div className="mb-12 text-center">
             <h2 className="mb-4 text-3xl font-bold text-[#1B3A7C]">Simple, Transparent Pricing</h2>
             <p className="text-lg text-[#718096]">
-              No hidden fees. No long contracts. Cancel anytime.
+              Plans starting at $149/month. No hidden fees. Cancel anytime.
             </p>
           </div>
 
-          <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-3">
-            {/* Starter */}
-            <div className="rounded-xl border border-[#E8EBF0] bg-white p-6 shadow-sm">
+          <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-3">
+            {/* Starter Preview */}
+            <div className="rounded-xl border border-[#E8EBF0] bg-white p-6 text-center shadow-sm">
               <h3 className="text-lg font-bold text-[#1B3A7C]">Starter</h3>
-              <p className="mt-1 text-sm text-[#718096]">For 1-2 dentist practices</p>
+              <p className="mt-1 text-sm text-[#718096]">1-2 dentists</p>
               <div className="my-4">
-                <span className="text-4xl font-bold text-[#2D3748]">$149</span>
-                <span className="text-[#718096]">/month</span>
+                <span className="text-3xl font-bold text-[#2D3748]">$149</span>
+                <span className="text-[#718096]">/mo</span>
               </div>
-              <ul className="mb-6 space-y-2 text-sm">
-                <li className="flex items-center gap-2">
-                  <span className="text-[#27AE60]">✓</span> Unlimited inbound calls
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-[#27AE60]">✓</span> AI appointment booking
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-[#27AE60]">✓</span> 24/7 after-hours coverage
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-[#27AE60]">✓</span> Emergency triage
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-[#27AE60]">✓</span> Call recordings & transcripts
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-[#27AE60]">✓</span> Email support (24h response)
-                </li>
-                <li className="flex items-center gap-2 text-[#718096]">
-                  <span>✗</span> PMS integration
-                </li>
-                <li className="flex items-center gap-2 text-[#718096]">
-                  <span>✗</span> Custom AI training
-                </li>
-              </ul>
-              <Link href="/signup">
-                <Button variant="outline" className="w-full border-[#1B3A7C] text-[#1B3A7C] hover:bg-[#1B3A7C] hover:text-white">
-                  Start 7-Day Trial
-                </Button>
-              </Link>
+              <p className="text-sm text-[#718096]">Unlimited calls, 24/7 coverage</p>
             </div>
 
-            {/* Professional - Most Popular */}
-            <div className="relative rounded-xl border-2 border-[#0099CC] bg-white p-6 shadow-lg">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#0099CC] px-4 py-1 text-xs font-bold text-white">
-                MOST POPULAR
+            {/* Professional Preview */}
+            <div className="relative rounded-xl border-2 border-[#0099CC] bg-white p-6 text-center shadow-lg">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#0099CC] px-3 py-1 text-xs font-bold text-white">
+                POPULAR
               </div>
               <h3 className="text-lg font-bold text-[#1B3A7C]">Professional</h3>
-              <p className="mt-1 text-sm text-[#718096]">For 3-5 dentist practices</p>
+              <p className="mt-1 text-sm text-[#718096]">3-5 dentists</p>
               <div className="my-4">
-                <span className="text-4xl font-bold text-[#2D3748]">$199</span>
-                <span className="text-[#718096]">/month</span>
+                <span className="text-3xl font-bold text-[#2D3748]">$199</span>
+                <span className="text-[#718096]">/mo</span>
               </div>
-              <ul className="mb-6 space-y-2 text-sm">
-                <li className="flex items-center gap-2">
-                  <span className="text-[#27AE60]">✓</span> Everything in Starter, plus:
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-[#27AE60]">✓</span> PMS integration (Dentrix, Open Dental)
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-[#27AE60]">✓</span> Custom AI voice & greeting
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-[#27AE60]">✓</span> Advanced analytics dashboard
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-[#27AE60]">✓</span> SMS appointment reminders
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-[#27AE60]">✓</span> Priority support (4h response)
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-[#27AE60]">✓</span> Multi-location (2 locations)
-                </li>
-                <li className="flex items-center gap-2 text-[#718096]">
-                  <span>✗</span> API access
-                </li>
-              </ul>
-              <Link href="/signup">
-                <Button className="w-full bg-[#0099CC] hover:bg-[#0077A3] text-white">
-                  Start 7-Day Trial
-                </Button>
-              </Link>
+              <p className="text-sm text-[#718096]">+ PMS integration & analytics</p>
             </div>
 
-            {/* Enterprise */}
-            <div className="rounded-xl border border-[#E8EBF0] bg-white p-6 shadow-sm">
+            {/* Enterprise Preview */}
+            <div className="rounded-xl border border-[#E8EBF0] bg-white p-6 text-center shadow-sm">
               <h3 className="text-lg font-bold text-[#1B3A7C]">Enterprise</h3>
-              <p className="mt-1 text-sm text-[#718096]">For DSOs & 6+ dentist practices</p>
+              <p className="mt-1 text-sm text-[#718096]">6+ dentists / DSOs</p>
               <div className="my-4">
-                <span className="text-4xl font-bold text-[#2D3748]">$399</span>
-                <span className="text-[#718096]">/month</span>
+                <span className="text-3xl font-bold text-[#2D3748]">$399</span>
+                <span className="text-[#718096]">/mo</span>
               </div>
-              <ul className="mb-6 space-y-2 text-sm">
-                <li className="flex items-center gap-2">
-                  <span className="text-[#27AE60]">✓</span> Everything in Professional, plus:
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-[#27AE60]">✓</span> Unlimited locations
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-[#27AE60]">✓</span> Dedicated account manager
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-[#27AE60]">✓</span> Custom AI training (your workflows)
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-[#27AE60]">✓</span> API access for integrations
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-[#27AE60]">✓</span> White-label option
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-[#27AE60]">✓</span> 99.9% uptime SLA
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-[#27AE60]">✓</span> Phone support (1h response)
-                </li>
-              </ul>
-              <Link href="/signup">
-                <Button variant="outline" className="w-full border-[#1B3A7C] text-[#1B3A7C] hover:bg-[#1B3A7C] hover:text-white">
-                  Contact Sales
-                </Button>
-              </Link>
+              <p className="text-sm text-[#718096]">Unlimited locations, API access</p>
             </div>
           </div>
 
-          {/* Price Comparison */}
-          <div className="mx-auto mt-12 max-w-3xl rounded-xl border border-[#E8EBF0] bg-[#F8F9FA] p-6">
-            <h3 className="mb-4 text-center font-bold text-[#1B3A7C]">Compare to Competitors</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[#E8EBF0]">
-                    <th className="py-2 text-left text-[#718096]">Feature</th>
-                    <th className="py-2 text-center text-[#718096]">Weave</th>
-                    <th className="py-2 text-center text-[#718096]">RevenueWell</th>
-                    <th className="py-2 text-center font-bold text-[#0099CC]">DentSignal</th>
-                  </tr>
-                </thead>
-                <tbody className="text-[#2D3748]">
-                  <tr className="border-b border-[#E8EBF0]">
-                    <td className="py-2">Inbound Call AI</td>
-                    <td className="py-2 text-center">❌</td>
-                    <td className="py-2 text-center">❌</td>
-                    <td className="py-2 text-center text-[#27AE60]">✅</td>
-                  </tr>
-                  <tr className="border-b border-[#E8EBF0]">
-                    <td className="py-2">Auto Appointment Booking</td>
-                    <td className="py-2 text-center">❌</td>
-                    <td className="py-2 text-center">❌</td>
-                    <td className="py-2 text-center text-[#27AE60]">✅</td>
-                  </tr>
-                  <tr className="border-b border-[#E8EBF0]">
-                    <td className="py-2">24/7 Coverage</td>
-                    <td className="py-2 text-center text-[#27AE60]">✅</td>
-                    <td className="py-2 text-center">❌</td>
-                    <td className="py-2 text-center text-[#27AE60]">✅</td>
-                  </tr>
-                  <tr className="border-b border-[#E8EBF0]">
-                    <td className="py-2">Setup Time</td>
-                    <td className="py-2 text-center">3-6 weeks</td>
-                    <td className="py-2 text-center">2-4 weeks</td>
-                    <td className="py-2 text-center font-bold text-[#27AE60]">48 hours</td>
-                  </tr>
-                  <tr className="border-b border-[#E8EBF0]">
-                    <td className="py-2">Contract</td>
-                    <td className="py-2 text-center">12 months</td>
-                    <td className="py-2 text-center">Flexible</td>
-                    <td className="py-2 text-center font-bold text-[#27AE60]">Month-to-month</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2 font-bold">Price</td>
-                    <td className="py-2 text-center">$300+/mo</td>
-                    <td className="py-2 text-center">$175/mo</td>
-                    <td className="py-2 text-center font-bold text-[#27AE60]">$199/mo</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </section>
-
-
-      {/* FAQ Section - White */}
-      <section className="bg-white py-20">
-        <div className="container mx-auto px-4">
-          <div className="mb-12 text-center">
-            <h2 className="mb-4 text-3xl font-bold text-[#1B3A7C]">Common Questions</h2>
-            <p className="text-lg text-[#718096]">
-              What dentists ask before trying AI
-            </p>
-          </div>
-
-          <div className="mx-auto max-w-3xl space-y-4">
-            <FAQItem 
-              question="Will patients know it's AI?"
-              answer="Most patients can't tell—the voice quality is that natural. But if someone asks, it politely says 'I'm the AI assistant—would you prefer I transfer you to the office?' Transparency builds trust, and 95% continue the call. Plus, they're getting 24/7 service they couldn't get otherwise."
-            />
-            <FAQItem 
-              question="Is it HIPAA compliant?"
-              answer="Fully HIPAA-compliant with BAA coverage included—no extra fee. Every call is encrypted end-to-end. Unlike some competitors, we NEVER use your patient data to train AI for other practices. That's our legal guarantee."
-            />
-            <FAQItem 
-              question="What if it makes a mistake?"
-              answer="It's trained specifically on dental calls—emergency triage, insurance questions, appointment types. For 95% of calls, it handles perfectly. For complex clinical questions, it smoothly transfers to your team with full context. You stay in control."
-            />
-            <FAQItem 
-              question="Will this replace my receptionist?"
-              answer="No—it makes her job easier. She's no longer interrupted 47 times per day during patient checkout or lunch. AI handles overflow during peak times and captures after-hours calls. Your team will thank you."
-            />
-            <FAQItem 
-              question="My patients are older—will they hate this?"
-              answer="80% of patients can't tell it's AI—it sounds completely natural. For those who prefer a human, it transfers instantly. But here's what matters: older patients LOVE that someone answers at 7pm when they're in pain. That's better service than voicemail."
-            />
-            <FAQItem 
-              question="How long does setup take?"
-              answer="Live in 48 hours. Zero IT work required. Works with your current phone provider—we handle call forwarding. You test one call and you're done."
-            />
+          <div className="mt-10 text-center">
+            <Link href="/pricing">
+              <Button size="lg" variant="outline" className="gap-2 border-[#1B3A7C] text-[#1B3A7C] hover:bg-[#1B3A7C] hover:text-white">
+                View Full Pricing & Compare
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -547,17 +373,5 @@ function FeatureCard({
       <h3 className="mb-2 font-semibold text-[#1B3A7C]">{title}</h3>
       <p className="text-sm text-[#718096]">{description}</p>
     </div>
-  )
-}
-
-function FAQItem({ question, answer }: { question: string; answer: string }) {
-  return (
-    <details className="group rounded-xl border border-[#E8EBF0] bg-white p-4 transition-all hover:border-[#0099CC]/30">
-      <summary className="flex cursor-pointer items-center justify-between font-medium text-[#1B3A7C]">
-        {question}
-        <ChevronDown className="h-4 w-4 text-[#0099CC] transition-transform group-open:rotate-180" />
-      </summary>
-      <p className="mt-3 text-sm text-[#718096]">{answer}</p>
-    </details>
   )
 }
