@@ -1,11 +1,11 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { 
   Phone, 
   Calendar, 
   BarChart3, 
   Bot, 
-  Stethoscope,
   ArrowRight,
   Clock,
   DollarSign,
@@ -24,10 +24,14 @@ export default function HomePage() {
       <header className="sticky top-0 z-50 border-b border-[#E8EBF0] bg-white/95 backdrop-blur-sm">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#1B3A7C]">
-              <Stethoscope className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-xl font-bold text-[#1B3A7C]">DentSignal</span>
+            <Image
+              src="/logo.png"
+              alt="DentSignal"
+              width={140}
+              height={36}
+              className="h-9 w-auto"
+              priority
+            />
           </div>
           <nav className="flex items-center gap-3">
             <Link href="/login">

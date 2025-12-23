@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import {
   LayoutDashboard,
   Phone,
+  PhoneCall,
   Calendar,
   Settings,
   BarChart3,
@@ -27,6 +28,7 @@ const SUPER_ADMIN_EMAILS = [
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Live Calls', href: '/live-calls', icon: PhoneCall },
   { name: 'Calls', href: '/calls', icon: Phone },
   { name: 'Calendar', href: '/calendar', icon: Calendar },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },

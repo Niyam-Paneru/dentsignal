@@ -141,23 +141,46 @@ async def incoming_voice_webhook(
     To: str = Form(...),
     CallStatus: str = Form(None),
     Direction: str = Form(None),
+    # Optional: clinic_id can be passed as query param for explicit routing
+    # Use this when you want to configure webhook URL per clinic:
+    # e.g., /inbound/voice?clinic_id=clinic_abc123
+    clinic_id: Optional[str] = Query(None, description="Optional clinic ID for explicit routing"),
 ):
     """
     Handle incoming voice call from Twilio.
     
     This endpoint receives the initial webhook when someone calls
     the clinic's Twilio number. We:
-    1. Look up which clinic owns this number
+    1. Look up which clinic owns this number (or use clinic_id param)
     2. Create an InboundCall record
     3. Return TwiML that connects to our WebSocket
+    
+    Per-Clinic Routing:
+    - Each clinic gets a unique Twilio number
+    - Configure each number's webhook with clinic_id param:
+      https://your-api.com/inbound/voice?clinic_id=CLIENT_ABC
+    - This ensures correct clinic routing even if phone lookup fails
     
     Returns:
         TwiML response with <Connect><Stream>
     """
-    logger.info(f"Incoming call: From={From}, To={To}, CallSid={CallSid}")
+    logger.info(f"Incoming call: From={From}, To={To}, CallSid={CallSid}, clinic_id={clinic_id}")
     
-    # Look up clinic by phone number
-    clinic = get_clinic_by_phone(To)
+    # Try to get clinic from explicit clinic_id parameter first (most reliable)
+    clinic = None
+    if clinic_id:
+        with get_session() as session:
+            # clinic_id could be the actual ID or a slug/name
+            statement = select(Client).where(
+                (Client.id == clinic_id) | (Client.name == clinic_id)
+            )
+            clinic = session.exec(statement).first()
+            if clinic:
+                logger.info(f"Found clinic via clinic_id param: {clinic.name}")
+    
+    # Fall back to phone number lookup
+    if not clinic:
+        clinic = get_clinic_by_phone(To)
     
     if not clinic:
         logger.warning(f"No clinic found for number {To}")

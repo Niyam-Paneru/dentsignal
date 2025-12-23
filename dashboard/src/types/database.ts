@@ -8,6 +8,11 @@ export interface Clinic {
   business_hours: BusinessHours
   created_at: string
   owner_id: string
+  // Onboarding fields
+  owner_name?: string
+  monthly_call_volume?: number
+  current_answer_rate?: number
+  reminder_method?: 'sms' | 'email'
 }
 
 export interface BusinessHours {
@@ -33,6 +38,7 @@ export interface Call {
   id: string
   clinic_id: string
   caller_phone: string
+  caller_name?: string
   started_at: string
   ended_at: string | null
   duration_seconds: number | null
@@ -43,6 +49,13 @@ export interface Call {
   sentiment: 'positive' | 'neutral' | 'negative' | null
   patient_id: string | null
   summary: string | null
+  quality_score?: number
+  // Live call tracking
+  status?: 'active' | 'ringing' | 'in_progress' | 'transferring' | 'completed' | 'failed'
+  ai_handled?: boolean
+  transferred_to?: string
+  transfer_reason?: string
+  receptionist_notes?: string
 }
 
 export interface Appointment {

@@ -137,7 +137,9 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {clinic?.name ? `Welcome, ${clinic.name}!` : 'Dashboard'}
+          </h1>
           <p className="text-muted-foreground">{currentDate}</p>
         </div>
         <Tabs value={dateRange.toString()} onValueChange={(v) => setDateRange(parseInt(v))} className="w-auto">
