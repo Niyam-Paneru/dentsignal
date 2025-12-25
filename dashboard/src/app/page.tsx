@@ -39,7 +39,7 @@ export default function HomePage() {
               <Button variant="ghost" className="text-[#2D3748] hover:text-[#1B3A7C]">Sign In</Button>
             </Link>
             <Link href="/signup">
-              <Button className="bg-[#FF8C42] hover:bg-[#E67330] text-white font-medium">
+              <Button className="bg-[#0099CC] hover:bg-[#0077A3] text-white font-medium">
                 Start Free Trial
               </Button>
             </Link>
@@ -56,15 +56,15 @@ export default function HomePage() {
       <section className="relative overflow-hidden bg-white py-16 sm:py-24">
         <div className="container mx-auto px-4 text-center">
           <div className="mx-auto max-w-3xl">
-            {/* 48-Hour Setup Badge - Warm Orange for Action */}
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-[#FF8C42]/10 px-4 py-2 text-sm font-semibold text-[#FF8C42] border border-[#FF8C42]/20">
-              <span className="flex h-2 w-2 rounded-full bg-[#FF8C42] animate-pulse" />
+            {/* 48-Hour Setup Badge - Teal for trust + modernity */}
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-[#0099CC]/10 px-4 py-2 text-sm font-semibold text-[#0099CC] border border-[#0099CC]/20">
+              <span className="flex h-2 w-2 rounded-full bg-[#0099CC] animate-pulse" />
               Live in 48 Hours — No IT Required
             </div>
             
             <h1 className="mb-6 text-4xl font-extrabold tracking-tight text-[#1B3A7C] sm:text-5xl lg:text-6xl">
               Your Practice is Losing{' '}
-              <span className="text-[#FF8C42]">$21,000/Month</span>{' '}
+              <span className="text-[#DC3545]">$21,000/Month</span>{' '}
               to Missed Calls
             </h1>
             <p className="mb-6 text-lg leading-relaxed text-[#718096] sm:text-xl">
@@ -99,7 +99,7 @@ export default function HomePage() {
             
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link href="/signup">
-                <Button size="lg" className="h-14 gap-2 bg-[#FF8C42] px-8 text-base font-semibold hover:bg-[#E67330] shadow-lg shadow-[#FF8C42]/25">
+                <Button size="lg" className="h-14 gap-2 bg-[#0099CC] px-8 text-base font-semibold hover:bg-[#0077A3] shadow-lg shadow-[#0099CC]/25">
                   Start Free Trial — 5 Spots Left
                   <ArrowRight className="h-5 w-5" />
                 </Button>
@@ -232,7 +232,7 @@ export default function HomePage() {
       <section className="bg-[#E8EBF0]/50 py-20">
         <div className="container mx-auto px-4">
           <div className="mb-12 text-center">
-            <div className="mb-4 inline-flex items-center rounded-full bg-[#FF8C42]/10 px-4 py-2 text-sm font-semibold text-[#FF8C42]">
+            <div className="mb-4 inline-flex items-center rounded-full bg-[#0099CC]/10 px-4 py-2 text-sm font-semibold text-[#0099CC]">
               💡 Why Practices Switch
             </div>
             <h2 className="mb-4 text-3xl font-bold text-[#1B3A7C]">DentSignal vs. Weave</h2>
@@ -401,7 +401,7 @@ export default function HomePage() {
               <span>✓ Live in 48 hours</span>
             </div>
             <Link href="/signup">
-              <Button size="lg" className="gap-2 bg-[#FF8C42] hover:bg-[#E67330] text-white font-semibold shadow-lg shadow-[#FF8C42]/25 px-8 py-6 text-lg">
+              <Button size="lg" className="gap-2 bg-[#0099CC] hover:bg-[#0077A3] text-white font-semibold shadow-lg shadow-[#0099CC]/25 px-8 py-6 text-lg">
                 Claim Your Spot — 5 Left
                 <ArrowRight className="h-5 w-5" />
               </Button>
