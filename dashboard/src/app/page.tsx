@@ -243,50 +243,55 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="mx-auto max-w-3xl overflow-hidden rounded-2xl border border-[#E8EBF0] bg-white shadow-lg">
-            <table className="w-full">
+          <div className="mx-auto max-w-3xl overflow-x-auto rounded-2xl border border-[#E8EBF0] bg-white shadow-lg">
+            <table className="w-full min-w-[500px]">
               <thead>
                 <tr className="border-b border-[#E8EBF0] bg-[#F8F9FA]">
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#718096]">Feature</th>
-                  <th className="px-6 py-4 text-center text-sm font-semibold text-[#1B3A7C]">DentSignal</th>
-                  <th className="px-6 py-4 text-center text-sm font-semibold text-[#718096]">Weave</th>
+                  <th className="px-4 sm:px-6 py-4 text-left text-sm font-semibold text-[#718096]">Feature</th>
+                  <th className="px-4 sm:px-6 py-4 text-center text-sm font-semibold text-[#1B3A7C]">DentSignal</th>
+                  <th className="px-4 sm:px-6 py-4 text-center text-sm font-semibold text-[#718096]">Weave</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E8EBF0]">
                 <tr>
-                  <td className="px-6 py-4 text-[#2D3748] font-medium">Monthly Price</td>
-                  <td className="px-6 py-4 text-center"><span className="text-[#27AE60] font-bold">$149/mo</span></td>
-                  <td className="px-6 py-4 text-center text-[#718096]">$249+/mo</td>
+                  <td className="px-4 sm:px-6 py-4 text-[#2D3748] font-medium">Monthly Price</td>
+                  <td className="px-4 sm:px-6 py-4 text-center"><span className="text-[#27AE60] font-bold">$149/mo</span></td>
+                  <td className="px-4 sm:px-6 py-4 text-center text-[#718096]">$249-449/mo</td>
                 </tr>
                 <tr className="bg-[#F8F9FA]/50">
-                  <td className="px-6 py-4 text-[#2D3748] font-medium">Setup Time</td>
-                  <td className="px-6 py-4 text-center"><span className="text-[#27AE60] font-bold">48 hours</span></td>
-                  <td className="px-6 py-4 text-center text-[#718096]">2-4 weeks</td>
+                  <td className="px-4 sm:px-6 py-4 text-[#2D3748] font-medium">Setup Time</td>
+                  <td className="px-4 sm:px-6 py-4 text-center"><span className="text-[#27AE60] font-bold">48 hours</span></td>
+                  <td className="px-4 sm:px-6 py-4 text-center text-[#718096]">3-6 weeks</td>
                 </tr>
                 <tr>
-                  <td className="px-6 py-4 text-[#2D3748] font-medium">Contract</td>
-                  <td className="px-6 py-4 text-center"><span className="text-[#27AE60] font-bold">Month-to-month</span></td>
-                  <td className="px-6 py-4 text-center text-[#718096]">12-month minimum</td>
+                  <td className="px-4 sm:px-6 py-4 text-[#2D3748] font-medium">Contract</td>
+                  <td className="px-4 sm:px-6 py-4 text-center"><span className="text-[#27AE60] font-bold">Month-to-month</span></td>
+                  <td className="px-4 sm:px-6 py-4 text-center text-[#718096]">12-month minimum</td>
                 </tr>
                 <tr className="bg-[#F8F9FA]/50">
-                  <td className="px-6 py-4 text-[#2D3748] font-medium">24/7 AI Answering</td>
-                  <td className="px-6 py-4 text-center"><span className="text-[#27AE60]">✓</span></td>
-                  <td className="px-6 py-4 text-center"><span className="text-[#27AE60]">✓</span></td>
+                  <td className="px-4 sm:px-6 py-4 text-[#2D3748] font-medium">AI Call Answering</td>
+                  <td className="px-4 sm:px-6 py-4 text-center"><span className="text-[#27AE60] font-bold">✓ 24/7</span></td>
+                  <td className="px-4 sm:px-6 py-4 text-center"><span className="text-[#DC3545]">✗</span></td>
                 </tr>
                 <tr>
-                  <td className="px-6 py-4 text-[#2D3748] font-medium">Auto Scheduling</td>
-                  <td className="px-6 py-4 text-center"><span className="text-[#27AE60]">✓</span></td>
-                  <td className="px-6 py-4 text-center"><span className="text-[#27AE60]">✓</span></td>
+                  <td className="px-4 sm:px-6 py-4 text-[#2D3748] font-medium">AI Books Appointments</td>
+                  <td className="px-4 sm:px-6 py-4 text-center"><span className="text-[#27AE60] font-bold">✓ Automatic</span></td>
+                  <td className="px-4 sm:px-6 py-4 text-center"><span className="text-[#DC3545]">✗</span></td>
                 </tr>
                 <tr className="bg-[#F8F9FA]/50">
-                  <td className="px-6 py-4 text-[#2D3748] font-medium">HIPAA Compliant</td>
-                  <td className="px-6 py-4 text-center"><span className="text-[#27AE60]">✓</span></td>
-                  <td className="px-6 py-4 text-center"><span className="text-[#27AE60]">✓</span></td>
+                  <td className="px-4 sm:px-6 py-4 text-[#2D3748] font-medium">After-Hours Capture</td>
+                  <td className="px-4 sm:px-6 py-4 text-center"><span className="text-[#27AE60] font-bold">✓ Full AI</span></td>
+                  <td className="px-4 sm:px-6 py-4 text-center text-[#718096]">Basic forwarding</td>
                 </tr>
                 <tr>
-                  <td className="px-6 py-4 text-[#2D3748] font-medium">Dedicated Support</td>
-                  <td className="px-6 py-4 text-center"><span className="text-[#27AE60] font-bold">Direct founder access</span></td>
-                  <td className="px-6 py-4 text-center text-[#718096]">Ticket system</td>
+                  <td className="px-4 sm:px-6 py-4 text-[#2D3748] font-medium">IT Requirements</td>
+                  <td className="px-4 sm:px-6 py-4 text-center"><span className="text-[#27AE60] font-bold">None</span></td>
+                  <td className="px-4 sm:px-6 py-4 text-center text-[#718096]">PMS integration</td>
+                </tr>
+                <tr className="bg-[#F8F9FA]/50">
+                  <td className="px-4 sm:px-6 py-4 text-[#2D3748] font-medium">Support</td>
+                  <td className="px-4 sm:px-6 py-4 text-center"><span className="text-[#27AE60] font-bold">Direct founder</span></td>
+                  <td className="px-4 sm:px-6 py-4 text-center text-[#718096]">Ticket system</td>
                 </tr>
               </tbody>
             </table>

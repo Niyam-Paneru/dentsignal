@@ -10,12 +10,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Loader2, AlertCircle, ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { Turnstile } from '@/components/turnstile'
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -27,6 +29,9 @@ export default function LoginPage() {
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
+      options: {
+        captchaToken: captchaToken || undefined,
+      },
     })
     
     if (signInError) {
@@ -50,7 +55,14 @@ export default function LoginPage() {
         </div>
         <CardHeader className="text-center pt-2">
           <div className="mx-auto mb-4">
-            <Image src="/favicon.png" alt="DentSignal" width={48} height={48} className="rounded-lg" />
+            <Image
+              src="/logo.png"
+              alt="DentSignal"
+              width={150}
+              height={40}
+              priority
+              className="h-10 w-auto"
+            />
           </div>
           <CardTitle className="text-2xl">Welcome Back</CardTitle>
           <CardDescription>
@@ -94,6 +106,13 @@ export default function LoginPage() {
                 required
               />
             </div>
+            
+            {/* Invisible Turnstile CAPTCHA */}
+            <Turnstile 
+              onVerify={setCaptchaToken}
+              onExpire={() => setCaptchaToken(null)}
+            />
+            
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? (
                 <>

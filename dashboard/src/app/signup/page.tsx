@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Loader2, Check, AlertCircle, ArrowLeft, ArrowRight, Phone, Building2, User } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { Turnstile } from '@/components/turnstile'
 
 // Format phone number as (555) 123-4567
 function formatPhoneNumber(value: string): string {
@@ -45,6 +46,19 @@ function stripPhoneFormatting(phone: string): string {
   return phone.replace(/\D/g, '')
 }
 
+// Password validation helpers
+function hasMinLength(password: string): boolean {
+  return password.length >= 8
+}
+
+function hasSpecialChar(password: string): boolean {
+  return /[!@#$%^&*(),.?":{}|<>\[\]\\;'`~_+=\-\/]/.test(password)
+}
+
+function isValidPassword(password: string): boolean {
+  return hasMinLength(password) && hasSpecialChar(password)
+}
+
 export default function SignupPage() {
   const [step, setStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
@@ -59,6 +73,9 @@ export default function SignupPage() {
   // Step 2 fields
   const [clinicName, setClinicName] = useState('')
   const [phone, setPhone] = useState('')
+  
+  // Captcha
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
   
   const router = useRouter()
   const supabase = createClient()
@@ -83,8 +100,12 @@ export default function SignupPage() {
       setError('Please enter a valid email address')
       return false
     }
-    if (!password || password.length < 8) {
+    if (!password || !hasMinLength(password)) {
       setError('Password must be at least 8 characters')
+      return false
+    }
+    if (!hasSpecialChar(password)) {
+      setError('Password must include at least one special character (!@#$%^&* etc.)')
       return false
     }
     return true
@@ -125,6 +146,7 @@ export default function SignupPage() {
       email,
       password,
       options: {
+        captchaToken: captchaToken || undefined,
         data: {
           first_name: firstName,
           last_name: lastName,
@@ -183,8 +205,14 @@ export default function SignupPage() {
       <header className="border-b border-[#E8EBF0] bg-white">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Link href="/" className="flex items-center gap-2 shrink-0">
-            <Image src="/favicon.png" alt="DentSignal" width={32} height={32} className="rounded" />
-            <span className="text-lg font-semibold text-[#1B3A7C] hidden sm:inline">DentSignal</span>
+            <Image
+              src="/logo.png"
+              alt="DentSignal"
+              width={120}
+              height={32}
+              priority
+              className="h-8 w-auto"
+            />
           </Link>
           <div className="flex items-center gap-2 text-sm text-[#718096]">
             <span className="hidden sm:inline">Already have an account?</span>
@@ -313,7 +341,20 @@ export default function SignupPage() {
                     autoComplete="new-password"
                     className="h-11 border-[#E8EBF0] focus:border-[#0099CC] focus:ring-[#0099CC]"
                   />
-                  <p className="text-xs text-[#718096]">At least 8 characters</p>
+                  <div className="space-y-1 pt-1">
+                    <div className="flex items-center gap-2">
+                      <div className={`h-1.5 w-1.5 rounded-full ${hasMinLength(password) ? 'bg-green-500' : 'bg-gray-300'}`} />
+                      <p className={`text-xs ${hasMinLength(password) ? 'text-green-600' : 'text-[#718096]'}`}>
+                        At least 8 characters
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className={`h-1.5 w-1.5 rounded-full ${hasSpecialChar(password) ? 'bg-green-500' : 'bg-gray-300'}`} />
+                      <p className={`text-xs ${hasSpecialChar(password) ? 'text-green-600' : 'text-[#718096]'}`}>
+                        Include a special character (!@#$%^&* etc.)
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
                 <Button 
@@ -379,6 +420,12 @@ export default function SignupPage() {
                     </li>
                   </ul>
                 </div>
+
+                {/* Invisible Turnstile CAPTCHA */}
+                <Turnstile 
+                  onVerify={setCaptchaToken}
+                  onExpire={() => setCaptchaToken(null)}
+                />
 
                 <Button 
                   type="submit" 
