@@ -5,12 +5,9 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Slider } from '@/components/ui/slider'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Loader2, Check, AlertCircle, ArrowLeft, ArrowRight } from 'lucide-react'
+import { Loader2, Check, AlertCircle, ArrowLeft, ArrowRight, Phone, Building2, User } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 // Format phone number as (555) 123-4567
@@ -61,11 +58,7 @@ export default function SignupPage() {
   
   // Step 2 fields
   const [clinicName, setClinicName] = useState('')
-  const [ownerName, setOwnerName] = useState('')
   const [phone, setPhone] = useState('')
-  const [monthlyCallVolume, setMonthlyCallVolume] = useState('500')
-  const [answerRate, setAnswerRate] = useState([50])
-  const [reminderMethod, setReminderMethod] = useState('sms')
   
   const router = useRouter()
   const supabase = createClient()
@@ -114,8 +107,6 @@ export default function SignupPage() {
     setIsLoading(true)
     setError(null)
     
-    const callVolume = parseInt(monthlyCallVolume) || 500
-    
     // Validation for step 2
     if (!clinicName || clinicName.length < 3) {
       setError('Clinic name must be at least 3 characters')
@@ -125,12 +116,6 @@ export default function SignupPage() {
     
     if (!isValidPhone(phone)) {
       setError('Please enter a valid phone number: (555) 123-4567')
-      setIsLoading(false)
-      return
-    }
-    
-    if (callVolume <= 0) {
-      setError('Monthly call volume must be greater than 0')
       setIsLoading(false)
       return
     }
@@ -161,16 +146,12 @@ export default function SignupPage() {
         .insert({
           owner_id: authData.user.id,
           name: clinicName,
-          owner_name: ownerName || `${firstName} ${lastName}`,
+          owner_name: `${firstName} ${lastName}`,
           phone: stripPhoneFormatting(phone),
-          monthly_call_volume: callVolume,
-          current_answer_rate: answerRate[0],
-          reminder_method: reminderMethod,
         })
       
       if (clinicError) {
         console.error('Failed to create clinic:', clinicError)
-        // Don't block signup, they can add clinic info later
       }
       
       // Also create default clinic settings
@@ -197,225 +178,238 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-white p-4 dark:from-gray-900 dark:to-gray-950">
-      <Card className="w-full max-w-lg">
-        <div className="p-4 pb-0">
-          {step === 1 ? (
-            <Link href="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors">
-              <ArrowLeft className="h-4 w-4" />
-              Back to Home
-            </Link>
-          ) : (
-            <button 
-              type="button"
-              onClick={handlePrevStep}
-              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Account Info
-            </button>
-          )}
-        </div>
-        <CardHeader className="text-center pt-2">
-          <div className="mx-auto mb-4">
-            <Image src="/favicon.png" alt="DentSignal" width={48} height={48} className="rounded-lg" />
-          </div>
-          <CardTitle className="text-2xl">
-            {step === 1 ? 'Create Your Account' : 'Set Up Your Clinic'}
-          </CardTitle>
-          <CardDescription>
-            {step === 1 ? 'Step 1 of 2 – Account Information' : 'Step 2 of 2 – Clinic Details'}
-          </CardDescription>
-          {/* Progress indicator */}
-          <div className="flex justify-center gap-2 pt-3">
-            <div className={`h-2 w-16 rounded-full transition-colors ${step >= 1 ? 'bg-primary' : 'bg-muted'}`} />
-            <div className={`h-2 w-16 rounded-full transition-colors ${step >= 2 ? 'bg-primary' : 'bg-muted'}`} />
-          </div>
-        </CardHeader>
-        <CardContent>
-          {error && (
-            <div className="flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400 mb-4">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              {error}
-            </div>
-          )}
-
-          {step === 1 ? (
-            /* Step 1: Account Information */
-            <div className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
-                  <Input 
-                    id="firstName" 
-                    placeholder="John" 
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    required 
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <Input 
-                    id="lastName" 
-                    placeholder="Smith" 
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    required 
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input 
-                  id="email" 
-                  type="email" 
-                  placeholder="you@clinic.com" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input 
-                  id="password" 
-                  type="password" 
-                  placeholder="••••••••" 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required 
-                  minLength={8} 
-                />
-                <p className="text-xs text-muted-foreground">Must be at least 8 characters</p>
-              </div>
-
-              {/* Benefits preview */}
-              <div className="rounded-lg bg-muted p-3 mt-4">
-                <p className="mb-2 text-sm font-medium">What you&apos;ll get:</p>
-                <ul className="space-y-1 text-xs text-muted-foreground">
-                  <li className="flex items-center gap-2">
-                    <Check className="h-3 w-3 text-green-500" />
-                    AI-powered call handling 24/7
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="h-3 w-3 text-green-500" />
-                    Automatic appointment booking
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="h-3 w-3 text-green-500" />
-                    Call analytics & insights
-                  </li>
-                </ul>
-              </div>
-
-              <Button type="button" className="w-full" onClick={handleNextStep}>
-                Continue
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
-          ) : (
-            /* Step 2: Clinic Information */
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="clinicName">Clinic Name</Label>
-                <Input 
-                  id="clinicName" 
-                  placeholder="Sunshine Dental Care" 
-                  value={clinicName}
-                  onChange={(e) => setClinicName(e.target.value)}
-                  required 
-                  minLength={3} 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="ownerName">Owner / Lead Dentist Name</Label>
-                <Input 
-                  id="ownerName" 
-                  placeholder="Dr. John Smith" 
-                  value={ownerName}
-                  onChange={(e) => setOwnerName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Practice Phone Number</Label>
-                <Input 
-                  id="phone" 
-                  type="tel" 
-                  placeholder="(555) 123-4567"
-                  value={phone}
-                  onChange={handlePhoneChange}
-                  required 
-                />
-                <p className="text-xs text-muted-foreground">Your current clinic phone number</p>
-              </div>
-              
-              <div className="space-y-4 pt-2 border-t">
-                <div className="text-sm font-medium text-muted-foreground pt-2">Personalize Your Experience</div>
-                <div className="space-y-2">
-                  <Label htmlFor="monthlyCallVolume">Estimated Monthly Call Volume</Label>
-                  <Input 
-                    id="monthlyCallVolume" 
-                    type="number" 
-                    min={1}
-                    max={10000}
-                    value={monthlyCallVolume}
-                    onChange={(e) => setMonthlyCallVolume(e.target.value)}
-                    required 
-                  />
-                  <p className="text-xs text-muted-foreground">How many calls does your clinic receive per month?</p>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label>Current Answer Rate</Label>
-                    <span className="text-sm font-medium">{answerRate[0]}%</span>
-                  </div>
-                  <Slider
-                    value={answerRate}
-                    onValueChange={setAnswerRate}
-                    max={100}
-                    min={0}
-                    step={5}
-                    className="w-full"
-                  />
-                  <p className="text-xs text-muted-foreground">What percentage of calls do you currently answer?</p>
-                </div>
-                <div className="space-y-3">
-                  <Label>Preferred Reminder Method</Label>
-                  <RadioGroup value={reminderMethod} onValueChange={setReminderMethod} className="flex gap-6">
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="sms" id="sms" />
-                      <Label htmlFor="sms" className="font-normal cursor-pointer">SMS</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="email" id="email-reminder" />
-                      <Label htmlFor="email-reminder" className="font-normal cursor-pointer">Email</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-              </div>
-
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating account...
-                  </>
-                ) : (
-                  'Create Account'
-                )}
-              </Button>
-            </form>
-          )}
-
-          <div className="mt-6 text-center text-sm text-muted-foreground">
+    <div className="min-h-screen bg-[#F8F9FA]">
+      {/* Header */}
+      <header className="border-b border-[#E8EBF0] bg-white">
+        <div className="container mx-auto flex h-16 items-center justify-between px-4">
+          <Link href="/" className="flex items-center gap-2">
+            <Image src="/logo.png" alt="DentSignal" width={140} height={36} priority />
+          </Link>
+          <div className="text-sm text-[#718096]">
             Already have an account?{' '}
-            <Link href="/login" className="text-primary hover:underline">
+            <Link href="/login" className="font-medium text-[#0099CC] hover:underline">
               Sign in
             </Link>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </header>
+
+      <div className="container mx-auto px-4 py-12">
+        <div className="mx-auto max-w-md">
+          {/* Progress Steps */}
+          <div className="mb-8">
+            <div className="flex items-center justify-center gap-4">
+              <div className="flex items-center gap-2">
+                <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold ${
+                  step >= 1 ? 'bg-[#0099CC] text-white' : 'bg-[#E8EBF0] text-[#718096]'
+                }`}>
+                  {step > 1 ? <Check className="h-4 w-4" /> : '1'}
+                </div>
+                <span className={`text-sm font-medium ${step >= 1 ? 'text-[#1B3A7C]' : 'text-[#718096]'}`}>
+                  Account
+                </span>
+              </div>
+              <div className={`h-px w-12 ${step >= 2 ? 'bg-[#0099CC]' : 'bg-[#E8EBF0]'}`} />
+              <div className="flex items-center gap-2">
+                <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold ${
+                  step >= 2 ? 'bg-[#0099CC] text-white' : 'bg-[#E8EBF0] text-[#718096]'
+                }`}>
+                  2
+                </div>
+                <span className={`text-sm font-medium ${step >= 2 ? 'text-[#1B3A7C]' : 'text-[#718096]'}`}>
+                  Clinic
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Card */}
+          <div className="rounded-2xl border border-[#E8EBF0] bg-white p-8 shadow-sm">
+            {/* Back button */}
+            {step === 2 && (
+              <button 
+                type="button"
+                onClick={handlePrevStep}
+                className="mb-6 inline-flex items-center gap-1 text-sm text-[#718096] hover:text-[#1B3A7C] transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </button>
+            )}
+
+            {/* Title */}
+            <div className="mb-6 text-center">
+              <div className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full ${
+                step === 1 ? 'bg-[#0099CC]/10' : 'bg-[#27AE60]/10'
+              }`}>
+                {step === 1 ? (
+                  <User className="h-6 w-6 text-[#0099CC]" />
+                ) : (
+                  <Building2 className="h-6 w-6 text-[#27AE60]" />
+                )}
+              </div>
+              <h1 className="text-2xl font-bold text-[#1B3A7C]">
+                {step === 1 ? 'Create your account' : 'Tell us about your practice'}
+              </h1>
+              <p className="mt-2 text-sm text-[#718096]">
+                {step === 1 ? 'Start your 7-day free trial' : 'We\'ll customize your AI receptionist'}
+              </p>
+            </div>
+
+            {/* Error */}
+            {error && (
+              <div className="mb-6 flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                {error}
+              </div>
+            )}
+
+            {step === 1 ? (
+              /* Step 1: Account Information */
+              <div className="space-y-5">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName" className="text-[#2D3748]">First name</Label>
+                    <Input 
+                      id="firstName" 
+                      placeholder="John" 
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      className="h-11 border-[#E8EBF0] focus:border-[#0099CC] focus:ring-[#0099CC]"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName" className="text-[#2D3748]">Last name</Label>
+                    <Input 
+                      id="lastName" 
+                      placeholder="Smith" 
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      className="h-11 border-[#E8EBF0] focus:border-[#0099CC] focus:ring-[#0099CC]"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-[#2D3748]">Work email</Label>
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    placeholder="you@clinic.com" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
+                    className="h-11 border-[#E8EBF0] focus:border-[#0099CC] focus:ring-[#0099CC]"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-[#2D3748]">Password</Label>
+                  <Input 
+                    id="password" 
+                    type="password" 
+                    placeholder="Create a password" 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="new-password"
+                    className="h-11 border-[#E8EBF0] focus:border-[#0099CC] focus:ring-[#0099CC]"
+                  />
+                  <p className="text-xs text-[#718096]">At least 8 characters</p>
+                </div>
+
+                <Button 
+                  type="button" 
+                  onClick={handleNextStep}
+                  className="h-11 w-full bg-[#0099CC] hover:bg-[#0077A3] text-white font-medium"
+                >
+                  Continue
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+
+                <p className="text-center text-xs text-[#718096]">
+                  By signing up, you agree to our{' '}
+                  <Link href="#" className="text-[#0099CC] hover:underline">Terms</Link>
+                  {' '}and{' '}
+                  <Link href="#" className="text-[#0099CC] hover:underline">Privacy Policy</Link>
+                </p>
+              </div>
+            ) : (
+              /* Step 2: Clinic Information */
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="clinicName" className="text-[#2D3748]">Practice name</Label>
+                  <Input 
+                    id="clinicName" 
+                    placeholder="Sunshine Dental Care" 
+                    value={clinicName}
+                    onChange={(e) => setClinicName(e.target.value)}
+                    className="h-11 border-[#E8EBF0] focus:border-[#0099CC] focus:ring-[#0099CC]"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="text-[#2D3748]">Practice phone number</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#718096]" />
+                    <Input 
+                      id="phone" 
+                      type="tel" 
+                      placeholder="(555) 123-4567"
+                      value={phone}
+                      onChange={handlePhoneChange}
+                      className="h-11 pl-10 border-[#E8EBF0] focus:border-[#0099CC] focus:ring-[#0099CC]"
+                    />
+                  </div>
+                  <p className="text-xs text-[#718096]">We&apos;ll use this to set up call forwarding</p>
+                </div>
+
+                {/* What happens next */}
+                <div className="rounded-xl bg-[#F8F9FA] p-4">
+                  <p className="mb-3 text-sm font-medium text-[#1B3A7C]">What happens next:</p>
+                  <ul className="space-y-2 text-sm text-[#718096]">
+                    <li className="flex items-start gap-2">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#27AE60]" />
+                      <span>Your AI receptionist will be ready in minutes</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#27AE60]" />
+                      <span>Test it with a call before going live</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#27AE60]" />
+                      <span>7 days free, cancel anytime</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <Button 
+                  type="submit" 
+                  disabled={isLoading}
+                  className="h-11 w-full bg-[#0099CC] hover:bg-[#0077A3] text-white font-medium"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Setting up your account...
+                    </>
+                  ) : (
+                    'Start Free Trial'
+                  )}
+                </Button>
+              </form>
+            )}
+          </div>
+
+          {/* Trust badges */}
+          <div className="mt-6 flex items-center justify-center gap-6 text-xs text-[#718096]">
+            <span className="flex items-center gap-1">
+              <Check className="h-3 w-3 text-[#27AE60]" />
+              No credit card required
+            </span>
+            <span className="flex items-center gap-1">
+              <Check className="h-3 w-3 text-[#27AE60]" />
+              HIPAA compliant
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

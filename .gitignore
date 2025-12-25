@@ -76,4 +76,25 @@ dental_agent/dental receptionist communication data.md
 dental_agent/Deepgram Voice Agent Advance Features.md
 dental_agent/Twilio Media Streams Optimization.md
 
+# Test files (testsprite, playwright)
+testsprite_tests/
+**/testsprite_tests/
+playwright-report/
+test-results/
+*.spec.ts
+*.test.ts
+
+# All markdown files (keep locally)
+*.md
+**/*.md
+
+# Instruction files
+.aitk/
+**/.aitk/
+copilot-instructions.md
+.github/copilot-instructions.md
+
+# Brand assets (optional - uncomment if needed)
+# brand/
+
 

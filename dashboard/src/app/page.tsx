@@ -28,7 +28,6 @@ export default function HomePage() {
               alt="DentSignal"
               width={140}
               height={36}
-              className="h-9 w-auto"
               priority
             />
           </div>
@@ -40,7 +39,7 @@ export default function HomePage() {
               <Button variant="ghost" className="text-[#2D3748] hover:text-[#1B3A7C]">Sign In</Button>
             </Link>
             <Link href="/signup">
-              <Button className="bg-[#0099CC] hover:bg-[#0077A3] text-white font-medium">
+              <Button className="bg-[#FF8C42] hover:bg-[#E67330] text-white font-medium">
                 Start Free Trial
               </Button>
             </Link>
@@ -48,23 +47,46 @@ export default function HomePage() {
         </div>
       </header>
 
+      {/* Social Proof Banner */}
+      <div className="bg-[#1B3A7C] py-2 text-center text-sm text-white">
+        <span className="font-medium">🎉 Join 50+ dental practices already saving $21K/month in missed calls</span>
+      </div>
+
       {/* Hero Section - Clean white with navy text */}
       <section className="relative overflow-hidden bg-white py-16 sm:py-24">
         <div className="container mx-auto px-4 text-center">
           <div className="mx-auto max-w-3xl">
-            <div className="mb-6 inline-flex items-center rounded-full bg-[#0099CC]/10 px-4 py-2 text-sm font-semibold text-[#0099CC]">
-              <Bot className="mr-2 h-4 w-4" />
-              AI-Powered Dental Receptionist
+            {/* 48-Hour Setup Badge - Warm Orange for Action */}
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-[#FF8C42]/10 px-4 py-2 text-sm font-semibold text-[#FF8C42] border border-[#FF8C42]/20">
+              <span className="flex h-2 w-2 rounded-full bg-[#FF8C42] animate-pulse" />
+              Live in 48 Hours — No IT Required
             </div>
+            
             <h1 className="mb-6 text-4xl font-extrabold tracking-tight text-[#1B3A7C] sm:text-5xl lg:text-6xl">
-              Stop Losing{' '}
-              <span className="text-[#DC3545]">$255,000/Year</span>{' '}
+              Your Practice is Losing{' '}
+              <span className="text-[#FF8C42]">$21,000/Month</span>{' '}
               to Missed Calls
             </h1>
-            <p className="mb-10 text-lg leading-relaxed text-[#718096] sm:text-xl">
-              The average dental practice misses 30% of calls—that&apos;s $255K in lost revenue. 
-              Our AI receptionist answers 24/7 and books appointments while you focus on patients.
+            <p className="mb-6 text-lg leading-relaxed text-[#718096] sm:text-xl">
+              AI answers every call, books appointments 24/7, and costs <strong className="text-[#1B3A7C]">60% less than Weave</strong>.
+              No contracts. Setup in 48 hours.
             </p>
+            
+            {/* Competitor Comparison Strip */}
+            <div className="mb-8 flex flex-wrap items-center justify-center gap-6 text-sm text-[#718096]">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-[#27AE60]">✓</span>
+                <span>60% cheaper than Weave</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-[#27AE60]">✓</span>
+                <span>No 12-month contracts</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-[#27AE60]">✓</span>
+                <span>HIPAA compliant</span>
+              </div>
+            </div>
             
             {/* Demo Phone CTA - Teal accent */}
             <div className="mb-10 rounded-2xl border-2 border-[#0099CC]/30 bg-[#0099CC]/5 p-6 sm:p-8">
@@ -77,8 +99,8 @@ export default function HomePage() {
             
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link href="/signup">
-                <Button size="lg" className="h-14 gap-2 bg-[#0099CC] px-8 text-base font-semibold hover:bg-[#0077A3]">
-                  Start Free Trial
+                <Button size="lg" className="h-14 gap-2 bg-[#FF8C42] px-8 text-base font-semibold hover:bg-[#E67330] shadow-lg shadow-[#FF8C42]/25">
+                  Start Free Trial — 5 Spots Left
                   <ArrowRight className="h-5 w-5" />
                 </Button>
               </Link>
@@ -88,10 +110,6 @@ export default function HomePage() {
                 </Button>
               </Link>
             </div>
-            
-            <p className="mt-6 text-sm font-medium text-[#718096]">
-              🎯 Now accepting 5 founding practices for free 7-day trial
-            </p>
           </div>
         </div>
 
@@ -210,6 +228,70 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Weave Comparison Section */}
+      <section className="bg-[#E8EBF0]/50 py-20">
+        <div className="container mx-auto px-4">
+          <div className="mb-12 text-center">
+            <div className="mb-4 inline-flex items-center rounded-full bg-[#FF8C42]/10 px-4 py-2 text-sm font-semibold text-[#FF8C42]">
+              💡 Why Practices Switch
+            </div>
+            <h2 className="mb-4 text-3xl font-bold text-[#1B3A7C]">DentSignal vs. Weave</h2>
+            <p className="text-lg text-[#718096]">
+              Same AI power. 60% lower price. No enterprise headaches.
+            </p>
+          </div>
+
+          <div className="mx-auto max-w-3xl overflow-hidden rounded-2xl border border-[#E8EBF0] bg-white shadow-lg">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-[#E8EBF0] bg-[#F8F9FA]">
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#718096]">Feature</th>
+                  <th className="px-6 py-4 text-center text-sm font-semibold text-[#1B3A7C]">DentSignal</th>
+                  <th className="px-6 py-4 text-center text-sm font-semibold text-[#718096]">Weave</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#E8EBF0]">
+                <tr>
+                  <td className="px-6 py-4 text-[#2D3748] font-medium">Monthly Price</td>
+                  <td className="px-6 py-4 text-center"><span className="text-[#27AE60] font-bold">$149/mo</span></td>
+                  <td className="px-6 py-4 text-center text-[#718096]">$249+/mo</td>
+                </tr>
+                <tr className="bg-[#F8F9FA]/50">
+                  <td className="px-6 py-4 text-[#2D3748] font-medium">Setup Time</td>
+                  <td className="px-6 py-4 text-center"><span className="text-[#27AE60] font-bold">48 hours</span></td>
+                  <td className="px-6 py-4 text-center text-[#718096]">2-4 weeks</td>
+                </tr>
+                <tr>
+                  <td className="px-6 py-4 text-[#2D3748] font-medium">Contract</td>
+                  <td className="px-6 py-4 text-center"><span className="text-[#27AE60] font-bold">Month-to-month</span></td>
+                  <td className="px-6 py-4 text-center text-[#718096]">12-month minimum</td>
+                </tr>
+                <tr className="bg-[#F8F9FA]/50">
+                  <td className="px-6 py-4 text-[#2D3748] font-medium">24/7 AI Answering</td>
+                  <td className="px-6 py-4 text-center"><span className="text-[#27AE60]">✓</span></td>
+                  <td className="px-6 py-4 text-center"><span className="text-[#27AE60]">✓</span></td>
+                </tr>
+                <tr>
+                  <td className="px-6 py-4 text-[#2D3748] font-medium">Auto Scheduling</td>
+                  <td className="px-6 py-4 text-center"><span className="text-[#27AE60]">✓</span></td>
+                  <td className="px-6 py-4 text-center"><span className="text-[#27AE60]">✓</span></td>
+                </tr>
+                <tr className="bg-[#F8F9FA]/50">
+                  <td className="px-6 py-4 text-[#2D3748] font-medium">HIPAA Compliant</td>
+                  <td className="px-6 py-4 text-center"><span className="text-[#27AE60]">✓</span></td>
+                  <td className="px-6 py-4 text-center"><span className="text-[#27AE60]">✓</span></td>
+                </tr>
+                <tr>
+                  <td className="px-6 py-4 text-[#2D3748] font-medium">Dedicated Support</td>
+                  <td className="px-6 py-4 text-center"><span className="text-[#27AE60] font-bold">Direct founder access</span></td>
+                  <td className="px-6 py-4 text-center text-[#718096]">Ticket system</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       {/* ROI Calculator Section - White */}
       <section className="bg-[#E8EBF0]/50 py-20" id="calculator">
         <div className="container mx-auto px-4">
@@ -239,48 +321,37 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-3">
+          <div className="mx-auto grid max-w-2xl gap-6 md:grid-cols-2">
             {/* Starter Preview */}
             <div className="rounded-xl border border-[#E8EBF0] bg-white p-6 text-center shadow-sm">
               <h3 className="text-lg font-bold text-[#1B3A7C]">Starter</h3>
-              <p className="mt-1 text-sm text-[#718096]">1-2 dentists</p>
+              <p className="mt-1 text-sm text-[#718096]">Solo & small practices</p>
               <div className="my-4">
                 <span className="text-3xl font-bold text-[#2D3748]">$149</span>
                 <span className="text-[#718096]">/mo</span>
               </div>
-              <p className="text-sm text-[#718096]">Unlimited calls, 24/7 coverage</p>
+              <p className="text-sm text-[#718096]">300 calls/mo, 24/7 coverage</p>
             </div>
 
             {/* Professional Preview */}
             <div className="relative rounded-xl border-2 border-[#0099CC] bg-white p-6 text-center shadow-lg">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#0099CC] px-3 py-1 text-xs font-bold text-white">
-                POPULAR
+                RECOMMENDED
               </div>
               <h3 className="text-lg font-bold text-[#1B3A7C]">Professional</h3>
-              <p className="mt-1 text-sm text-[#718096]">3-5 dentists</p>
+              <p className="mt-1 text-sm text-[#718096]">Growing practices</p>
               <div className="my-4">
                 <span className="text-3xl font-bold text-[#2D3748]">$199</span>
                 <span className="text-[#718096]">/mo</span>
               </div>
-              <p className="text-sm text-[#718096]">+ PMS integration & analytics</p>
-            </div>
-
-            {/* Enterprise Preview */}
-            <div className="rounded-xl border border-[#E8EBF0] bg-white p-6 text-center shadow-sm">
-              <h3 className="text-lg font-bold text-[#1B3A7C]">Enterprise</h3>
-              <p className="mt-1 text-sm text-[#718096]">6+ dentists / DSOs</p>
-              <div className="my-4">
-                <span className="text-3xl font-bold text-[#2D3748]">$399</span>
-                <span className="text-[#718096]">/mo</span>
-              </div>
-              <p className="text-sm text-[#718096]">Unlimited locations, API access</p>
+              <p className="text-sm text-[#718096]">Unlimited calls + SMS reminders</p>
             </div>
           </div>
 
           <div className="mt-10 text-center">
             <Link href="/pricing">
               <Button size="lg" variant="outline" className="gap-2 border-[#1B3A7C] text-[#1B3A7C] hover:bg-[#1B3A7C] hover:text-white">
-                View Full Pricing & Compare
+                View Full Pricing Details
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
@@ -314,22 +385,30 @@ export default function HomePage() {
       {/* CTA Section - Navy background for trust */}
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4 text-center">
-          <div className="mx-auto max-w-2xl rounded-2xl bg-[#1B3A7C] p-8 text-white sm:p-12 shadow-xl">
+          <div className="mx-auto max-w-2xl rounded-2xl bg-[#1B3A7C] p-8 text-white sm:p-12 shadow-xl relative overflow-hidden">
+            {/* Urgency Badge */}
+            <div className="absolute top-4 right-4 bg-[#FF8C42] text-white text-xs font-bold px-3 py-1 rounded-full animate-pulse">
+              Limited Spots
+            </div>
+            
             <h2 className="mb-4 text-3xl font-bold">Start Free 7-Day Trial</h2>
             <p className="mb-6 text-lg text-white/90">
-              5 spots available for founding practices. Free setup, free trial, honest feedback.
+              Only 5 spots available for founding practices. Free setup, free trial, honest feedback.
             </p>
-            <div className="mb-6 flex flex-col items-center justify-center gap-2 text-sm text-white/80">
+            <div className="mb-6 flex flex-wrap items-center justify-center gap-4 text-sm text-white/80">
               <span>✓ No credit card required</span>
               <span>✓ No contracts ever</span>
-              <span>✓ Cancel anytime</span>
+              <span>✓ Live in 48 hours</span>
             </div>
             <Link href="/signup">
-              <Button size="lg" className="gap-2 bg-[#0099CC] hover:bg-[#0077A3] text-white font-semibold">
-                Apply Now — 5 Spots Left
-                <ArrowRight className="h-4 w-4" />
+              <Button size="lg" className="gap-2 bg-[#FF8C42] hover:bg-[#E67330] text-white font-semibold shadow-lg shadow-[#FF8C42]/25 px-8 py-6 text-lg">
+                Claim Your Spot — 5 Left
+                <ArrowRight className="h-5 w-5" />
               </Button>
             </Link>
+            <p className="mt-4 text-xs text-white/60">
+              🔒 HIPAA compliant • BAA included • Cancel anytime
+            </p>
           </div>
         </div>
       </section>
@@ -343,7 +422,8 @@ export default function HomePage() {
               alt="DentSignal"
               width={120}
               height={30}
-              className="h-8 w-auto brightness-0 invert"
+              className="brightness-0 invert"
+              style={{ width: 'auto', height: 'auto' }}
             />
           </div>
           <p className="text-sm text-[#718096]">

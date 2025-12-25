@@ -23,7 +23,6 @@ export default function PricingPage() {
                 alt="DentSignal"
                 width={140}
                 height={36}
-                className="h-9 w-auto"
                 priority
               />
             </Link>
@@ -62,39 +61,42 @@ export default function PricingPage() {
       {/* Pricing Cards */}
       <section className="bg-white py-16">
         <div className="container mx-auto px-4">
-          <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-3">
+          <div className="mx-auto grid max-w-3xl gap-8 md:grid-cols-2">
             {/* Starter */}
             <div className="rounded-xl border border-[#E8EBF0] bg-white p-6 shadow-sm">
               <h3 className="text-lg font-bold text-[#1B3A7C]">Starter</h3>
-              <p className="mt-1 text-sm text-[#718096]">For 1-2 dentist practices</p>
+              <p className="mt-1 text-sm text-[#718096]">Perfect for solo & small practices</p>
               <div className="my-4">
                 <span className="text-4xl font-bold text-[#2D3748]">$149</span>
                 <span className="text-[#718096]">/month</span>
               </div>
               <ul className="mb-6 space-y-2 text-sm">
                 <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> Unlimited inbound calls
+                  <Check className="h-4 w-4 text-[#27AE60]" /> Up to 300 AI-handled calls/month
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> AI appointment booking
+                  <Check className="h-4 w-4 text-[#27AE60]" /> 24/7 call answering
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> 24/7 after-hours coverage
+                  <Check className="h-4 w-4 text-[#27AE60]" /> Appointment scheduling via Google Calendar
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> Emergency triage
+                  <Check className="h-4 w-4 text-[#27AE60]" /> Emergency call triage
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-[#27AE60]" /> Call recordings & transcripts
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> Email support (24h response)
+                  <Check className="h-4 w-4 text-[#27AE60]" /> Basic analytics dashboard
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-[#27AE60]" /> Email support
                 </li>
                 <li className="flex items-center gap-2 text-[#718096]">
-                  <X className="h-4 w-4" /> PMS integration
+                  <X className="h-4 w-4" /> SMS reminders
                 </li>
                 <li className="flex items-center gap-2 text-[#718096]">
-                  <X className="h-4 w-4" /> Custom AI training
+                  <X className="h-4 w-4" /> Custom AI voice
                 </li>
               </ul>
               <Link href="/signup">
@@ -107,23 +109,29 @@ export default function PricingPage() {
             {/* Professional - Most Popular */}
             <div className="relative rounded-xl border-2 border-[#0099CC] bg-white p-6 shadow-lg">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#0099CC] px-4 py-1 text-xs font-bold text-white">
-                MOST POPULAR
+                RECOMMENDED
               </div>
               <h3 className="text-lg font-bold text-[#1B3A7C]">Professional</h3>
-              <p className="mt-1 text-sm text-[#718096]">For 3-5 dentist practices</p>
+              <p className="mt-1 text-sm text-[#718096]">For growing practices</p>
               <div className="my-4">
                 <span className="text-4xl font-bold text-[#2D3748]">$199</span>
                 <span className="text-[#718096]">/month</span>
               </div>
               <ul className="mb-6 space-y-2 text-sm">
                 <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> Everything in Starter, plus:
+                  <Check className="h-4 w-4 text-[#27AE60]" /> Unlimited AI-handled calls
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> PMS integration (Dentrix, Open Dental)
+                  <Check className="h-4 w-4 text-[#27AE60]" /> 24/7 call answering
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> Custom AI voice & greeting
+                  <Check className="h-4 w-4 text-[#27AE60]" /> Appointment scheduling via Google Calendar
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-[#27AE60]" /> Emergency call triage
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-[#27AE60]" /> Call recordings & transcripts
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-[#27AE60]" /> Advanced analytics dashboard
@@ -132,13 +140,10 @@ export default function PricingPage() {
                   <Check className="h-4 w-4 text-[#27AE60]" /> SMS appointment reminders
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> Priority support (4h response)
+                  <Check className="h-4 w-4 text-[#27AE60]" /> Custom AI voice & greeting
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> Multi-location (2 locations)
-                </li>
-                <li className="flex items-center gap-2 text-[#718096]">
-                  <X className="h-4 w-4" /> API access
+                  <Check className="h-4 w-4 text-[#27AE60]" /> Priority email support (4h response)
                 </li>
               </ul>
               <Link href="/signup">
@@ -147,48 +152,12 @@ export default function PricingPage() {
                 </Button>
               </Link>
             </div>
-
-            {/* Enterprise */}
-            <div className="rounded-xl border border-[#E8EBF0] bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-bold text-[#1B3A7C]">Enterprise</h3>
-              <p className="mt-1 text-sm text-[#718096]">For DSOs & 6+ dentist practices</p>
-              <div className="my-4">
-                <span className="text-4xl font-bold text-[#2D3748]">$399</span>
-                <span className="text-[#718096]">/month</span>
-              </div>
-              <ul className="mb-6 space-y-2 text-sm">
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> Everything in Professional, plus:
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> Unlimited locations
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> Dedicated account manager
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> Custom AI training (your workflows)
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> API access for integrations
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> White-label option
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> 99.9% uptime SLA
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> Phone support (1h response)
-                </li>
-              </ul>
-              <Link href="/signup">
-                <Button variant="outline" className="w-full border-[#1B3A7C] text-[#1B3A7C] hover:bg-[#1B3A7C] hover:text-white">
-                  Contact Sales
-                </Button>
-              </Link>
-            </div>
           </div>
+
+          {/* Note about integrations */}
+          <p className="mt-8 text-center text-sm text-[#718096]">
+            Need PMS integration (Dentrix, Open Dental)? <Link href="mailto:niyampaneru79@gmail.com" className="text-[#0099CC] hover:underline">Contact us</Link> for custom enterprise solutions.
+          </p>
         </div>
       </section>
 
@@ -242,7 +211,7 @@ export default function PricingPage() {
                     <td className="py-3 font-bold">Price</td>
                     <td className="py-3 text-center">$300+/mo</td>
                     <td className="py-3 text-center">$175/mo</td>
-                    <td className="py-3 text-center font-bold text-[#27AE60]">$199/mo</td>
+                    <td className="py-3 text-center font-bold text-[#27AE60]">From $149/mo</td>
                   </tr>
                 </tbody>
               </table>
@@ -317,7 +286,8 @@ export default function PricingPage() {
                 alt="DentSignal"
                 width={120}
                 height={30}
-                className="h-8 w-auto brightness-0 invert"
+                className="brightness-0 invert"
+                style={{ width: 'auto', height: 'auto' }}
               />
             </Link>
           </div>

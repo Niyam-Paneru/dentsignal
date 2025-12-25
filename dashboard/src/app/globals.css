@@ -59,6 +59,11 @@
   --teal-light: #00B8E6;
   --teal-dark: #0077A3;
   
+  /* Warm Accent: Friendly Orange - Human Touch, Urgency, Action */
+  --warm-accent: #FF8C42;
+  --warm-light: #FFB380;
+  --warm-dark: #E67330;
+  
   /* Neutrals */
   --charcoal-dark: #1A202C;
   --text-primary: #2D3748;
