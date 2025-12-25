@@ -182,11 +182,12 @@ export default function SignupPage() {
       {/* Header */}
       <header className="border-b border-[#E8EBF0] bg-white">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <Link href="/" className="flex items-center gap-2">
-            <Image src="/logo.png" alt="DentSignal" width={140} height={36} priority />
+          <Link href="/" className="flex items-center gap-2 shrink-0">
+            <Image src="/favicon.png" alt="DentSignal" width={32} height={32} className="rounded" />
+            <span className="text-lg font-semibold text-[#1B3A7C] hidden sm:inline">DentSignal</span>
           </Link>
-          <div className="text-sm text-[#718096]">
-            Already have an account?{' '}
+          <div className="flex items-center gap-2 text-sm text-[#718096]">
+            <span className="hidden sm:inline">Already have an account?</span>
             <Link href="/login" className="font-medium text-[#0099CC] hover:underline">
               Sign in
             </Link>

@@ -22,25 +22,27 @@ export default function HomePage() {
       {/* Header - Navy for authority */}
       <header className="sticky top-0 z-50 border-b border-[#E8EBF0] bg-white/95 backdrop-blur-sm">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <div className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2 shrink-0">
             <Image
               src="/logo.png"
               alt="DentSignal"
-              width={140}
-              height={36}
+              width={120}
+              height={32}
               priority
+              className="h-8 w-auto"
             />
-          </div>
-          <nav className="flex items-center gap-3">
-            <Link href="/pricing">
+          </Link>
+          <nav className="flex items-center gap-1 sm:gap-3">
+            <Link href="/pricing" className="hidden sm:block">
               <Button variant="ghost" className="text-[#2D3748] hover:text-[#1B3A7C]">Pricing</Button>
             </Link>
             <Link href="/login">
-              <Button variant="ghost" className="text-[#2D3748] hover:text-[#1B3A7C]">Sign In</Button>
+              <Button variant="ghost" className="text-[#2D3748] hover:text-[#1B3A7C] text-sm sm:text-base px-2 sm:px-4">Sign In</Button>
             </Link>
             <Link href="/signup">
-              <Button className="bg-[#0099CC] hover:bg-[#0077A3] text-white font-medium">
-                Start Free Trial
+              <Button className="bg-[#0099CC] hover:bg-[#0077A3] text-white font-medium text-sm sm:text-base px-3 sm:px-4">
+                <span className="hidden sm:inline">Start Free Trial</span>
+                <span className="sm:hidden">Start Trial</span>
               </Button>
             </Link>
           </nav>
@@ -416,16 +418,16 @@ export default function HomePage() {
       {/* Footer - Charcoal professional */}
       <footer className="bg-[#1A202C] py-8 text-white">
         <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 sm:flex-row">
-          <div className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
             <Image
-              src="/logo.png"
+              src="/favicon.png"
               alt="DentSignal"
-              width={120}
-              height={30}
-              className="brightness-0 invert"
-              style={{ width: 'auto', height: 'auto' }}
+              width={32}
+              height={32}
+              className="rounded"
             />
-          </div>
+            <span className="text-lg font-semibold">DentSignal</span>
+          </Link>
           <p className="text-sm text-[#718096]">
             © 2025 DentSignal. All rights reserved.
           </p>
