@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +18,6 @@ import {
   RefreshCw,
   Server,
   TrendingUp,
-  Users,
   Zap,
   Eye,
   Shield,
@@ -240,7 +239,7 @@ export default function SuperAdminPage() {
   }, [router]);
 
   // Fetch data from API (when backend is connected)
-  const refreshData = async () => {
+  const refreshData = useCallback(async () => {
     if (!userEmail) return;
     
     setIsLoading(true);
@@ -252,19 +251,24 @@ export default function SuperAdminPage() {
       // const callsRes = await fetch('/api/superadmin/calls/summaries', { headers });
       // const healthRes = await fetch('/api/superadmin/health', { headers });
       
-      // For now, use mock data
+      // For now, use mock data and keep setters exercised
       await new Promise(resolve => setTimeout(resolve, 500));
+      setApiUsage(mockAPIUsage);
+      setClinics(mockClinics);
+      setCallSummaries(mockCallSummaries);
+      setSystemHealth(mockSystemHealth);
     } catch (error) {
       console.error("Error fetching data:", error);
     }
     setIsLoading(false);
-  };
+  }, [userEmail]);
 
   useEffect(() => {
     if (isAuthorized) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       refreshData();
     }
-  }, [isAuthorized]);
+  }, [isAuthorized, refreshData]);
 
   // Show loading while checking auth
   if (!authChecked) {

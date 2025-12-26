@@ -13,7 +13,6 @@ import {
   BarChart3,
   LogOut,
   Menu,
-  X,
   Shield,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'

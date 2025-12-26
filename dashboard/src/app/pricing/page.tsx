@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { 
   ArrowLeft,
@@ -9,44 +8,22 @@ import {
   Check,
   X
 } from 'lucide-react'
+import { MarketingHeader } from '@/components/landing/marketing-header'
+import { MarketingFooter } from '@/components/landing/marketing-footer'
 
 export default function PricingPage() {
   return (
     <div className="flex min-h-screen flex-col bg-[#F8F9FA]">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-[#E8EBF0] bg-white/95 backdrop-blur-sm">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <div className="flex items-center gap-2">
-            <Link href="/">
-              <Image
-                src="/logo.png"
-                alt="DentSignal"
-                width={140}
-                height={36}
-                priority
-              />
-            </Link>
-          </div>
-          <nav className="flex items-center gap-3">
-            <Link href="/login">
-              <Button variant="ghost" className="text-[#2D3748] hover:text-[#1B3A7C]">Sign In</Button>
-            </Link>
-            <Link href="/signup">
-              <Button className="bg-[#0099CC] hover:bg-[#0077A3] text-white font-medium">
-                Start Free Trial
-              </Button>
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <MarketingHeader />
 
-      {/* Back Link */}
-      <div className="container mx-auto px-4 pt-6">
-        <Link href="/" className="inline-flex items-center gap-1 text-sm text-[#718096] hover:text-[#1B3A7C] transition-colors">
-          <ArrowLeft className="h-4 w-4" />
-          Back to Home
-        </Link>
-      </div>
+      <main className="flex-1">
+        {/* Back Link */}
+        <div className="container mx-auto px-4 pt-6">
+          <Link href="/" className="inline-flex items-center gap-1 text-sm text-[#718096] hover:text-[#1B3A7C] transition-colors">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Home
+          </Link>
+        </div>
 
       {/* Pricing Header */}
       <section className="bg-[#F8F9FA] py-12">
@@ -259,43 +236,25 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-16 bg-[#E8EBF0]/50">
-        <div className="container mx-auto px-4 text-center">
-          <div className="mx-auto max-w-2xl rounded-2xl bg-[#1B3A7C] p-8 text-white sm:p-12 shadow-xl">
-            <h2 className="mb-4 text-2xl font-bold">Ready to Get Started?</h2>
-            <p className="mb-6 text-white/90">
-              Start your free 7-day trial today. No credit card required.
-            </p>
-            <Link href="/signup">
-              <Button size="lg" className="gap-2 bg-[#0099CC] hover:bg-[#0077A3] text-white font-semibold">
-                Start Free Trial
-              </Button>
-            </Link>
+        {/* CTA */}
+        <section className="py-16 bg-[#E8EBF0]/50">
+          <div className="container mx-auto px-4 text-center">
+            <div className="mx-auto max-w-2xl rounded-2xl bg-[#1B3A7C] p-8 text-white sm:p-12 shadow-xl">
+              <h2 className="mb-4 text-2xl font-bold">Ready to Get Started?</h2>
+              <p className="mb-6 text-white/90">
+                Start your free 7-day trial today. No credit card required.
+              </p>
+              <Link href="/signup">
+                <Button size="lg" className="gap-2 bg-[#0099CC] hover:bg-[#0077A3] text-white font-semibold">
+                  Start Free Trial
+                </Button>
+              </Link>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
-      {/* Footer */}
-      <footer className="bg-[#1A202C] py-8 text-white">
-        <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 sm:flex-row">
-          <div className="flex items-center gap-2">
-            <Link href="/">
-              <Image
-                src="/logo.png"
-                alt="DentSignal"
-                width={120}
-                height={30}
-                className="brightness-0 invert"
-                style={{ width: 'auto', height: 'auto' }}
-              />
-            </Link>
-          </div>
-          <p className="text-sm text-[#718096]">
-            © 2025 DentSignal. All rights reserved.
-          </p>
-        </div>
-      </footer>
+      <MarketingFooter />
     </div>
   )
 }

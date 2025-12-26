@@ -152,6 +152,7 @@ export default function LiveCallsPage() {
   }, [supabase])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchCalls()
     
     // Auto-refresh every 2 seconds

@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,6 +9,8 @@ import { Label } from '@/components/ui/label'
 import { Loader2, Check, AlertCircle, ArrowLeft, ArrowRight, Phone, Building2, User } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Turnstile } from '@/components/turnstile'
+import { MarketingHeader } from '@/components/landing/marketing-header'
+import { MarketingFooter } from '@/components/landing/marketing-footer'
 
 // Format phone number as (555) 123-4567
 function formatPhoneNumber(value: string): string {
@@ -53,10 +54,6 @@ function hasMinLength(password: string): boolean {
 
 function hasSpecialChar(password: string): boolean {
   return /[!@#$%^&*(),.?":{}|<>\[\]\\;'`~_+=\-\/]/.test(password)
-}
-
-function isValidPassword(password: string): boolean {
-  return hasMinLength(password) && hasSpecialChar(password)
 }
 
 export default function SignupPage() {
@@ -200,30 +197,10 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA]">
-      {/* Header */}
-      <header className="border-b border-[#E8EBF0] bg-white">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <Link href="/" className="flex items-center gap-2 shrink-0">
-            <Image
-              src="/logo.png"
-              alt="DentSignal"
-              width={120}
-              height={32}
-              priority
-              className="h-8 w-auto"
-            />
-          </Link>
-          <div className="flex items-center gap-2 text-sm text-[#718096]">
-            <span className="hidden sm:inline">Already have an account?</span>
-            <Link href="/login" className="font-medium text-[#0099CC] hover:underline">
-              Sign in
-            </Link>
-          </div>
-        </div>
-      </header>
+    <div className="flex min-h-screen flex-col bg-[#F8F9FA]">
+      <MarketingHeader />
 
-      <div className="container mx-auto px-4 py-12">
+      <main className="container mx-auto flex-1 px-4 py-12">
         <div className="mx-auto max-w-md">
           {/* Progress Steps */}
           <div className="mb-8">
@@ -457,7 +434,9 @@ export default function SignupPage() {
             </span>
           </div>
         </div>
-      </div>
+      </main>
+
+      <MarketingFooter />
     </div>
   )
 }

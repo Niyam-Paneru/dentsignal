@@ -104,7 +104,6 @@ export function ROICalculator() {
     
     // Current state calculations
     const currentAppointments = inputs.monthlyCallVolume * answerRate * conversionRate
-    const currentRevenue = currentAppointments * inputs.avgAppointmentValue
     const missedCalls = inputs.monthlyCallVolume * (1 - answerRate)
     
     // Missed call revenue loss (50% of missed would have booked)

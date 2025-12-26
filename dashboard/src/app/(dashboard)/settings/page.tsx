@@ -23,7 +23,6 @@ import {
   Shield,
   Save,
   Play,
-  Volume2,
   Loader2,
   Phone
 } from 'lucide-react'
