@@ -183,8 +183,8 @@ export function CallForwardingGuide({ twilioNumber = '(904) 867-9643' }: Forward
             <p className="font-medium mb-1">Need help setting up?</p>
             <p className="text-muted-foreground">
               Email us at{' '}
-              <a href="mailto:niyampaneru79@gmail.com" className="text-primary hover:underline">
-                niyampaneru79@gmail.com
+              <a href="mailto:founder@dentsignal.me" className="text-primary hover:underline">
+                founder@dentsignal.me
               </a>
               {' '}and we&apos;ll help you set up call forwarding for free.
             </p>

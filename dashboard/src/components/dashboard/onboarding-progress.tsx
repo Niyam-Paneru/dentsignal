@@ -173,8 +173,8 @@ export function OnboardingProgress({
         <div className="rounded-lg bg-muted/50 p-3 text-sm">
           <p className="text-muted-foreground">
             Need help? Email us at{' '}
-            <a href="mailto:niyampaneru79@gmail.com" className="text-primary hover:underline">
-              niyampaneru79@gmail.com
+            <a href="mailto:founder@dentsignal.me" className="text-primary hover:underline">
+              founder@dentsignal.me
             </a>
           </p>
         </div>

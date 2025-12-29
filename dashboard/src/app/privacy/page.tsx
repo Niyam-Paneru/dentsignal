@@ -70,7 +70,7 @@ const sections = [
   {
     title: "Contact",
     items: [
-      "Privacy questions or requests: niyampaneru79@gmail.com or (904) 867-9643.",
+      "Privacy questions or requests: founder@dentsignal.me or (904) 867-9643.",
     ],
   },
 ];

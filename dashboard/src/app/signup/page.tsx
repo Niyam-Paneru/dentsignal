@@ -47,6 +47,39 @@ function stripPhoneFormatting(phone: string): string {
   return phone.replace(/\D/g, '')
 }
 
+// XSS Protection - sanitize input to prevent script injection
+function containsXSS(value: string): boolean {
+  const xssPatterns = [
+    /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+    /<[^>]+on\w+\s*=/gi,  // onclick, onerror, onload, etc.
+    /javascript:/gi,
+    /<iframe/gi,
+    /<object/gi,
+    /<embed/gi,
+    /<svg[^>]*onload/gi,
+    /<img[^>]*onerror/gi,
+    /&#x?[0-9a-f]+;/gi,  // HTML entities that could be used for XSS
+  ]
+  return xssPatterns.some(pattern => pattern.test(value))
+}
+
+// Sanitize name fields - only allow letters, spaces, hyphens, apostrophes
+function isValidName(name: string): boolean {
+  // Allow letters (including unicode), spaces, hyphens, apostrophes
+  return /^[\p{L}\s'-]+$/u.test(name) && !containsXSS(name)
+}
+
+// Proper email validation
+function isValidEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return emailRegex.test(email) && !containsXSS(email)
+}
+
+// Sanitize business name - allow alphanumeric, spaces, common punctuation
+function isValidBusinessName(name: string): boolean {
+  return /^[\p{L}\p{N}\s\-&.,'"()]+$/u.test(name) && !containsXSS(name)
+}
+
 // Password validation helpers
 function hasMinLength(password: string): boolean {
   return password.length >= 8
@@ -89,11 +122,19 @@ export default function SignupPage() {
       setError('Please enter your first name')
       return false
     }
+    if (!isValidName(firstName)) {
+      setError('First name contains invalid characters')
+      return false
+    }
     if (!lastName.trim()) {
       setError('Please enter your last name')
       return false
     }
-    if (!email || !email.includes('@')) {
+    if (!isValidName(lastName)) {
+      setError('Last name contains invalid characters')
+      return false
+    }
+    if (!email || !isValidEmail(email)) {
       setError('Please enter a valid email address')
       return false
     }
@@ -128,6 +169,12 @@ export default function SignupPage() {
     // Validation for step 2
     if (!clinicName || clinicName.length < 3) {
       setError('Clinic name must be at least 3 characters')
+      setIsLoading(false)
+      return
+    }
+    
+    if (!isValidBusinessName(clinicName)) {
+      setError('Clinic name contains invalid characters')
       setIsLoading(false)
       return
     }
@@ -345,9 +392,9 @@ export default function SignupPage() {
 
                 <p className="text-center text-xs text-[#718096]">
                   By signing up, you agree to our{' '}
-                  <Link href="#" className="text-[#0099CC] hover:underline">Terms</Link>
+                  <Link href="/terms" className="text-[#0099CC] hover:underline">Terms</Link>
                   {' '}and{' '}
-                  <Link href="#" className="text-[#0099CC] hover:underline">Privacy Policy</Link>
+                  <Link href="/privacy" className="text-[#0099CC] hover:underline">Privacy Policy</Link>
                 </p>
               </div>
             ) : (

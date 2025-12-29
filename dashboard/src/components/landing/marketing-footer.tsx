@@ -9,8 +9,8 @@ const quickLinks = [
 ];
 
 const supportLinks = [
-  { label: "Book a demo", href: "mailto:niyampaneru79@gmail.com" },
-  { label: "Support", href: "mailto:niyampaneru79@gmail.com" },
+  { label: "Book a demo", href: "mailto:founder@dentsignal.me" },
+  { label: "Support", href: "mailto:founder@dentsignal.me" },
   { label: "Privacy", href: "/privacy" },
   { label: "Terms", href: "/terms" },
 ];
@@ -27,7 +27,6 @@ export function MarketingFooter() {
                 alt="DentSignal"
                 width={152}
                 height={40}
-                className="h-10 w-auto"
               />
               <span className="text-base font-semibold text-white">DentSignal</span>
             </Link>
@@ -56,7 +55,7 @@ export function MarketingFooter() {
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Contact</p>
               <ul className="space-y-2 text-sm text-slate-200">
                 {supportLinks.map((item) => (
-                  <li key={item.href}>
+                  <li key={item.label}>
                     <Link
                       href={item.href}
                       className="transition-colors hover:text-white"
@@ -75,7 +74,7 @@ export function MarketingFooter() {
               Email the founder directly and we will set up a live demo or a quick check-in call.
             </p>
             <Link
-              href="mailto:niyampaneru79@gmail.com"
+              href="mailto:founder@dentsignal.me"
               className="inline-flex w-fit items-center gap-2 rounded-full bg-[#0099CC] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#0077A3]"
             >
               Schedule a demo
@@ -86,8 +85,8 @@ export function MarketingFooter() {
         <div className="mt-10 flex flex-col gap-4 text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between">
           <p>© 2025 DentSignal. Built for modern dental practices.</p>
           <div className="flex items-center gap-4">
-            <Link href="mailto:niyampaneru79@gmail.com" className="hover:text-white">
-              niyampaneru79@gmail.com
+            <Link href="mailto:founder@dentsignal.me" className="hover:text-white">
+              founder@dentsignal.me
             </Link>
             <span className="hidden sm:inline">•</span>
             <Link href="tel:+19048679643" className="hover:text-white">

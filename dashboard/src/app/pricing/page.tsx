@@ -133,7 +133,7 @@ export default function PricingPage() {
 
           {/* Note about integrations */}
           <p className="mt-8 text-center text-sm text-[#718096]">
-            Need PMS integration (Dentrix, Open Dental)? <Link href="mailto:niyampaneru79@gmail.com" className="text-[#0099CC] hover:underline">Contact us</Link> for custom enterprise solutions.
+            Need PMS integration (Dentrix, Open Dental)? <Link href="mailto:founder@dentsignal.me" className="text-[#0099CC] hover:underline">Contact us</Link> for custom enterprise solutions.
           </p>
         </div>
       </section>

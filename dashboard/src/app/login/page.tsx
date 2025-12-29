@@ -66,7 +66,6 @@ export default function LoginPage() {
                 width={152}
                 height={40}
                 priority
-                className="h-10 w-auto"
               />
             </div>
             <CardTitle className="text-2xl">Welcome Back</CardTitle>

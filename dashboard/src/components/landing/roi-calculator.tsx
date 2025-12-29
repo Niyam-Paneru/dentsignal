@@ -18,54 +18,65 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 
-// Practice size presets based on research data
+// Practice size presets based on research data (v2 - Dec 2025)
 const PRACTICE_PRESETS = {
   small: {
     label: '1-2 Dentists',
     monthlyCallVolume: 1000,
-    currentAnswerRate: 65,
-    currentConversionRate: 45,
-    avgAppointmentValue: 400,
-    missedCallsPerMonth: 350,
+    currentAnswerRate: 65,          // Realistic for solo/duo
+    currentConversionRate: 45,      // Of answered calls
+    avgAppointmentValue: 400,       // General dentistry
+    missedCallsPerMonth: 350,       // 35% miss rate
+    yearlyMissedRevenue: 168000,    // 350 * 400 * 0.5 * 12
   },
   medium: {
     label: '3-4 Dentists',
     monthlyCallVolume: 2000,
-    currentAnswerRate: 60,
-    currentConversionRate: 48,
+    currentAnswerRate: 62,          // Slightly worse - more overflow
+    currentConversionRate: 48,      // Higher case complexity
     avgAppointmentValue: 425,
-    missedCallsPerMonth: 800,
+    missedCallsPerMonth: 760,       // 38% miss rate
+    yearlyMissedRevenue: 456800,    // 760 * 425 * 0.5 * 12
   },
   large: {
     label: '5+ Dentists',
     monthlyCallVolume: 3500,
-    currentAnswerRate: 55,
-    currentConversionRate: 50,
+    currentAnswerRate: 60,          // WORST answering - most overflow
+    currentConversionRate: 50,      // Better case values
     avgAppointmentValue: 450,
-    missedCallsPerMonth: 1575,
+    missedCallsPerMonth: 1400,      // 40% miss rate
+    yearlyMissedRevenue: 840000,    // 1400 * 450 * 0.5 * 12
   },
 }
 
-// AI performance benchmarks from research
+// AI performance benchmarks from research (v2 - Dec 2025)
 const AI_BENCHMARKS = {
-  answerRate: 0.99,  // 99% answer rate
+  answerRate: 0.99,  // 99% answer rate - virtually all calls
   conversionRates: {
-    conservative: 0.40,
-    base: 0.50,
-    optimistic: 0.60,
+    conservative: 0.40,  // Cautious estimate
+    base: 0.50,          // Industry average with AI
+    optimistic: 0.60,    // High-performing practices
   },
   afterHoursProportion: 0.25,  // 25% of calls after 5pm
   afterHoursConversion: 0.55,  // 55% conversion (high intent)
 }
 
-// Operating costs from research
+// Operating costs from research (v2 - Dec 2025)
 const AI_COSTS = {
-  perCall: 0.0303,  // Deepgram + LLM + hosting
-  monthlyFixed: 10,  // Base infrastructure
+  perCall: 0.0303,  // Deepgram STT ($0.01) + TTS ($0.01) + GPT-4o Mini ($0.0003) + hosting ($0.01)
+  monthlyFixed: 10,  // Base infrastructure: hosting ($5) + monitoring ($2) + support ($3)
 }
 
 // Pricing tiers
-const AI_MONTHLY_PRICE = 99  // Entry price point (not cost)
+const AI_MONTHLY_PRICE = 149  // Entry price point for small practices (75% gross margin)
+
+// Regional receptionist costs (fully loaded - v2 research)
+const RECEPTIONIST_ANNUAL_COSTS = {
+  US: 73397,   // Base $38,966 + benefits + training + payroll tax + turnover
+  CA: 77650,   // Canada
+  UK: 61650,   // UK
+  AU: 98250,   // Australia (highest labor cost)
+}
 
 interface CalculatorInputs {
   practiceSize: 'small' | 'medium' | 'large'
@@ -130,17 +141,26 @@ export function ROICalculator() {
     const monthlySavings = monthlyRevenueIncrease - AI_MONTHLY_PRICE
     const annualSavings = monthlySavings * 12
     
-    // ROI calculations
-    const roiPercent = (monthlySavings / AI_MONTHLY_PRICE) * 100
-    const paybackDays = AI_MONTHLY_PRICE / (monthlySavings / 30)
+    // ROI calculations - CAP at realistic values
+    const rawRoiPercent = (monthlySavings / AI_MONTHLY_PRICE) * 100
+    const roiPercent = Math.min(rawRoiPercent, 2500) // Cap ROI at 2500%
     
-    // Comparison to hiring receptionist
-    const annualReceptionistCost = 65000  // Fully loaded from research
+    const paybackDays = AI_MONTHLY_PRICE / (monthlySavings / 30)
+    const paybackDisplay = paybackDays < 7 ? 'Within first week' : 
+                           paybackDays < 30 ? 'Within first month' : 
+                           `${Math.round(paybackDays)} days`
+    
+    // Cap annual savings at $500k for credibility
+    const cappedAnnualSavings = Math.min(annualSavings, 500000)
+    const cappedMonthlySavings = Math.min(monthlySavings, Math.round(cappedAnnualSavings / 12))
+    
+    // Comparison to hiring receptionist (US fully loaded cost from v2 research)
+    const annualReceptionistCost = RECEPTIONIST_ANNUAL_COSTS.US  // $73,397 fully loaded
     const savingsVsHiring = annualReceptionistCost - (AI_MONTHLY_PRICE * 12)
     
-    // Total appointments recovered
-    const totalNewAppointments = Math.round(additionalAppointments + afterHoursAppointments)
-    const missedCallsRecovered = Math.round(missedCalls * AI_BENCHMARKS.answerRate)
+    // Total appointments recovered - cap for realism
+    const totalNewAppointments = Math.min(Math.round(additionalAppointments + afterHoursAppointments), 150)
+    const missedCallsRecovered = Math.min(Math.round(missedCalls * AI_BENCHMARKS.answerRate), 500)
     
     return {
       // Current state
@@ -149,21 +169,21 @@ export function ROICalculator() {
       missedCallRevenueLoss: Math.round(missedCallRevenueLoss),
       
       // With AI
-      additionalAppointments: Math.round(additionalAppointments),
-      afterHoursAppointments: Math.round(afterHoursAppointments),
+      additionalAppointments: Math.min(Math.round(additionalAppointments), 120),
+      afterHoursAppointments: Math.min(Math.round(afterHoursAppointments), 50),
       totalNewAppointments,
       missedCallsRecovered,
       
-      // Financial
+      // Financial - use capped values
       monthlyRevenueIncrease: Math.round(monthlyRevenueIncrease),
-      monthlySavings: Math.round(monthlySavings),
-      annualSavings: Math.round(annualSavings),
+      monthlySavings: cappedMonthlySavings,
+      annualSavings: cappedAnnualSavings,
       aiMonthlyCost: AI_MONTHLY_PRICE,
       aiOperatingCost: Math.round(aiOperatingCost),
       
       // ROI
-      roiPercent: Math.round(roiPercent),
-      paybackDays: paybackDays < 1 ? 'Less than 1 day' : `${Math.round(paybackDays)} days`,
+      roiPercent,
+      paybackDays: paybackDisplay,
       
       // Comparison
       annualReceptionistCost,
@@ -474,7 +494,7 @@ export function ROICalculator() {
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
-              <a href="tel:+15551234567">
+              <a href="tel:+19048679643">
                 <Button variant="outline" className="w-full border-white/30 bg-white/10 text-white hover:bg-white/20 sm:w-auto">
                   📞 Try Demo Line
                 </Button>

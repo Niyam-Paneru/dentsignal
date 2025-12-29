@@ -357,7 +357,7 @@ export default function HomePage() {
               In exchange, I just need honest feedback—and a testimonial if you love it.
             </p>
             <p className="text-sm text-[#718096]">
-              Questions? Email me directly: <span className="font-medium text-[#0099CC]">niyampaneru79@gmail.com</span>
+              Questions? Email me directly: <span className="font-medium text-[#0099CC]">founder@dentsignal.me</span>
             </p>
           </div>
         </div>

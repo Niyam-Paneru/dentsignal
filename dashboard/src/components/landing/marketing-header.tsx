@@ -31,7 +31,7 @@ export function MarketingHeader({ className }: { className?: string }) {
             width={152}
             height={40}
             priority
-            className="h-10 w-auto transition-transform duration-150 group-hover:scale-[1.03]"
+            className="transition-transform duration-150 group-hover:scale-[1.03]"
           />
           <div className="hidden flex-col leading-tight sm:flex">
             <span className="text-sm font-semibold text-white">DentSignal</span>

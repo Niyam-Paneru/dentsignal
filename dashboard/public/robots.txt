@@ -1,0 +1,36 @@
+# DentSignal Robots.txt
+# https://dentsignal.me
+
+User-agent: *
+Allow: /
+
+# Allow search engines to index main pages
+Allow: /
+Allow: /pricing
+Allow: /login
+Allow: /signup
+Allow: /terms
+Allow: /privacy
+
+# Disallow dashboard and admin areas (require authentication)
+Disallow: /dashboard
+Disallow: /dashboard/*
+Disallow: /superadmin
+Disallow: /superadmin/*
+Disallow: /settings
+Disallow: /settings/*
+Disallow: /calls
+Disallow: /calls/*
+Disallow: /live-calls
+Disallow: /live-calls/*
+Disallow: /calendar
+Disallow: /calendar/*
+Disallow: /analytics
+Disallow: /analytics/*
+
+# Disallow API routes
+Disallow: /api/
+Disallow: /api/*
+
+# Sitemap location
+Sitemap: https://dentsignal.me/sitemap.xml
