@@ -26,9 +26,9 @@ export function MarketingHeader({ className }: { className?: string }) {
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className="group flex items-center gap-3">
           <Image
-            src="/logo.png"
+            src="/logo.svg"
             alt="DentSignal"
-            width={152}
+            width={160}
             height={40}
             priority
             className="transition-transform duration-150 group-hover:scale-[1.03]"

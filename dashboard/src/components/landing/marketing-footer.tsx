@@ -23,9 +23,9 @@ export function MarketingFooter() {
           <div className="space-y-4">
             <Link href="/" className="inline-flex items-center gap-3">
               <Image
-                src="/logo.png"
+                src="/logo.svg"
                 alt="DentSignal"
-                width={152}
+                width={160}
                 height={40}
               />
               <span className="text-base font-semibold text-white">DentSignal</span>

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" fill="none">
+  <defs>
+    <linearGradient id="toothGradient" x1="10" y1="5" x2="40" y2="45" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0099CC"/>
+      <stop offset="1" stop-color="#1B3A7C"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Tooth Shape -->
+  <path d="M25 8C18 8 12 14 12 22C12 28 16 32 18 38C19 41 22 44 25 44C28 44 31 41 32 38C34 32 38 28 38 22C38 14 32 8 25 8Z" fill="url(#toothGradient)"/>
+  
+  <!-- Signal Waves -->
+  <path d="M25 18C27.2091 18 29 19.7909 29 22" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M25 14C29.4183 14 33 17.5817 33 22" stroke="white" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>
+  <path d="M25 22H25.01" stroke="white" stroke-width="3" stroke-linecap="round"/>
+</svg>

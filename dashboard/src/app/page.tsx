@@ -28,60 +28,60 @@ export default function HomePage() {
         <span className="font-medium">� Try our live demo: (904) 867-9643 — See the AI in action</span>
       </div>
 
-      {/* Hero Section - Clean white with navy text */}
-      <section className="relative overflow-hidden bg-white py-16 sm:py-24">
-        <div className="container mx-auto px-4 text-center">
-          <div className="mx-auto max-w-3xl">
+      {/* Hero Section - Modern Gradient */}
+      <section className="relative overflow-hidden bg-gradient-to-b from-white via-[#F0F9FF] to-white py-20 sm:py-32">
+        <div className="container relative mx-auto px-4 text-center">
+          <div className="mx-auto max-w-4xl">
             {/* 48-Hour Setup Badge - Teal for trust + modernity */}
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-[#0099CC]/10 px-4 py-2 text-sm font-semibold text-[#0099CC] border border-[#0099CC]/20">
+            <div className="mb-8 inline-flex items-center gap-2 rounded-full bg-[#0099CC]/10 px-4 py-2 text-sm font-semibold text-[#0099CC] border border-[#0099CC]/20 shadow-sm backdrop-blur-sm">
               <span className="flex h-2 w-2 rounded-full bg-[#0099CC] animate-pulse" />
               Live in 48 Hours — No IT Required
             </div>
             
-            <h1 className="mb-6 text-4xl font-extrabold tracking-tight text-[#1B3A7C] sm:text-5xl lg:text-6xl">
+            <h1 className="mb-8 text-5xl font-extrabold tracking-tight text-[#1B3A7C] sm:text-6xl lg:text-7xl drop-shadow-sm">
               Never Miss Another{' '}
-              <span className="text-[#0099CC]">Patient Call</span>{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0099CC] to-[#0077A3]">Patient Call</span>{' '}
               Again
             </h1>
-            <p className="mb-6 text-lg leading-relaxed text-[#718096] sm:text-xl">
+            <p className="mb-10 text-xl leading-relaxed text-[#4A5568] sm:text-2xl max-w-2xl mx-auto">
               AI answers every call, books appointments 24/7, and integrates with your existing systems.
               No contracts. Setup in 48 hours.
             </p>
             
             {/* Trust Strip */}
-            <div className="mb-8 flex flex-wrap items-center justify-center gap-6 text-sm text-[#718096]">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-[#27AE60]">✓</span>
+            <div className="mb-12 flex flex-wrap items-center justify-center gap-8 text-base font-medium text-[#4A5568]">
+              <div className="flex items-center gap-2 bg-white/50 px-3 py-1 rounded-full border border-gray-100 shadow-sm">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#27AE60] text-white text-xs">✓</span>
                 <span>HIPAA compliant</span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-[#27AE60]">✓</span>
+              <div className="flex items-center gap-2 bg-white/50 px-3 py-1 rounded-full border border-gray-100 shadow-sm">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#27AE60] text-white text-xs">✓</span>
                 <span>No long-term contracts</span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-[#27AE60]">✓</span>
+              <div className="flex items-center gap-2 bg-white/50 px-3 py-1 rounded-full border border-gray-100 shadow-sm">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#27AE60] text-white text-xs">✓</span>
                 <span>Free trial included</span>
               </div>
             </div>
             
             {/* Demo Phone CTA - Teal accent */}
-            <div className="mb-10 rounded-2xl border-2 border-[#0099CC]/30 bg-[#0099CC]/5 p-6 sm:p-8">
-              <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-[#0099CC]">
+            <div className="mb-12 rounded-2xl border border-[#0099CC]/20 bg-gradient-to-r from-[#0099CC]/5 to-[#1B3A7C]/5 p-8 shadow-xl backdrop-blur-sm">
+              <p className="mb-3 text-sm font-bold uppercase tracking-widest text-[#0099CC]">
                 🎧 Try It Yourself — Call Our Demo Line
               </p>
-              <p className="mb-3 text-3xl font-bold tracking-wider text-[#1B3A7C] sm:text-4xl">(904) 867-9643</p>
-              <p className="text-sm text-[#718096]">Pretend you&apos;re a patient with a toothache. See how natural it sounds.</p>
+              <p className="mb-4 text-4xl font-black tracking-wider text-[#1B3A7C] sm:text-5xl font-mono">(904) 867-9643</p>
+              <p className="text-base text-[#4A5568] font-medium">Pretend you&apos;re a patient with a toothache. See how natural it sounds.</p>
             </div>
             
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link href="/signup">
-                <Button size="lg" className="h-14 gap-2 bg-[#0099CC] px-8 text-base font-semibold hover:bg-[#0077A3] shadow-lg shadow-[#0099CC]/25">
+                <Button size="lg" className="h-16 gap-3 bg-[#0099CC] px-10 text-lg font-bold hover:bg-[#0077A3] shadow-xl shadow-[#0099CC]/20 transition-all hover:shadow-[#0099CC]/40 hover:-translate-y-1 rounded-xl">
                   Start Free Trial
-                  <ArrowRight className="h-5 w-5" />
+                  <ArrowRight className="h-6 w-6" />
                 </Button>
               </Link>
               <Link href="#calculator">
-                <Button size="lg" variant="outline" className="h-14 gap-2 border-[#1B3A7C] px-8 text-base font-semibold text-[#1B3A7C] hover:bg-[#1B3A7C] hover:text-white">
+                <Button size="lg" variant="outline" className="h-16 gap-3 border-2 border-[#1B3A7C]/20 bg-white px-10 text-lg font-bold text-[#1B3A7C] hover:bg-[#1B3A7C]/5 hover:border-[#1B3A7C] transition-all rounded-xl">
                   See ROI Calculator
                 </Button>
               </Link>

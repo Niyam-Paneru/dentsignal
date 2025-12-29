@@ -23,6 +23,11 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://dentsignal.me",
   },
+  icons: {
+    icon: '/icon.svg',
+    shortcut: '/icon.svg',
+    apple: '/icon.svg',
+  },
   openGraph: {
     title: "DentSignal - AI Dental Receptionist | Never Miss a Call",
     description: "AI answers every call 24/7, books appointments automatically. 60% cheaper than Weave. HIPAA compliant. Live in 48 hours.",

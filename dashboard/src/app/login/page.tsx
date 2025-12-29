@@ -61,9 +61,9 @@ export default function LoginPage() {
           <CardHeader className="text-center pt-2">
             <div className="mx-auto mb-4">
               <Image
-                src="/logo.png"
+                src="/logo.svg"
                 alt="DentSignal"
-                width={152}
+                width={160}
                 height={40}
                 priority
               />

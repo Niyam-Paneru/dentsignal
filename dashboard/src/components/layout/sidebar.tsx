@@ -149,7 +149,7 @@ export function Sidebar() {
           <SheetContent side="left" className="w-64 p-0">
             <div className="flex h-full flex-col">
               <div className="flex h-16 items-center gap-2 border-b px-6">
-                <Image src="/favicon.png" alt="DentSignal" width={32} height={32} className="rounded" />
+                <Image src="/icon.svg" alt="DentSignal" width={32} height={32} className="rounded" />
                 <span className="font-semibold">DentSignal</span>
               </div>
               <div className="flex-1 overflow-auto p-4">
@@ -172,7 +172,7 @@ export function Sidebar() {
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r bg-card lg:block">
         <div className="flex h-full flex-col">
           <div className="flex h-16 items-center gap-2 border-b px-6">
-            <Image src="/favicon.png" alt="DentSignal" width={32} height={32} className="rounded" />
+            <Image src="/icon.svg" alt="DentSignal" width={32} height={32} className="rounded" />
             <span className="text-lg font-semibold">DentSignal</span>
           </div>
           <div className="flex-1 overflow-auto p-4">
