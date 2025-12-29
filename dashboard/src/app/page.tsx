@@ -25,7 +25,7 @@ export default function HomePage() {
 
       {/* Social Proof Banner */}
       <div className="bg-[#1B3A7C] py-2 text-center text-sm text-white">
-        <span className="font-medium">🎉 Join 50+ dental practices already saving $21K/month in missed calls</span>
+        <span className="font-medium">� Try our live demo: (904) 867-9643 — See the AI in action</span>
       </div>
 
       {/* Hero Section - Clean white with navy text */}
@@ -39,28 +39,28 @@ export default function HomePage() {
             </div>
             
             <h1 className="mb-6 text-4xl font-extrabold tracking-tight text-[#1B3A7C] sm:text-5xl lg:text-6xl">
-              Your Practice is Losing{' '}
-              <span className="text-[#DC3545]">$21,000/Month</span>{' '}
-              to Missed Calls
+              Never Miss Another{' '}
+              <span className="text-[#0099CC]">Patient Call</span>{' '}
+              Again
             </h1>
             <p className="mb-6 text-lg leading-relaxed text-[#718096] sm:text-xl">
-              AI answers every call, books appointments 24/7, and costs <strong className="text-[#1B3A7C]">60% less than Weave</strong>.
+              AI answers every call, books appointments 24/7, and integrates with your existing systems.
               No contracts. Setup in 48 hours.
             </p>
             
-            {/* Competitor Comparison Strip */}
+            {/* Trust Strip */}
             <div className="mb-8 flex flex-wrap items-center justify-center gap-6 text-sm text-[#718096]">
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-[#27AE60]">✓</span>
-                <span>60% cheaper than Weave</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-[#27AE60]">✓</span>
-                <span>No 12-month contracts</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-[#27AE60]">✓</span>
                 <span>HIPAA compliant</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-[#27AE60]">✓</span>
+                <span>No long-term contracts</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-[#27AE60]">✓</span>
+                <span>Free trial included</span>
               </div>
             </div>
             
@@ -76,13 +76,13 @@ export default function HomePage() {
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link href="/signup">
                 <Button size="lg" className="h-14 gap-2 bg-[#0099CC] px-8 text-base font-semibold hover:bg-[#0077A3] shadow-lg shadow-[#0099CC]/25">
-                  Start Free Trial — 5 Spots Left
+                  Start Free Trial
                   <ArrowRight className="h-5 w-5" />
                 </Button>
               </Link>
               <Link href="#calculator">
                 <Button size="lg" variant="outline" className="h-14 gap-2 border-[#1B3A7C] px-8 text-base font-semibold text-[#1B3A7C] hover:bg-[#1B3A7C] hover:text-white">
-                  Calculate Your Lost Revenue
+                  See ROI Calculator
                 </Button>
               </Link>
             </div>
@@ -204,16 +204,16 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Weave Comparison Section */}
+      {/* Comparison Section - Focus on our features, not competitor bashing */}
       <section className="bg-[#E8EBF0]/50 py-20">
         <div className="container mx-auto px-4">
           <div className="mb-12 text-center">
             <div className="mb-4 inline-flex items-center rounded-full bg-[#0099CC]/10 px-4 py-2 text-sm font-semibold text-[#0099CC]">
-              💡 Why Practices Switch
+              💡 What You Get
             </div>
-            <h2 className="mb-4 text-3xl font-bold text-[#1B3A7C]">DentSignal vs. Weave</h2>
+            <h2 className="mb-4 text-3xl font-bold text-[#1B3A7C]">Built Different</h2>
             <p className="text-lg text-[#718096]">
-              Same AI power. 60% lower price. No enterprise headaches.
+              AI-first from day one. Simple pricing. No enterprise bloat.
             </p>
           </div>
 
@@ -223,49 +223,44 @@ export default function HomePage() {
                 <tr className="border-b border-[#E8EBF0] bg-[#F8F9FA]">
                   <th className="px-4 sm:px-6 py-4 text-left text-sm font-semibold text-[#718096]">Feature</th>
                   <th className="px-4 sm:px-6 py-4 text-center text-sm font-semibold text-[#1B3A7C]">DentSignal</th>
-                  <th className="px-4 sm:px-6 py-4 text-center text-sm font-semibold text-[#718096]">Weave</th>
+                  <th className="px-4 sm:px-6 py-4 text-center text-sm font-semibold text-[#718096]">Traditional Solutions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E8EBF0]">
                 <tr>
                   <td className="px-4 sm:px-6 py-4 text-[#2D3748] font-medium">Monthly Price</td>
-                  <td className="px-4 sm:px-6 py-4 text-center"><span className="text-[#27AE60] font-bold">$149/mo</span></td>
-                  <td className="px-4 sm:px-6 py-4 text-center text-[#718096]">$249-449/mo</td>
+                  <td className="px-4 sm:px-6 py-4 text-center"><span className="text-[#27AE60] font-bold">From $149/mo</span></td>
+                  <td className="px-4 sm:px-6 py-4 text-center text-[#718096]">$200-500/mo</td>
                 </tr>
                 <tr className="bg-[#F8F9FA]/50">
                   <td className="px-4 sm:px-6 py-4 text-[#2D3748] font-medium">Setup Time</td>
                   <td className="px-4 sm:px-6 py-4 text-center"><span className="text-[#27AE60] font-bold">48 hours</span></td>
-                  <td className="px-4 sm:px-6 py-4 text-center text-[#718096]">3-6 weeks</td>
+                  <td className="px-4 sm:px-6 py-4 text-center text-[#718096]">Weeks to months</td>
                 </tr>
                 <tr>
                   <td className="px-4 sm:px-6 py-4 text-[#2D3748] font-medium">Contract</td>
                   <td className="px-4 sm:px-6 py-4 text-center"><span className="text-[#27AE60] font-bold">Month-to-month</span></td>
-                  <td className="px-4 sm:px-6 py-4 text-center text-[#718096]">12-month minimum</td>
+                  <td className="px-4 sm:px-6 py-4 text-center text-[#718096]">Often 12+ months</td>
                 </tr>
                 <tr className="bg-[#F8F9FA]/50">
                   <td className="px-4 sm:px-6 py-4 text-[#2D3748] font-medium">AI Call Answering</td>
-                  <td className="px-4 sm:px-6 py-4 text-center"><span className="text-[#27AE60] font-bold">✓ 24/7</span></td>
-                  <td className="px-4 sm:px-6 py-4 text-center"><span className="text-[#DC3545]">✗</span></td>
+                  <td className="px-4 sm:px-6 py-4 text-center"><span className="text-[#27AE60] font-bold">24/7 included</span></td>
+                  <td className="px-4 sm:px-6 py-4 text-center text-[#718096]">Often extra or limited</td>
                 </tr>
                 <tr>
-                  <td className="px-4 sm:px-6 py-4 text-[#2D3748] font-medium">AI Books Appointments</td>
-                  <td className="px-4 sm:px-6 py-4 text-center"><span className="text-[#27AE60] font-bold">✓ Automatic</span></td>
-                  <td className="px-4 sm:px-6 py-4 text-center"><span className="text-[#DC3545]">✗</span></td>
+                  <td className="px-4 sm:px-6 py-4 text-[#2D3748] font-medium">Auto Booking</td>
+                  <td className="px-4 sm:px-6 py-4 text-center"><span className="text-[#27AE60] font-bold">Built-in</span></td>
+                  <td className="px-4 sm:px-6 py-4 text-center text-[#718096]">Varies by provider</td>
                 </tr>
                 <tr className="bg-[#F8F9FA]/50">
-                  <td className="px-4 sm:px-6 py-4 text-[#2D3748] font-medium">After-Hours Capture</td>
-                  <td className="px-4 sm:px-6 py-4 text-center"><span className="text-[#27AE60] font-bold">✓ Full AI</span></td>
-                  <td className="px-4 sm:px-6 py-4 text-center text-[#718096]">Basic forwarding</td>
-                </tr>
-                <tr>
                   <td className="px-4 sm:px-6 py-4 text-[#2D3748] font-medium">IT Requirements</td>
                   <td className="px-4 sm:px-6 py-4 text-center"><span className="text-[#27AE60] font-bold">None</span></td>
-                  <td className="px-4 sm:px-6 py-4 text-center text-[#718096]">PMS integration</td>
+                  <td className="px-4 sm:px-6 py-4 text-center text-[#718096]">May need integrations</td>
                 </tr>
-                <tr className="bg-[#F8F9FA]/50">
+                <tr>
                   <td className="px-4 sm:px-6 py-4 text-[#2D3748] font-medium">Support</td>
-                  <td className="px-4 sm:px-6 py-4 text-center"><span className="text-[#27AE60] font-bold">Direct founder</span></td>
-                  <td className="px-4 sm:px-6 py-4 text-center text-[#718096]">Ticket system</td>
+                  <td className="px-4 sm:px-6 py-4 text-center"><span className="text-[#27AE60] font-bold">Direct founder access</span></td>
+                  <td className="px-4 sm:px-6 py-4 text-center text-[#718096]">Ticket systems</td>
                 </tr>
               </tbody>
             </table>
@@ -281,10 +276,9 @@ export default function HomePage() {
               <Calculator className="mr-2 h-4 w-4" />
               ROI Calculator
             </div>
-            <h2 className="mb-4 text-3xl font-bold text-[#1B3A7C]">Calculate Your Lost Revenue</h2>
+            <h2 className="mb-4 text-3xl font-bold text-[#1B3A7C]">See Your Potential Savings</h2>
             <p className="mx-auto max-w-2xl text-lg text-[#718096]">
-              Based on 2,000+ dental practices: the average clinic loses $21,000/month to missed calls. 
-              See what you&apos;re losing—and how much you&apos;ll save.
+              Adjust the sliders to match your practice. We show conservative estimates—your actual results depend on your call volume and conversion rates.
             </p>
           </div>
 
@@ -347,17 +341,17 @@ export default function HomePage() {
             <div className="mb-6 inline-flex h-20 w-20 items-center justify-center rounded-full bg-[#0099CC]/10 text-3xl">
               👋
             </div>
-            <h2 className="mb-4 text-2xl font-bold text-[#1B3A7C]">Built by a Solo Founder, Not a Corporation</h2>
+            <h2 className="mb-4 text-2xl font-bold text-[#1B3A7C]">Built by a Solo Founder</h2>
             <p className="mb-6 text-[#718096]">
-              Hi, I&apos;m building this because I watched my family&apos;s small business lose customers to missed calls. 
-              Big companies charge $300+/month for AI receptionists. Small dental practices deserve better.
+              I built DentSignal because I saw how small practices struggle with enterprise-priced tools. 
+              My goal is simple: make AI call answering accessible and affordable.
             </p>
             <p className="mb-6 text-[#718096]">
-              I&apos;m looking for <strong className="text-[#1B3A7C]">5 founding practices</strong> to try this free for 7 days. 
-              In exchange, I just need honest feedback—and a testimonial if you love it.
+              Every feature is based on real feedback from dental offices. If something doesn&apos;t work for you, 
+              tell me—I read every email and ship fixes fast.
             </p>
             <p className="text-sm text-[#718096]">
-              Questions? Email me directly: <span className="font-medium text-[#0099CC]">founder@dentsignal.me</span>
+              Questions? <a href="mailto:founder@dentsignal.me" className="font-medium text-[#0099CC] hover:underline">founder@dentsignal.me</a>
             </p>
           </div>
         </div>
@@ -367,28 +361,23 @@ export default function HomePage() {
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4 text-center">
           <div className="mx-auto max-w-2xl rounded-2xl bg-[#1B3A7C] p-8 text-white sm:p-12 shadow-xl relative overflow-hidden">
-            {/* Urgency Badge */}
-            <div className="absolute top-4 right-4 bg-[#FF8C42] text-white text-xs font-bold px-3 py-1 rounded-full animate-pulse">
-              Limited Spots
-            </div>
-            
-            <h2 className="mb-4 text-3xl font-bold">Start Free 7-Day Trial</h2>
+            <h2 className="mb-4 text-3xl font-bold">Ready to Get Started?</h2>
             <p className="mb-6 text-lg text-white/90">
-              Only 5 spots available for founding practices. Free setup, free trial, honest feedback.
+              Free trial included. No credit card required. Cancel anytime.
             </p>
             <div className="mb-6 flex flex-wrap items-center justify-center gap-4 text-sm text-white/80">
-              <span>✓ No credit card required</span>
-              <span>✓ No contracts ever</span>
+              <span>✓ HIPAA compliant</span>
+              <span>✓ No contracts</span>
               <span>✓ Live in 48 hours</span>
             </div>
             <Link href="/signup">
               <Button size="lg" className="gap-2 bg-[#0099CC] hover:bg-[#0077A3] text-white font-semibold shadow-lg shadow-[#0099CC]/25 px-8 py-6 text-lg">
-                Claim Your Spot — 5 Left
+                Start Free Trial
                 <ArrowRight className="h-5 w-5" />
               </Button>
             </Link>
             <p className="mt-4 text-xs text-white/60">
-              🔒 HIPAA compliant • BAA included • Cancel anytime
+              🔒 BAA included • Cancel anytime
             </p>
           </div>
         </div>
