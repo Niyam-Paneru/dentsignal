@@ -25,8 +25,9 @@ export function MarketingFooter() {
               <Image
                 src="/logo.svg"
                 alt="DentSignal"
-                width={160}
+                width={120}
                 height={40}
+                className="h-[40px] w-auto object-contain"
               />
               <span className="text-base font-semibold text-white">DentSignal</span>
             </Link>

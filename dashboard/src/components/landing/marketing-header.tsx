@@ -3,9 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 const navLinks = [
   { href: "/", label: "Product" },
@@ -15,6 +16,7 @@ const navLinks = [
 
 export function MarketingHeader({ className }: { className?: string }) {
   const pathname = usePathname();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <header
@@ -23,23 +25,25 @@ export function MarketingHeader({ className }: { className?: string }) {
         className
       )}
     >
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
+      <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6">
+        {/* Logo - Clean, professional, responsive */}
         <Link href="/" className="group flex items-center gap-3">
           <Image
             src="/logo.svg"
             alt="DentSignal"
-            width={160}
+            width={120}
             height={40}
             priority
-            className="transition-transform duration-150 group-hover:scale-[1.03]"
+            className="h-[40px] w-auto max-w-full object-contain transition-transform duration-150 group-hover:scale-[1.02]"
           />
-          <div className="hidden flex-col leading-tight sm:flex">
-            <span className="text-sm font-semibold text-white">DentSignal</span>
-            <span className="text-xs text-slate-200">24/7 AI dental receptionist</span>
-          </div>
+          {/* Hide text on mobile, show on md+ */}
+          <span className="hidden text-lg font-semibold text-white md:block">
+            DentSignal
+          </span>
         </Link>
 
-        <nav className="flex items-center gap-1 sm:gap-2">
+        {/* Desktop Navigation */}
+        <nav className="hidden items-center gap-1 sm:flex sm:gap-2">
           {navLinks.map((item) => {
             const isActive =
               item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
@@ -61,22 +65,60 @@ export function MarketingHeader({ className }: { className?: string }) {
           })}
           <Button
             asChild
-            className="hidden sm:inline-flex gap-2 bg-[#0099CC] px-4 text-sm font-semibold text-white shadow-md shadow-[#0099CC]/25 hover:bg-[#0077A3]"
+            className="ml-2 gap-2 bg-[#0099CC] px-4 text-sm font-semibold text-white shadow-md shadow-[#0099CC]/25 hover:bg-[#0077A3]"
           >
             <Link href="/signup">
               Start free trial
               <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
+        </nav>
+
+        {/* Mobile Menu Button */}
+        <div className="flex items-center gap-2 sm:hidden">
           <Button
             asChild
-            variant="outline"
-            className="sm:hidden border-white/60 text-white hover:bg-white hover:text-[#1B3A7C]"
+            size="sm"
+            className="gap-1 bg-[#0099CC] px-3 text-xs font-semibold text-white hover:bg-[#0077A3]"
           >
             <Link href="/signup">Start trial</Link>
           </Button>
-        </nav>
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="rounded-lg p-2 text-white hover:bg-white/10"
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+          >
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
       </div>
+
+      {/* Mobile Menu Dropdown */}
+      {mobileMenuOpen && (
+        <div className="border-t border-white/10 bg-[#1B3A7C] px-4 py-4 sm:hidden">
+          <nav className="flex flex-col gap-2">
+            {navLinks.map((item) => {
+              const isActive =
+                item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={cn(
+                    "rounded-lg px-4 py-3 text-sm font-semibold transition-colors",
+                    isActive
+                      ? "bg-white/15 text-white"
+                      : "text-slate-100 hover:bg-white/10"
+                  )}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      )}
     </header>
   );
 }

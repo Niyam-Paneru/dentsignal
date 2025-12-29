@@ -21,11 +21,11 @@ export default function HomePage() {
     <div className="flex min-h-screen flex-col bg-[#F8F9FA]">
       <MarketingHeader />
 
-      <main className="flex-1">
+      <main id="main-content" className="flex-1">
 
       {/* Social Proof Banner */}
       <div className="bg-[#1B3A7C] py-2 text-center text-sm text-white">
-        <span className="font-medium">� Try our live demo: (904) 867-9643 — See the AI in action</span>
+        <span className="font-medium">🎧 Try our live demo: <a href="tel:+19048679643" className="underline hover:no-underline">(904) 867-9643</a> — See the AI in action</span>
       </div>
 
       {/* Hero Section - Modern Gradient */}
@@ -69,7 +69,7 @@ export default function HomePage() {
               <p className="mb-3 text-sm font-bold uppercase tracking-widest text-[#0099CC]">
                 🎧 Try It Yourself — Call Our Demo Line
               </p>
-              <p className="mb-4 text-4xl font-black tracking-wider text-[#1B3A7C] sm:text-5xl font-mono">(904) 867-9643</p>
+              <a href="tel:+19048679643" className="block mb-4 text-4xl font-black tracking-wider text-[#1B3A7C] sm:text-5xl font-mono hover:text-[#0099CC] transition-colors">(904) 867-9643</a>
               <p className="text-base text-[#4A5568] font-medium">Pretend you&apos;re a patient with a toothache. See how natural it sounds.</p>
             </div>
             

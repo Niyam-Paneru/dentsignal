@@ -82,17 +82,37 @@ function isValidBusinessName(name: string): boolean {
 
 // Password validation helpers
 function hasMinLength(password: string): boolean {
-  return password.length >= 8
+  return password.length >= 12
 }
 
 function hasSpecialChar(password: string): boolean {
-  return /[!@#$%^&*(),.?":{}|<>\[\]\\;'`~_+=\-\/]/.test(password)
+  return /[!@#$%^&*(),.?\":{}|<>\\[\\]\\\\;'`~_+=\\-\\/]/.test(password)
+}
+
+function hasNumber(password: string): boolean {
+  return /[0-9]/.test(password)
+}
+
+function hasUpperAndLower(password: string): boolean {
+  return /[a-z]/.test(password) && /[A-Z]/.test(password)
+}
+
+// Calculate password strength (0-4)
+function getPasswordStrength(password: string): number {
+  let score = 0
+  if (password.length >= 8) score++
+  if (password.length >= 12) score++
+  if (hasSpecialChar(password)) score++
+  if (hasNumber(password)) score++
+  if (hasUpperAndLower(password)) score++
+  return Math.min(4, score)
 }
 
 export default function SignupPage() {
   const [step, setStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   
   // Step 1 fields
   const [firstName, setFirstName] = useState('')
@@ -104,11 +124,37 @@ export default function SignupPage() {
   const [clinicName, setClinicName] = useState('')
   const [phone, setPhone] = useState('')
   
+  // Rate limiting state
+  const [attempts, setAttempts] = useState(0)
+  const [lastAttemptTime, setLastAttemptTime] = useState<number | null>(null)
+  const MAX_ATTEMPTS = 5
+  const RATE_LIMIT_WINDOW = 15 * 60 * 1000 // 15 minutes
+  
+  // Honeypot field for catching bots
+  const [honeypot, setHoneypot] = useState('')
+  
   // Captcha
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
   
   const router = useRouter()
   const supabase = createClient()
+  
+  // Check rate limiting
+  const isRateLimited = () => {
+    if (lastAttemptTime && attempts >= MAX_ATTEMPTS) {
+      const timeSinceLastAttempt = Date.now() - lastAttemptTime
+      if (timeSinceLastAttempt < RATE_LIMIT_WINDOW) {
+        const minutesRemaining = Math.ceil((RATE_LIMIT_WINDOW - timeSinceLastAttempt) / 60000)
+        setError(`Too many signup attempts. Please try again in ${minutesRemaining} minutes.`)
+        return true
+      } else {
+        // Reset rate limit
+        setAttempts(0)
+        setLastAttemptTime(null)
+      }
+    }
+    return false
+  }
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPhoneNumber(e.target.value)
@@ -139,11 +185,19 @@ export default function SignupPage() {
       return false
     }
     if (!password || !hasMinLength(password)) {
-      setError('Password must be at least 8 characters')
+      setError('Password must be at least 12 characters')
       return false
     }
     if (!hasSpecialChar(password)) {
       setError('Password must include at least one special character (!@#$%^&* etc.)')
+      return false
+    }
+    if (!hasNumber(password)) {
+      setError('Password must include at least one number')
+      return false
+    }
+    if (!hasUpperAndLower(password)) {
+      setError('Password must include both uppercase and lowercase letters')
       return false
     }
     return true
@@ -165,6 +219,25 @@ export default function SignupPage() {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
+    setSuccess(null)
+    
+    // Honeypot check - if filled, it's a bot
+    if (honeypot) {
+      console.log('Honeypot triggered - bot detected')
+      setIsLoading(false)
+      // Silently fail for bots, don't give them feedback
+      return
+    }
+    
+    // Rate limiting check
+    if (isRateLimited()) {
+      setIsLoading(false)
+      return
+    }
+    
+    // Track attempt
+    setAttempts(prev => prev + 1)
+    setLastAttemptTime(Date.now())
     
     // Validation for step 2
     if (!clinicName || clinicName.length < 3) {
@@ -311,8 +384,8 @@ export default function SignupPage() {
 
             {/* Error */}
             {error && (
-              <div className="mb-6 flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600">
-                <AlertCircle className="h-4 w-4 shrink-0" />
+              <div className="mb-6 flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600" role="alert" aria-live="polite">
+                <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
                 {error}
               </div>
             )}
@@ -327,8 +400,16 @@ export default function SignupPage() {
                       id="firstName" 
                       placeholder="John" 
                       value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      className="h-11 border-[#E8EBF0] focus:border-[#0099CC] focus:ring-[#0099CC]"
+                      onChange={(e) => {
+                        setFirstName(e.target.value)
+                        // Clear error when user types valid name
+                        if (error && error.includes('first name') && isValidName(e.target.value)) {
+                          setError(null)
+                        }
+                      }}
+                      className={`h-11 border-[#E8EBF0] focus:border-[#0099CC] focus:ring-[#0099CC] ${
+                        firstName && isValidName(firstName) ? 'border-green-500' : ''
+                      }`}
                     />
                   </div>
                   <div className="space-y-2">
@@ -337,8 +418,16 @@ export default function SignupPage() {
                       id="lastName" 
                       placeholder="Smith" 
                       value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      className="h-11 border-[#E8EBF0] focus:border-[#0099CC] focus:ring-[#0099CC]"
+                      onChange={(e) => {
+                        setLastName(e.target.value)
+                        // Clear error when user types valid name
+                        if (error && error.includes('last name') && isValidName(e.target.value)) {
+                          setError(null)
+                        }
+                      }}
+                      className={`h-11 border-[#E8EBF0] focus:border-[#0099CC] focus:ring-[#0099CC] ${
+                        lastName && isValidName(lastName) ? 'border-green-500' : ''
+                      }`}
                     />
                   </div>
                 </div>
@@ -349,9 +438,17 @@ export default function SignupPage() {
                     type="email" 
                     placeholder="you@clinic.com" 
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value)
+                      // Clear error when user types valid email
+                      if (error && error.includes('email') && isValidEmail(e.target.value)) {
+                        setError(null)
+                      }
+                    }}
                     autoComplete="email"
-                    className="h-11 border-[#E8EBF0] focus:border-[#0099CC] focus:ring-[#0099CC]"
+                    className={`h-11 border-[#E8EBF0] focus:border-[#0099CC] focus:ring-[#0099CC] ${
+                      email && isValidEmail(email) ? 'border-green-500' : ''
+                    }`}
                   />
                 </div>
                 <div className="space-y-2">
@@ -359,23 +456,99 @@ export default function SignupPage() {
                   <Input 
                     id="password" 
                     type="password" 
-                    placeholder="Create a password" 
+                    placeholder="Create a strong password" 
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      setPassword(e.target.value)
+                      // Clear error when user starts typing valid password
+                      if (error && error.includes('Password')) {
+                        setError(null)
+                      }
+                    }}
                     autoComplete="new-password"
-                    className="h-11 border-[#E8EBF0] focus:border-[#0099CC] focus:ring-[#0099CC]"
+                    className={`h-11 border-[#E8EBF0] focus:border-[#0099CC] focus:ring-[#0099CC] ${
+                      password && hasMinLength(password) && hasSpecialChar(password) && hasNumber(password) && hasUpperAndLower(password)
+                        ? 'border-green-500 focus:border-green-500 focus:ring-green-500'
+                        : ''
+                    }`}
                   />
-                  <div className="space-y-1 pt-1">
+                  
+                  {/* Password Strength Meter */}
+                  {password && (
+                    <div className="pt-2">
+                      <div className="flex gap-1 mb-2">
+                        {[1, 2, 3, 4].map((level) => (
+                          <div
+                            key={level}
+                            className={`h-1.5 flex-1 rounded-full transition-colors ${
+                              getPasswordStrength(password) >= level
+                                ? getPasswordStrength(password) <= 1
+                                  ? 'bg-red-500'
+                                  : getPasswordStrength(password) <= 2
+                                  ? 'bg-orange-500'
+                                  : getPasswordStrength(password) <= 3
+                                  ? 'bg-yellow-500'
+                                  : 'bg-green-500'
+                                : 'bg-gray-200'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <p className={`text-xs font-medium ${
+                        getPasswordStrength(password) <= 1 ? 'text-red-600' :
+                        getPasswordStrength(password) <= 2 ? 'text-orange-600' :
+                        getPasswordStrength(password) <= 3 ? 'text-yellow-600' :
+                        'text-green-600'
+                      }`}>
+                        {getPasswordStrength(password) <= 1 ? 'Weak' :
+                         getPasswordStrength(password) <= 2 ? 'Fair' :
+                         getPasswordStrength(password) <= 3 ? 'Good' :
+                         'Strong'}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Password Requirements with Checkmarks */}
+                  <div className="space-y-1.5 pt-2 rounded-lg bg-slate-50 p-3">
+                    <p className="text-xs font-medium text-slate-600 mb-2">Password requirements:</p>
                     <div className="flex items-center gap-2">
-                      <div className={`h-1.5 w-1.5 rounded-full ${hasMinLength(password) ? 'bg-green-500' : 'bg-gray-300'}`} />
-                      <p className={`text-xs ${hasMinLength(password) ? 'text-green-600' : 'text-[#718096]'}`}>
-                        At least 8 characters
+                      {hasMinLength(password) ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <div className="h-4 w-4 rounded-full border-2 border-gray-300" />
+                      )}
+                      <p className={`text-xs ${hasMinLength(password) ? 'text-green-600 font-medium' : 'text-[#718096]'}`}>
+                        At least 12 characters
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className={`h-1.5 w-1.5 rounded-full ${hasSpecialChar(password) ? 'bg-green-500' : 'bg-gray-300'}`} />
-                      <p className={`text-xs ${hasSpecialChar(password) ? 'text-green-600' : 'text-[#718096]'}`}>
+                      {hasSpecialChar(password) ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <div className="h-4 w-4 rounded-full border-2 border-gray-300" />
+                      )}
+                      <p className={`text-xs ${hasSpecialChar(password) ? 'text-green-600 font-medium' : 'text-[#718096]'}`}>
                         Include a special character (!@#$%^&* etc.)
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {hasNumber(password) ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <div className="h-4 w-4 rounded-full border-2 border-gray-300" />
+                      )}
+                      <p className={`text-xs ${hasNumber(password) ? 'text-green-600 font-medium' : 'text-[#718096]'}`}>
+                        Include a number
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {hasUpperAndLower(password) ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <div className="h-4 w-4 rounded-full border-2 border-gray-300" />
+                      )}
+                      <p className={`text-xs ${hasUpperAndLower(password) ? 'text-green-600 font-medium' : 'text-[#718096]'}`}>
+                        Include uppercase and lowercase letters
                       </p>
                     </div>
                   </div>
@@ -384,7 +557,8 @@ export default function SignupPage() {
                 <Button 
                   type="button" 
                   onClick={handleNextStep}
-                  className="h-11 w-full bg-[#0099CC] hover:bg-[#0077A3] text-white font-medium"
+                  disabled={!hasMinLength(password) || !hasSpecialChar(password) || !hasNumber(password) || !hasUpperAndLower(password)}
+                  className="h-11 w-full bg-[#0099CC] hover:bg-[#0077A3] text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Continue
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -443,6 +617,20 @@ export default function SignupPage() {
                       <span>7 days free, cancel anytime</span>
                     </li>
                   </ul>
+                </div>
+
+                {/* Honeypot field - hidden from users, catches bots */}
+                <div className="absolute left-[-9999px] opacity-0 h-0 overflow-hidden" aria-hidden="true">
+                  <label htmlFor="website">Website (leave blank)</label>
+                  <input
+                    type="text"
+                    id="website"
+                    name="website"
+                    value={honeypot}
+                    onChange={(e) => setHoneypot(e.target.value)}
+                    tabIndex={-1}
+                    autoComplete="off"
+                  />
                 </div>
 
                 {/* Invisible Turnstile CAPTCHA */}

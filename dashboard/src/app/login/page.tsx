@@ -20,13 +20,47 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  
+  // Rate limiting state
+  const [attempts, setAttempts] = useState(0)
+  const [lastAttemptTime, setLastAttemptTime] = useState<number | null>(null)
+  const MAX_ATTEMPTS = 5
+  const RATE_LIMIT_WINDOW = 15 * 60 * 1000 // 15 minutes
+  
   const router = useRouter()
   const supabase = createClient()
+  
+  // Check rate limiting
+  const isRateLimited = () => {
+    if (lastAttemptTime && attempts >= MAX_ATTEMPTS) {
+      const timeSinceLastAttempt = Date.now() - lastAttemptTime
+      if (timeSinceLastAttempt < RATE_LIMIT_WINDOW) {
+        const minutesRemaining = Math.ceil((RATE_LIMIT_WINDOW - timeSinceLastAttempt) / 60000)
+        setError(`Too many login attempts. Please try again in ${minutesRemaining} minutes.`)
+        return true
+      } else {
+        // Reset rate limit
+        setAttempts(0)
+        setLastAttemptTime(null)
+      }
+    }
+    return false
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
+    
+    // Rate limiting check
+    if (isRateLimited()) {
+      setIsLoading(false)
+      return
+    }
+    
+    // Track attempt
+    setAttempts(prev => prev + 1)
+    setLastAttemptTime(Date.now())
     
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
@@ -63,9 +97,10 @@ export default function LoginPage() {
               <Image
                 src="/logo.svg"
                 alt="DentSignal"
-                width={160}
+                width={120}
                 height={40}
                 priority
+                className="h-[40px] w-auto object-contain"
               />
             </div>
             <CardTitle className="text-2xl">Welcome Back</CardTitle>
@@ -76,8 +111,8 @@ export default function LoginPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600">
-                  <AlertCircle className="h-4 w-4 shrink-0" />
+                <div className="flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600" role="alert" aria-live="polite">
+                  <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
                   {error}
                 </div>
               )}

@@ -110,13 +110,25 @@ export function ROICalculator() {
     const totalCalls = inputs.monthlyCallVolume
     const answeredNow = totalCalls * answerRate
     const apptsNow = answeredNow * conversionRate
-    const missedCalls = totalCalls - answeredNow
+    // Calculate missed calls: callVolume * (1 - answerRate/100)
+    const missedCalls = Math.round(totalCalls * (1 - answerRate))
     
     // ========== WITH AI ==========
-    // Key: only a PORTION of missed calls are real appointment opportunities
-    // Not all missed calls = lost bookings (many are existing patients, questions, etc.)
-    const missedToBookedFactor = AI_BENCHMARKS.missedToBookedFactor[inputs.scenario]
-    const extraApptsFromMissed = missedCalls * missedToBookedFactor
+    // Recovery percentage based on scenario
+    const recoveryPercentage = inputs.scenario === 'conservative' ? 15 : inputs.scenario === 'base' ? 25 : 35
+    // Extra appointments = missedCalls * (recoveryPercentage / 100)
+    const extraApptsFromMissed = Math.round(missedCalls * (recoveryPercentage / 100))
+    
+    // Debug logging to verify calculations run on input changes
+    console.log('[ROI Calculator] Inputs changed:', {
+      practiceSize: inputs.practiceSize,
+      callVolume: totalCalls,
+      answerRate: inputs.currentAnswerRate,
+      scenario: inputs.scenario,
+      missedCalls,
+      recoveryPercentage,
+      extraAppointments: extraApptsFromMissed
+    })
     
     // Total appointments with AI = current + recovered from missed
     const extraAppts = extraApptsFromMissed
@@ -131,11 +143,11 @@ export function ROICalculator() {
     const paybackDays = netMonthlyGain > 0 ? (AI_MONTHLY_PRICE / netMonthlyGain) * 30 : 999
     
     // ========== APPLY HARD CAPS (credibility) ==========
-    const safeNetMonthlyGain = clamp(netMonthlyGain, 0, 3500)    // Max $3,500/month
-    const safeNetAnnualGain = clamp(netAnnualGain, 0, 42000)     // Max $42k/year
-    const safeRoiPercent = clamp(roiPercent, 0, 900)             // Max 900% ROI
-    const safePaybackDays = clamp(paybackDays, 7, 60)            // 1-8 weeks
-    const safeExtraAppts = clamp(Math.round(extraAppts), 0, 25)  // Max 25/month
+    const safeNetMonthlyGain = clamp(netMonthlyGain, 0, 5000)    // Max $5,000/month
+    const safeNetAnnualGain = clamp(netAnnualGain, 0, 60000)     // Max $60k/year
+    const safeRoiPercent = clamp(roiPercent, 0, 1200)            // Max 1200% ROI
+    const safePaybackDays = clamp(paybackDays, 3, 60)            // 3 days - 8 weeks
+    const safeExtraAppts = clamp(Math.round(extraAppts), 0, 50)  // Max 50/month (allows more variation)
     
     // Payback display
     const paybackDisplay = safePaybackDays <= 14 ? '1–2 weeks' :
@@ -217,19 +229,24 @@ export function ROICalculator() {
             {/* Monthly Call Volume */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label className="flex items-center gap-2 text-slate-700">
+                <Label htmlFor="call-volume-slider" className="flex items-center gap-2 text-slate-700">
                   <Phone className="h-4 w-4 text-cyan-600" />
                   Monthly Call Volume
                 </Label>
-                <span className="text-sm font-medium text-slate-900">{inputs.monthlyCallVolume.toLocaleString()} calls</span>
+                <span className="text-sm font-medium text-slate-900" aria-live="polite">{inputs.monthlyCallVolume.toLocaleString()} calls</span>
               </div>
               <Slider
+                id="call-volume-slider"
                 min={500}
                 max={3000}
                 step={50}
                 value={[inputs.monthlyCallVolume]}
                 onValueChange={([value]) => setInputs(prev => ({ ...prev, monthlyCallVolume: value }))}
                 className="cursor-pointer"
+                aria-label={`Monthly call volume: ${inputs.monthlyCallVolume} calls`}
+                aria-valuemin={500}
+                aria-valuemax={3000}
+                aria-valuenow={inputs.monthlyCallVolume}
               />
               <div className="flex justify-between text-xs text-slate-500">
                 <span>500</span>
@@ -240,19 +257,24 @@ export function ROICalculator() {
             {/* Current Answer Rate */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label className="flex items-center gap-2 text-slate-700">
+                <Label htmlFor="answer-rate-slider" className="flex items-center gap-2 text-slate-700">
                   <Clock className="h-4 w-4 text-cyan-600" />
                   Current Answer Rate
                 </Label>
-                <span className="text-sm font-medium text-slate-900">{inputs.currentAnswerRate}%</span>
+                <span className="text-sm font-medium text-slate-900" aria-live="polite">{inputs.currentAnswerRate}%</span>
               </div>
               <Slider
+                id="answer-rate-slider"
                 min={50}
                 max={85}
                 step={1}
                 value={[inputs.currentAnswerRate]}
                 onValueChange={([value]) => setInputs(prev => ({ ...prev, currentAnswerRate: value }))}
                 className="cursor-pointer"
+                aria-label={`Current answer rate: ${inputs.currentAnswerRate}%`}
+                aria-valuemin={50}
+                aria-valuemax={85}
+                aria-valuenow={inputs.currentAnswerRate}
               />
               <div className="flex justify-between text-xs text-slate-500">
                 <span>50% (Struggling)</span>
@@ -263,19 +285,24 @@ export function ROICalculator() {
             {/* Average Appointment Value */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label className="flex items-center gap-2 text-slate-700">
+                <Label htmlFor="appointment-value-slider" className="flex items-center gap-2 text-slate-700">
                   <DollarSign className="h-4 w-4 text-cyan-600" />
                   Avg Revenue Per Appointment
                 </Label>
-                <span className="text-sm font-medium text-slate-900">{formatCurrency(inputs.avgAppointmentValue)}</span>
+                <span className="text-sm font-medium text-slate-900" aria-live="polite">{formatCurrency(inputs.avgAppointmentValue)}</span>
               </div>
               <Slider
+                id="appointment-value-slider"
                 min={200}
                 max={600}
                 step={25}
                 value={[inputs.avgAppointmentValue]}
                 onValueChange={([value]) => setInputs(prev => ({ ...prev, avgAppointmentValue: value }))}
                 className="cursor-pointer"
+                aria-label={`Average appointment value: ${formatCurrency(inputs.avgAppointmentValue)}`}
+                aria-valuemin={200}
+                aria-valuemax={600}
+                aria-valuenow={inputs.avgAppointmentValue}
               />
               <div className="flex justify-between text-xs text-slate-500">
                 <span>$200</span>
@@ -285,10 +312,12 @@ export function ROICalculator() {
 
             {/* Scenario Selection */}
             <div className="space-y-3">
-              <Label className="text-sm font-medium text-slate-700">Projection Scenario</Label>
-              <div className="grid grid-cols-3 gap-2">
+              <Label className="text-sm font-medium text-slate-700" id="scenario-label">Projection Scenario</Label>
+              <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-labelledby="scenario-label">
                 <button
                   onClick={() => setInputs(prev => ({ ...prev, scenario: 'conservative' }))}
+                  role="radio"
+                  aria-checked={inputs.scenario === 'conservative'}
                   className={`rounded-lg border-2 p-2 text-center transition-all ${
                     inputs.scenario === 'conservative'
                       ? 'border-amber-500 bg-amber-50'
@@ -300,6 +329,8 @@ export function ROICalculator() {
                 </button>
                 <button
                   onClick={() => setInputs(prev => ({ ...prev, scenario: 'base' }))}
+                  role="radio"
+                  aria-checked={inputs.scenario === 'base'}
                   className={`rounded-lg border-2 p-2 text-center transition-all ${
                     inputs.scenario === 'base'
                       ? 'border-cyan-600 bg-cyan-50'
@@ -311,6 +342,8 @@ export function ROICalculator() {
                 </button>
                 <button
                   onClick={() => setInputs(prev => ({ ...prev, scenario: 'optimistic' }))}
+                  role="radio"
+                  aria-checked={inputs.scenario === 'optimistic'}
                   className={`rounded-lg border-2 p-2 text-center transition-all ${
                     inputs.scenario === 'optimistic'
                       ? 'border-emerald-500 bg-emerald-50'
@@ -329,7 +362,7 @@ export function ROICalculator() {
         </Card>
 
         {/* Results Section */}
-        <div className="space-y-6">
+        <div className="space-y-6" aria-live="polite">
           {/* Main Savings Card */}
           <Card className="border-2 border-emerald-200 bg-emerald-50/50">
             <CardHeader className="pb-2">
