@@ -20,6 +20,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const [captchaError, setCaptchaError] = useState(false)
   
   // Rate limiting state
   const [attempts, setAttempts] = useState(0)
@@ -47,6 +48,12 @@ export default function LoginPage() {
     return false
   }
 
+  const handleCaptchaError = () => {
+    setCaptchaError(true)
+    // Don't block login - just log the error
+    console.warn('[Login] CAPTCHA failed to load, proceeding without it')
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
@@ -62,16 +69,27 @@ export default function LoginPage() {
     setAttempts(prev => prev + 1)
     setLastAttemptTime(Date.now())
     
+    // Build auth options - only include captcha token if available
+    const authOptions: { captchaToken?: string } = {}
+    if (captchaToken) {
+      authOptions.captchaToken = captchaToken
+    }
+    
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
-      options: {
-        captchaToken: captchaToken || undefined,
-      },
+      options: authOptions,
     })
     
     if (signInError) {
-      setError(signInError.message)
+      // Provide more helpful error messages
+      if (signInError.message.includes('captcha')) {
+        setError('Login failed. Please try again.')
+      } else if (signInError.message.includes('Invalid login')) {
+        setError('Invalid email or password. Please check your credentials.')
+      } else {
+        setError(signInError.message)
+      }
       setIsLoading(false)
       return
     }
@@ -147,9 +165,10 @@ export default function LoginPage() {
                 />
               </div>
               
-              {/* Invisible Turnstile CAPTCHA */}
+              {/* Invisible Turnstile CAPTCHA - optional, won't block login */}
               <Turnstile 
                 onVerify={setCaptchaToken}
+                onError={handleCaptchaError}
                 onExpire={() => setCaptchaToken(null)}
               />
               

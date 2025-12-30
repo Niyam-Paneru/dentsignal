@@ -136,10 +136,17 @@ export default function SignupPage() {
   
   // Captcha
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const [captchaError, setCaptchaError] = useState(false)
   
   const router = useRouter()
   const supabase = createClient()
   
+  // Handle CAPTCHA errors - don't block signup
+  const handleCaptchaError = () => {
+    setCaptchaError(true)
+    console.warn('[Signup] CAPTCHA failed to load, proceeding without it')
+  }
+
   // Check rate limiting
   const isRateLimited = () => {
     if (lastAttemptTime && attempts >= MAX_ATTEMPTS) {
@@ -274,7 +281,12 @@ export default function SignupPage() {
     })
     
     if (signUpError) {
-      setError(signUpError.message)
+      // Handle captcha-related errors more gracefully
+      if (signUpError.message.toLowerCase().includes('captcha') || captchaError) {
+        setError('Sign up failed. Please try again.')
+      } else {
+        setError(signUpError.message)
+      }
       setIsLoading(false)
       return
     }
@@ -658,9 +670,10 @@ export default function SignupPage() {
                   />
                 </div>
 
-                {/* Invisible Turnstile CAPTCHA */}
+                {/* Invisible Turnstile CAPTCHA - optional, won't block signup */}
                 <Turnstile 
                   onVerify={setCaptchaToken}
+                  onError={handleCaptchaError}
                   onExpire={() => setCaptchaToken(null)}
                 />
 

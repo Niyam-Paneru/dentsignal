@@ -142,19 +142,28 @@ export function ROICalculator() {
     const roiPercent = AI_MONTHLY_PRICE > 0 ? (netMonthlyGain / AI_MONTHLY_PRICE) * 100 : 0
     const paybackDays = netMonthlyGain > 0 ? (AI_MONTHLY_PRICE / netMonthlyGain) * 30 : 999
     
+    // ========== LOSS CALCULATION (for display) ==========
+    // How much revenue is lost from missed calls (assuming 40% would have converted)
+    const monthlyLoss = missedCalls * inputs.avgAppointmentValue * 0.4
+    
     // ========== APPLY HARD CAPS (credibility) ==========
-    // Higher caps to show realistic variation - users need to see changes when they adjust inputs
-    const safeNetMonthlyGain = clamp(netMonthlyGain, 0, 15000)   // Max $15,000/month
-    const safeNetAnnualGain = clamp(netAnnualGain, 0, 180000)    // Max $180k/year
-    const safeRoiPercent = clamp(roiPercent, 0, 3000)            // Max 3000% ROI
+    // Cap ROI at 500% for credibility (even if mathematically higher)
+    const safeNetMonthlyGain = clamp(netMonthlyGain, 0, 25000)   // Max $25,000/month
+    const safeNetAnnualGain = clamp(netAnnualGain, 0, 300000)    // Max $300k/year
+    const safeRoiPercent = clamp(roiPercent, 0, 500)             // Cap at 500% for credibility
     const safePaybackDays = clamp(paybackDays, 1, 90)            // 1 day - 3 months
-    const safeExtraAppts = clamp(Math.round(extraAppts), 0, 200) // Max 200/month (realistic for large practices)
+    const safeExtraAppts = clamp(Math.round(extraAppts), 0, 300) // Max 300/month
+    const safeMonthlyLoss = clamp(monthlyLoss, 0, 150000)        // Max $150k/month loss display
+    const safeCapturedRevenue = clamp(extraRevenue, 0, 50000)    // Max $50k/month captured
     
     // Payback display
     const paybackDisplay = safePaybackDays <= 14 ? '1–2 weeks' :
                            safePaybackDays <= 30 ? '2–4 weeks' :
                            safePaybackDays <= 45 ? '4–6 weeks' :
                            '6–8 weeks'
+    
+    // ROI display (cap display at 500%+ for credibility)
+    const roiDisplay = roiPercent > 500 ? '500%+' : `${Math.round(safeRoiPercent)}%`
     
     // Receptionist comparison
     const aiAnnualCost = AI_MONTHLY_PRICE * 12
@@ -164,14 +173,17 @@ export function ROICalculator() {
       // Current state
       missedCalls: Math.round(missedCalls),
       currentAppts: Math.round(apptsNow),
+      monthlyLoss: Math.round(safeMonthlyLoss),
       
       // With AI (capped for credibility)
       extraAppts: safeExtraAppts,
+      capturedRevenue: Math.round(safeCapturedRevenue),
       
       // Financial (HONEST numbers)
       monthlySavings: Math.round(safeNetMonthlyGain),
       annualSavings: Math.round(safeNetAnnualGain),
       roiPercent: Math.round(safeRoiPercent),
+      roiDisplay,
       paybackDisplay,
       
       // Comparison
@@ -371,8 +383,8 @@ export function ROICalculator() {
               <CardContent className="pt-6 text-center">
                 <div className="mb-2 text-3xl">🔴</div>
                 <p className="mb-1 text-sm font-semibold text-red-600 uppercase tracking-wide">You&apos;re Losing</p>
-                <p className="text-3xl font-black text-red-600 transition-all duration-300">
-                  {formatCurrency(calculations.missedCalls * inputs.avgAppointmentValue * 0.4)}
+                <p className="text-3xl font-black text-red-600 transition-all duration-300" key={calculations.monthlyLoss}>
+                  {formatCurrency(calculations.monthlyLoss)}
                 </p>
                 <p className="text-sm text-red-500/80">/month from missed calls</p>
               </CardContent>
@@ -383,8 +395,8 @@ export function ROICalculator() {
               <CardContent className="pt-6 text-center">
                 <div className="mb-2 text-3xl">✅</div>
                 <p className="mb-1 text-sm font-semibold text-emerald-600 uppercase tracking-wide">You&apos;ll Capture</p>
-                <p className="text-3xl font-black text-emerald-600 transition-all duration-300">
-                  +{formatCurrency(calculations.monthlySavings + calculations.aiMonthlyCost)}
+                <p className="text-3xl font-black text-emerald-600 transition-all duration-300" key={calculations.capturedRevenue}>
+                  +{formatCurrency(calculations.capturedRevenue)}
                 </p>
                 <p className="text-sm text-emerald-500/80">/month in recovered revenue</p>
               </CardContent>
@@ -395,7 +407,7 @@ export function ROICalculator() {
               <CardContent className="pt-6 text-center">
                 <div className="mb-2 text-3xl">💰</div>
                 <p className="mb-1 text-sm font-semibold text-blue-600 uppercase tracking-wide">Net Gain</p>
-                <p className="text-3xl font-black text-blue-600 transition-all duration-300">
+                <p className="text-3xl font-black text-blue-600 transition-all duration-300" key={calculations.monthlySavings}>
                   +{formatCurrency(calculations.monthlySavings)}
                 </p>
                 <p className="text-sm text-blue-500/80">/month after DentSignal cost</p>
@@ -407,11 +419,11 @@ export function ROICalculator() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="rounded-xl bg-slate-900 p-4 text-center">
               <p className="text-sm text-slate-400">Return on Investment</p>
-              <p className="text-3xl font-black text-white transition-all duration-300">{calculations.roiPercent}%</p>
+              <p className="text-3xl font-black text-white transition-all duration-300" key={calculations.roiDisplay}>{calculations.roiDisplay}</p>
             </div>
             <div className="rounded-xl bg-slate-900 p-4 text-center">
               <p className="text-sm text-slate-400">Payback Period</p>
-              <p className="text-3xl font-black text-white transition-all duration-300">{calculations.paybackDisplay}</p>
+              <p className="text-3xl font-black text-white transition-all duration-300" key={calculations.paybackDisplay}>{calculations.paybackDisplay}</p>
             </div>
           </div>
 
