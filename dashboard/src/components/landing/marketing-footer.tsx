@@ -21,15 +21,14 @@ export function MarketingFooter() {
       <div className="container mx-auto px-4 py-12">
         <div className="grid gap-10 md:grid-cols-[1.1fr_1fr_1fr] md:items-start">
           <div className="space-y-4">
-            <Link href="/" className="inline-flex items-center gap-3">
+            <Link href="/" className="inline-flex items-center">
               <Image
                 src="/logo.svg"
                 alt="DentSignal"
-                width={120}
+                width={140}
                 height={40}
-                className="h-[40px] w-auto object-contain"
+                className="h-[36px] w-auto object-contain"
               />
-              <span className="text-base font-semibold text-white">DentSignal</span>
             </Link>
             <p className="text-sm text-slate-300">
               AI receptionist that answers every call, books appointments, and protects your patient experience 24/7.

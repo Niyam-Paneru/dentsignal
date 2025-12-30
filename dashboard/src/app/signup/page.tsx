@@ -86,7 +86,8 @@ function hasMinLength(password: string): boolean {
 }
 
 function hasSpecialChar(password: string): boolean {
-  return /[!@#$%^&*(),.?\":{}|<>\\[\\]\\\\;'`~_+=\\-\\/]/.test(password)
+  // Check for common special characters
+  return /[!@#$%^&*()\-_=+{};:'",.<>/?\\|`~]/.test(password)
 }
 
 function hasNumber(password: string): boolean {
@@ -400,6 +401,7 @@ export default function SignupPage() {
                       id="firstName" 
                       placeholder="John" 
                       value={firstName}
+                      maxLength={50}
                       onChange={(e) => {
                         setFirstName(e.target.value)
                         // Clear error when user types valid name
@@ -408,7 +410,7 @@ export default function SignupPage() {
                         }
                       }}
                       className={`h-11 border-[#E8EBF0] focus:border-[#0099CC] focus:ring-[#0099CC] ${
-                        firstName && isValidName(firstName) ? 'border-green-500' : ''
+                        firstName && isValidName(firstName) ? 'border-green-500 focus:border-green-500 focus:ring-green-500' : ''
                       }`}
                     />
                   </div>
@@ -418,6 +420,7 @@ export default function SignupPage() {
                       id="lastName" 
                       placeholder="Smith" 
                       value={lastName}
+                      maxLength={50}
                       onChange={(e) => {
                         setLastName(e.target.value)
                         // Clear error when user types valid name
@@ -426,30 +429,49 @@ export default function SignupPage() {
                         }
                       }}
                       className={`h-11 border-[#E8EBF0] focus:border-[#0099CC] focus:ring-[#0099CC] ${
-                        lastName && isValidName(lastName) ? 'border-green-500' : ''
+                        lastName && isValidName(lastName) ? 'border-green-500 focus:border-green-500 focus:ring-green-500' : ''
                       }`}
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-[#2D3748]">Work email</Label>
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    placeholder="you@clinic.com" 
-                    value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value)
-                      // Clear error when user types valid email
-                      if (error && error.includes('email') && isValidEmail(e.target.value)) {
-                        setError(null)
-                      }
-                    }}
-                    autoComplete="email"
-                    className={`h-11 border-[#E8EBF0] focus:border-[#0099CC] focus:ring-[#0099CC] ${
-                      email && isValidEmail(email) ? 'border-green-500' : ''
-                    }`}
-                  />
+                  <div className="relative">
+                    <Input 
+                      id="email" 
+                      type="email" 
+                      placeholder="you@clinic.com" 
+                      value={email}
+                      maxLength={100}
+                      onChange={(e) => {
+                        setEmail(e.target.value)
+                        // Clear error when user types valid email
+                        if (error && error.includes('email') && isValidEmail(e.target.value)) {
+                          setError(null)
+                        }
+                      }}
+                      autoComplete="email"
+                      className={`h-11 pr-10 border-[#E8EBF0] focus:border-[#0099CC] focus:ring-[#0099CC] ${
+                        email && isValidEmail(email) 
+                          ? 'border-green-500 focus:border-green-500 focus:ring-green-500' 
+                          : email && !isValidEmail(email) 
+                            ? 'border-red-400 focus:border-red-400 focus:ring-red-400' 
+                            : ''
+                      }`}
+                    />
+                    {email && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        {isValidEmail(email) ? (
+                          <Check className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <AlertCircle className="h-4 w-4 text-red-400" />
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  {email && !isValidEmail(email) && (
+                    <p className="text-xs text-red-500">Please enter a valid email address</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password" className="text-[#2D3748]">Password</Label>
@@ -580,8 +602,11 @@ export default function SignupPage() {
                     id="clinicName" 
                     placeholder="Sunshine Dental Care" 
                     value={clinicName}
+                    maxLength={100}
                     onChange={(e) => setClinicName(e.target.value)}
-                    className="h-11 border-[#E8EBF0] focus:border-[#0099CC] focus:ring-[#0099CC]"
+                    className={`h-11 border-[#E8EBF0] focus:border-[#0099CC] focus:ring-[#0099CC] ${
+                      clinicName.length >= 3 && isValidBusinessName(clinicName) ? 'border-green-500 focus:border-green-500 focus:ring-green-500' : ''
+                    }`}
                   />
                 </div>
                 <div className="space-y-2">

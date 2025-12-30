@@ -27,19 +27,15 @@ export function MarketingHeader({ className }: { className?: string }) {
     >
       <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6">
         {/* Logo - Clean, professional, responsive */}
-        <Link href="/" className="group flex items-center gap-3">
+        <Link href="/" className="group flex items-center">
           <Image
             src="/logo.svg"
             alt="DentSignal"
-            width={120}
-            height={40}
+            width={160}
+            height={48}
             priority
-            className="h-[40px] w-auto max-w-full object-contain transition-transform duration-150 group-hover:scale-[1.02]"
+            className="h-[36px] w-auto object-contain transition-transform duration-150 group-hover:scale-[1.02] sm:h-[40px]"
           />
-          {/* Hide text on mobile, show on md+ */}
-          <span className="hidden text-lg font-semibold text-white md:block">
-            DentSignal
-          </span>
         </Link>
 
         {/* Desktop Navigation */}

@@ -143,11 +143,12 @@ export function ROICalculator() {
     const paybackDays = netMonthlyGain > 0 ? (AI_MONTHLY_PRICE / netMonthlyGain) * 30 : 999
     
     // ========== APPLY HARD CAPS (credibility) ==========
-    const safeNetMonthlyGain = clamp(netMonthlyGain, 0, 5000)    // Max $5,000/month
-    const safeNetAnnualGain = clamp(netAnnualGain, 0, 60000)     // Max $60k/year
-    const safeRoiPercent = clamp(roiPercent, 0, 1200)            // Max 1200% ROI
-    const safePaybackDays = clamp(paybackDays, 3, 60)            // 3 days - 8 weeks
-    const safeExtraAppts = clamp(Math.round(extraAppts), 0, 50)  // Max 50/month (allows more variation)
+    // Higher caps to show realistic variation - users need to see changes when they adjust inputs
+    const safeNetMonthlyGain = clamp(netMonthlyGain, 0, 15000)   // Max $15,000/month
+    const safeNetAnnualGain = clamp(netAnnualGain, 0, 180000)    // Max $180k/year
+    const safeRoiPercent = clamp(roiPercent, 0, 3000)            // Max 3000% ROI
+    const safePaybackDays = clamp(paybackDays, 1, 90)            // 1 day - 3 months
+    const safeExtraAppts = clamp(Math.round(extraAppts), 0, 200) // Max 200/month (realistic for large practices)
     
     // Payback display
     const paybackDisplay = safePaybackDays <= 14 ? '1–2 weeks' :
@@ -374,10 +375,10 @@ export function ROICalculator() {
             <CardContent>
               <div className="mb-6 text-center">
                 <p className="mb-1 text-sm text-slate-600">Monthly Gain</p>
-                <p className="text-4xl font-bold text-emerald-600">
+                <p className="text-4xl font-bold text-emerald-600 transition-all duration-300">
                   +{formatCurrency(calculations.monthlySavings)}
                 </p>
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="mt-1 text-sm text-slate-500 transition-all duration-300">
                   {formatCurrency(calculations.annualSavings)}/year
                 </p>
               </div>
@@ -385,11 +386,11 @@ export function ROICalculator() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="rounded-lg bg-white p-4 border border-slate-200">
                   <p className="text-sm text-slate-600">ROI</p>
-                  <p className="text-2xl font-bold text-slate-900">{calculations.roiPercent}%</p>
+                  <p className="text-2xl font-bold text-slate-900 transition-all duration-300">{calculations.roiPercent}%</p>
                 </div>
                 <div className="rounded-lg bg-white p-4 border border-slate-200">
                   <p className="text-sm text-slate-600">Payback Period</p>
-                  <p className="text-2xl font-bold text-slate-900">{calculations.paybackDisplay}</p>
+                  <p className="text-2xl font-bold text-slate-900 transition-all duration-300">{calculations.paybackDisplay}</p>
                 </div>
               </div>
             </CardContent>
