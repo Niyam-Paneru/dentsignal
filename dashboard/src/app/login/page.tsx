@@ -100,7 +100,8 @@ export default function LoginPage() {
                 width={120}
                 height={40}
                 priority
-                className="h-[40px] w-auto object-contain"
+                className="h-[40px] object-contain"
+                style={{ width: 'auto' }}
               />
             </div>
             <CardTitle className="text-2xl">Welcome Back</CardTitle>

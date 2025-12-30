@@ -27,7 +27,8 @@ export function MarketingFooter() {
                 alt="DentSignal"
                 width={140}
                 height={40}
-                className="h-[36px] w-auto object-contain"
+                className="h-[36px] object-contain"
+                style={{ width: 'auto' }}
               />
             </Link>
             <p className="text-sm text-slate-300">

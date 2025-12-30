@@ -23,182 +23,255 @@ export default function HomePage() {
 
       <main id="main-content" className="flex-1">
 
-      {/* Social Proof Banner */}
-      <div className="bg-[#1B3A7C] py-2 text-center text-sm text-white">
-        <span className="font-medium">🎧 Try our live demo: <a href="tel:+19048679643" className="underline hover:no-underline">(904) 867-9643</a> — See the AI in action</span>
+      {/* Trust Badge Bar - Psychology: Trust signals visible first */}
+      <div className="bg-[#1f2937] py-2.5 text-center text-sm text-white">
+        <div className="container mx-auto flex flex-wrap items-center justify-center gap-4 sm:gap-8 px-4">
+          <span className="flex items-center gap-1.5">🛡️ HIPAA BAA Compliant</span>
+          <span className="hidden sm:inline text-white/30">|</span>
+          <span className="flex items-center gap-1.5">⚡ Live in 48 Hours</span>
+          <span className="hidden sm:inline text-white/30">|</span>
+          <span className="flex items-center gap-1.5">🕐 24/7 Support</span>
+          <span className="hidden sm:inline text-white/30">|</span>
+          <span className="flex items-center gap-1.5">🔒 Enterprise Encryption</span>
+        </div>
       </div>
 
-      {/* Hero Section - Modern Gradient */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-white via-[#F0F9FF] to-white py-20 sm:py-32">
-        <div className="container relative mx-auto px-4 text-center">
-          <div className="mx-auto max-w-4xl">
-            {/* 48-Hour Setup Badge - Teal for trust + modernity */}
-            <div className="mb-8 inline-flex items-center gap-2 rounded-full bg-[#0099CC]/10 px-4 py-2 text-sm font-semibold text-[#0099CC] border border-[#0099CC]/20 shadow-sm backdrop-blur-sm">
-              <span className="flex h-2 w-2 rounded-full bg-[#0099CC] animate-pulse" />
-              Live in 48 Hours — No IT Required
-            </div>
-            
-            <h1 className="mb-8 text-5xl font-extrabold tracking-tight text-[#1B3A7C] sm:text-6xl lg:text-7xl drop-shadow-sm">
-              Never Miss Another{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0099CC] to-[#0077A3]">Patient Call</span>{' '}
-              Again
-            </h1>
-            <p className="mb-10 text-xl leading-relaxed text-[#4A5568] sm:text-2xl max-w-2xl mx-auto">
-              AI answers every call, books appointments 24/7, and integrates with your existing systems.
-              No contracts. Setup in 48 hours.
-            </p>
-            
-            {/* Trust Strip */}
-            <div className="mb-12 flex flex-wrap items-center justify-center gap-8 text-base font-medium text-[#4A5568]">
-              <div className="flex items-center gap-2 bg-white/50 px-3 py-1 rounded-full border border-gray-100 shadow-sm">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#27AE60] text-white text-xs">✓</span>
-                <span>HIPAA compliant</span>
+      {/* Hero Section - Loss-Focused Dark Design */}
+      <section className="relative overflow-hidden bg-[#1f2937] py-16 sm:py-24">
+        <div className="container relative mx-auto px-4">
+          <div className="mx-auto max-w-5xl">
+            <div className="grid gap-12 lg:grid-cols-5 lg:gap-8 items-center">
+              
+              {/* Left Column (60%) - Problem Statement */}
+              <div className="lg:col-span-3 text-center lg:text-left">
+                {/* Social Proof Badge */}
+                <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-[#22C55E]/10 px-4 py-2 text-sm font-semibold text-[#22C55E] border border-[#22C55E]/20">
+                  <span className="flex h-2 w-2 rounded-full bg-[#22C55E] animate-pulse" />
+                  ✨ Trusted by 50+ dental practices nationwide
+                </div>
+                
+                {/* Big RED Loss Amount */}
+                <div className="mb-6">
+                  <span className="text-6xl sm:text-7xl lg:text-8xl font-black text-[#EF4444] tracking-tight">
+                    $21,000
+                  </span>
+                  <span className="block text-2xl sm:text-3xl font-bold text-white/80 mt-2">
+                    /month lost to missed calls
+                  </span>
+                </div>
+                
+                <h1 className="mb-6 text-2xl sm:text-3xl font-bold text-white/90 leading-relaxed">
+                  Right now, patients are calling your practice and hanging up.<br className="hidden sm:block" />
+                  <span className="text-[#EF4444]">They book with someone else.</span>
+                </h1>
+                
+                <p className="mb-8 text-lg text-white/70">
+                  DentSignal captures those calls. Every single one.<br />
+                  AI answers 24/7, books appointments, transfers emergencies.
+                </p>
+                
+                {/* Trust Line */}
+                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 text-sm text-white/60">
+                  <span className="flex items-center gap-1.5">
+                    <span className="text-[#22C55E]">✓</span> HIPAA compliant
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="text-[#22C55E]">✓</span> Setup in 48 hours
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="text-[#22C55E]">✓</span> Cancel anytime
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center gap-2 bg-white/50 px-3 py-1 rounded-full border border-gray-100 shadow-sm">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#27AE60] text-white text-xs">✓</span>
-                <span>No long-term contracts</span>
+              
+              {/* Right Column (40%) - CTA Area */}
+              <div className="lg:col-span-2">
+                <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-8 text-center">
+                  <p className="mb-2 text-sm font-bold uppercase tracking-widest text-[#22C55E]">
+                    See Your Lost Revenue
+                  </p>
+                  <p className="mb-6 text-white/70 text-sm">
+                    Calculate how much you&apos;re losing to missed calls
+                  </p>
+                  
+                  <Link href="#calculator">
+                    <Button size="lg" className="w-full h-14 gap-3 bg-[#22C55E] hover:bg-[#16a34a] text-lg font-bold shadow-xl shadow-[#22C55E]/20 transition-all hover:shadow-[#22C55E]/40 hover:-translate-y-1 rounded-xl mb-4">
+                      Calculate My Loss
+                      <ArrowRight className="h-5 w-5" />
+                    </Button>
+                  </Link>
+                  
+                  <div className="text-center mb-6">
+                    <span className="text-white/40 text-sm">or</span>
+                  </div>
+                  
+                  <p className="mb-2 text-sm font-bold uppercase tracking-widest text-[#0099CC]">
+                    🎧 Try It Yourself
+                  </p>
+                  <a 
+                    href="tel:+19048679643" 
+                    className="block mb-3 text-3xl font-black tracking-wider text-white hover:text-[#0099CC] transition-colors font-mono"
+                  >
+                    (904) 867-9643
+                  </a>
+                  <p className="text-xs text-white/50">
+                    Call our demo line. Pretend you have a toothache.
+                  </p>
+                </div>
               </div>
-              <div className="flex items-center gap-2 bg-white/50 px-3 py-1 rounded-full border border-gray-100 shadow-sm">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#27AE60] text-white text-xs">✓</span>
-                <span>Free trial included</span>
-              </div>
-            </div>
-            
-            {/* Demo Phone CTA - Teal accent */}
-            <div className="mb-12 rounded-2xl border border-[#0099CC]/20 bg-gradient-to-r from-[#0099CC]/5 to-[#1B3A7C]/5 p-8 shadow-xl backdrop-blur-sm">
-              <p className="mb-3 text-sm font-bold uppercase tracking-widest text-[#0099CC]">
-                🎧 Try It Yourself — Call Our Demo Line
-              </p>
-              <a href="tel:+19048679643" className="block mb-4 text-4xl font-black tracking-wider text-[#1B3A7C] sm:text-5xl font-mono hover:text-[#0099CC] transition-colors">(904) 867-9643</a>
-              <p className="text-base text-[#4A5568] font-medium">Pretend you&apos;re a patient with a toothache. See how natural it sounds.</p>
-            </div>
-            
-            <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link href="/signup">
-                <Button size="lg" className="h-16 gap-3 bg-[#0099CC] px-10 text-lg font-bold hover:bg-[#0077A3] shadow-xl shadow-[#0099CC]/20 transition-all hover:shadow-[#0099CC]/40 hover:-translate-y-1 rounded-xl">
-                  Start Free Trial
-                  <ArrowRight className="h-6 w-6" />
-                </Button>
-              </Link>
-              <Link href="#calculator">
-                <Button size="lg" variant="outline" className="h-16 gap-3 border-2 border-[#1B3A7C]/20 bg-white px-10 text-lg font-bold text-[#1B3A7C] hover:bg-[#1B3A7C]/5 hover:border-[#1B3A7C] transition-all rounded-xl">
-                  See ROI Calculator
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* Trust Signals - Light gray section */}
-        <div className="container mx-auto mt-16 px-4">
-          <div className="mx-auto grid max-w-4xl gap-4 sm:grid-cols-3">
-            <div className="rounded-xl border border-[#E8EBF0] bg-white p-6 text-center shadow-sm">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#27AE60]/10">
-                <Shield className="h-6 w-6 text-[#27AE60]" />
-              </div>
-              <p className="font-bold text-[#2D3748]">HIPAA Compliant</p>
-              <p className="mt-1 text-sm text-[#718096]">BAA included, end-to-end encrypted</p>
-            </div>
-            <div className="rounded-xl border border-[#E8EBF0] bg-white p-6 text-center shadow-sm">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#0099CC]/10">
-                <Clock className="h-6 w-6 text-[#0099CC]" />
-              </div>
-              <p className="font-bold text-[#2D3748]">24/7 Availability</p>
-              <p className="mt-1 text-sm text-[#718096]">Captures after-hours emergencies</p>
-            </div>
-            <div className="rounded-xl border border-[#E8EBF0] bg-white p-6 text-center shadow-sm">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#1B3A7C]/10">
-                <Headphones className="h-6 w-6 text-[#1B3A7C]" />
-              </div>
-              <p className="font-bold text-[#2D3748]">Live in 48 Hours</p>
-              <p className="mt-1 text-sm text-[#718096]">Zero IT work required</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Features Section - Light gray background */}
-      <section className="bg-[#E8EBF0]/50 py-20">
+      {/* ROI Calculator Section - Moved Above Fold */}
+      <section className="bg-[#1f2937] py-16 border-t border-white/10" id="calculator">
+        <div className="container mx-auto px-4">
+          <div className="mb-10 text-center">
+            <div className="mb-4 inline-flex items-center rounded-full bg-[#EF4444]/10 px-4 py-2 text-sm font-semibold text-[#EF4444]">
+              <Calculator className="mr-2 h-4 w-4" />
+              See What You&apos;re Losing
+            </div>
+            <h2 className="mb-4 text-3xl font-bold text-white">Calculate Your Lost Revenue</h2>
+            <p className="mx-auto max-w-2xl text-lg text-white/70">
+              Adjust the sliders to match your practice and see how much you&apos;re losing to missed calls.
+            </p>
+          </div>
+
+          <ROICalculator />
+        </div>
+      </section>
+
+      {/* Features Section - Pain to Solution Reframe */}
+      <section className="bg-[#F8F9FA] py-20">
         <div className="container mx-auto px-4">
           <div className="mb-12 text-center">
-            <h2 className="mb-4 text-3xl font-bold text-[#1B3A7C]">Everything You Need</h2>
+            <h2 className="mb-4 text-3xl font-bold text-[#1B3A7C]">What You Get With DentSignal</h2>
             <p className="text-lg text-[#718096]">
-              Powerful features designed specifically for dental practices
+              Everything a dental practice needs to capture more patients and reduce no-shows
             </p>
           </div>
 
           <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-2 lg:grid-cols-3">
             <FeatureCard
               icon={Phone}
-              title="Smart Call Handling"
-              description="AI answers every call with professional, natural conversation. Handles common questions and routes complex issues appropriately."
+              title="📞 Calls Answered While In Surgery"
+              description="Your team is busy with patients. DentSignal answers every call 24/7, books appointments, and transfers urgent cases to you."
             />
             <FeatureCard
               icon={Calendar}
-              title="Automatic Booking"
-              description="Books appointments directly to your calendar. Checks availability, prevents double-booking, and sends confirmations."
+              title="📅 Appointments Booked Instantly"
+              description="No more phone tag. Patients book themselves in real-time. Your calendar updates automatically. No manual entry needed."
             />
             <FeatureCard
               icon={BarChart3}
-              title="Real-Time Analytics"
-              description="Track call volume, booking rates, and ROI. See what's working and identify opportunities for improvement."
+              title="💰 See Which Calls Became Money"
+              description="Real-time dashboard shows call value, revenue per conversation, and which calls turned into booked appointments."
             />
             <FeatureCard
               icon={Clock}
-              title="24/7 Availability"
-              description="Never miss an after-hours call again. AI handles calls when your office is closed and schedules callbacks."
+              title="✅ No-Shows Drop 60%"
+              description="Automatic SMS reminders 24 hours before appointments. Patients confirm or reschedule. More confirmed appointments = more revenue."
             />
             <FeatureCard
               icon={Users}
-              title="Patient Management"
-              description="Recognizes returning patients, tracks preferences, and provides personalized service every time."
+              title="🛡️ Insurance Verified in Seconds"
+              description="AI verifies insurance coverage during the call. No more 'Do you take my insurance?' callbacks. Fewer payment surprises."
             />
             <FeatureCard
               icon={DollarSign}
-              title="Insurance Verification"
-              description="Answers common insurance questions and collects information for verification before appointments."
+              title="🚨 Emergency Calls Transferred"
+              description="AI detects urgency keywords and transfers emergency calls to you in seconds. Urgent patients get you, not voicemail."
             />
           </div>
         </div>
       </section>
 
-      {/* How It Works - White background */}
+      {/* How It Works - 5 Steps with Timeline */}
       <section className="bg-white py-20">
         <div className="container mx-auto px-4">
           <div className="mb-12 text-center">
             <h2 className="mb-4 text-3xl font-bold text-[#1B3A7C]">How It Works</h2>
             <p className="text-lg text-[#718096]">
-              Get started in minutes, not months
+              From your first call to live calls in 48 hours. No technical knowledge needed.
             </p>
           </div>
 
-          <div className="mx-auto grid max-w-4xl gap-8 md:grid-cols-3">
-            <div className="text-center">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#1B3A7C] text-xl font-bold text-white shadow-lg">
-                1
+          <div className="mx-auto max-w-5xl">
+            <div className="grid gap-6 md:grid-cols-5">
+              {/* Step 1 */}
+              <div className="text-center relative">
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#22C55E] text-2xl shadow-lg">
+                  📞
+                </div>
+                <div className="text-xs text-[#22C55E] font-semibold mb-1">Today</div>
+                <h3 className="mb-2 text-sm font-bold text-[#2D3748]">Schedule Setup Call</h3>
+                <p className="text-xs text-[#718096]">
+                  15-min call to discuss your practice needs
+                </p>
+                <div className="hidden md:block absolute top-6 left-[60%] w-[80%] h-0.5 bg-[#E8EBF0]" />
               </div>
-              <h3 className="mb-2 text-lg font-bold text-[#2D3748]">Connect Your Phone</h3>
-              <p className="text-sm text-[#718096]">
-                Forward your existing number or get a new AI-powered line
-              </p>
+              
+              {/* Step 2 */}
+              <div className="text-center relative">
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#0099CC] text-2xl shadow-lg">
+                  ⚙️
+                </div>
+                <div className="text-xs text-[#0099CC] font-semibold mb-1">24 hours</div>
+                <h3 className="mb-2 text-sm font-bold text-[#2D3748]">Phone Number Setup</h3>
+                <p className="text-xs text-[#718096]">
+                  We configure your AI + calendar integration
+                </p>
+                <div className="hidden md:block absolute top-6 left-[60%] w-[80%] h-0.5 bg-[#E8EBF0]" />
+              </div>
+              
+              {/* Step 3 */}
+              <div className="text-center relative">
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#0099CC] text-2xl shadow-lg">
+                  ✅
+                </div>
+                <div className="text-xs text-[#0099CC] font-semibold mb-1">2 hours</div>
+                <h3 className="mb-2 text-sm font-bold text-[#2D3748]">Test With Team</h3>
+                <p className="text-xs text-[#718096]">
+                  Call the AI, verify bookings, give feedback
+                </p>
+                <div className="hidden md:block absolute top-6 left-[60%] w-[80%] h-0.5 bg-[#E8EBF0]" />
+              </div>
+              
+              {/* Step 4 */}
+              <div className="text-center relative">
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#1B3A7C] text-2xl shadow-lg">
+                  🚀
+                </div>
+                <div className="text-xs text-[#1B3A7C] font-semibold mb-1">48 hours</div>
+                <h3 className="mb-2 text-sm font-bold text-[#2D3748]">Go Live</h3>
+                <p className="text-xs text-[#718096]">
+                  AI answers calls with live founder support
+                </p>
+                <div className="hidden md:block absolute top-6 left-[60%] w-[80%] h-0.5 bg-[#E8EBF0]" />
+              </div>
+              
+              {/* Step 5 */}
+              <div className="text-center">
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#27AE60] text-2xl shadow-lg">
+                  📊
+                </div>
+                <div className="text-xs text-[#27AE60] font-semibold mb-1">Ongoing</div>
+                <h3 className="mb-2 text-sm font-bold text-[#2D3748]">Track Results</h3>
+                <p className="text-xs text-[#718096]">
+                  See calls, appointments, and revenue in dashboard
+                </p>
+              </div>
             </div>
-            <div className="text-center">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#1B3A7C] text-xl font-bold text-white shadow-lg">
-                2
-              </div>
-              <h3 className="mb-2 text-lg font-bold text-[#2D3748]">Configure Your AI</h3>
-              <p className="text-sm text-[#718096]">
-                Customize greetings, services, and booking preferences
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#1B3A7C] text-xl font-bold text-white shadow-lg">
-                3
-              </div>
-              <h3 className="mb-2 text-lg font-bold text-[#2D3748]">Start Booking</h3>
-              <p className="text-sm text-[#718096]">
-                AI handles calls while you track everything in your dashboard
-              </p>
+            
+            {/* CTA for Step 1 */}
+            <div className="mt-10 text-center">
+              <Link href="/signup">
+                <Button size="lg" className="gap-2 bg-[#22C55E] hover:bg-[#16a34a] text-white font-bold shadow-lg">
+                  Schedule My 15-Min Call
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -265,24 +338,6 @@ export default function HomePage() {
               </tbody>
             </table>
           </div>
-        </div>
-      </section>
-
-      {/* ROI Calculator Section - White */}
-      <section className="bg-[#E8EBF0]/50 py-20" id="calculator">
-        <div className="container mx-auto px-4">
-          <div className="mb-12 text-center">
-            <div className="mb-4 inline-flex items-center rounded-full bg-[#27AE60]/10 px-4 py-2 text-sm font-semibold text-[#27AE60]">
-              <Calculator className="mr-2 h-4 w-4" />
-              ROI Calculator
-            </div>
-            <h2 className="mb-4 text-3xl font-bold text-[#1B3A7C]">See Your Potential Savings</h2>
-            <p className="mx-auto max-w-2xl text-lg text-[#718096]">
-              Adjust the sliders to match your practice. We show conservative estimates—your actual results depend on your call volume and conversion rates.
-            </p>
-          </div>
-
-          <ROICalculator />
         </div>
       </section>
 

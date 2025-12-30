@@ -364,42 +364,61 @@ export function ROICalculator() {
 
         {/* Results Section */}
         <div className="space-y-6" aria-live="polite">
-          {/* Main Savings Card */}
-          <Card className="border-2 border-emerald-200 bg-emerald-50/50">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-slate-900">
-                <TrendingUp className="h-5 w-5 text-emerald-600" />
-                Estimated Revenue Recovery
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="mb-6 text-center">
-                <p className="mb-1 text-sm text-slate-600">Monthly Gain</p>
-                <p className="text-4xl font-bold text-emerald-600 transition-all duration-300">
+          {/* Loss vs Savings - 3 Column Layout */}
+          <div className="grid gap-4 md:grid-cols-3">
+            {/* Current Loss - RED */}
+            <Card className="border-2 border-red-200 bg-red-50/50">
+              <CardContent className="pt-6 text-center">
+                <div className="mb-2 text-3xl">🔴</div>
+                <p className="mb-1 text-sm font-semibold text-red-600 uppercase tracking-wide">You&apos;re Losing</p>
+                <p className="text-3xl font-black text-red-600 transition-all duration-300">
+                  {formatCurrency(calculations.missedCalls * inputs.avgAppointmentValue * 0.4)}
+                </p>
+                <p className="text-sm text-red-500/80">/month from missed calls</p>
+              </CardContent>
+            </Card>
+            
+            {/* With DentSignal - GREEN */}
+            <Card className="border-2 border-emerald-200 bg-emerald-50/50">
+              <CardContent className="pt-6 text-center">
+                <div className="mb-2 text-3xl">✅</div>
+                <p className="mb-1 text-sm font-semibold text-emerald-600 uppercase tracking-wide">You&apos;ll Capture</p>
+                <p className="text-3xl font-black text-emerald-600 transition-all duration-300">
+                  +{formatCurrency(calculations.monthlySavings + calculations.aiMonthlyCost)}
+                </p>
+                <p className="text-sm text-emerald-500/80">/month in recovered revenue</p>
+              </CardContent>
+            </Card>
+            
+            {/* Net Profit - BLUE */}
+            <Card className="border-2 border-blue-200 bg-blue-50/50">
+              <CardContent className="pt-6 text-center">
+                <div className="mb-2 text-3xl">💰</div>
+                <p className="mb-1 text-sm font-semibold text-blue-600 uppercase tracking-wide">Net Gain</p>
+                <p className="text-3xl font-black text-blue-600 transition-all duration-300">
                   +{formatCurrency(calculations.monthlySavings)}
                 </p>
-                <p className="mt-1 text-sm text-slate-500 transition-all duration-300">
-                  {formatCurrency(calculations.annualSavings)}/year
-                </p>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="rounded-lg bg-white p-4 border border-slate-200">
-                  <p className="text-sm text-slate-600">ROI</p>
-                  <p className="text-2xl font-bold text-slate-900 transition-all duration-300">{calculations.roiPercent}%</p>
-                </div>
-                <div className="rounded-lg bg-white p-4 border border-slate-200">
-                  <p className="text-sm text-slate-600">Payback Period</p>
-                  <p className="text-2xl font-bold text-slate-900 transition-all duration-300">{calculations.paybackDisplay}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                <p className="text-sm text-blue-500/80">/month after DentSignal cost</p>
+              </CardContent>
+            </Card>
+          </div>
+          
+          {/* ROI & Payback Row */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-xl bg-slate-900 p-4 text-center">
+              <p className="text-sm text-slate-400">Return on Investment</p>
+              <p className="text-3xl font-black text-white transition-all duration-300">{calculations.roiPercent}%</p>
+            </div>
+            <div className="rounded-xl bg-slate-900 p-4 text-center">
+              <p className="text-sm text-slate-400">Payback Period</p>
+              <p className="text-3xl font-black text-white transition-all duration-300">{calculations.paybackDisplay}</p>
+            </div>
+          </div>
 
           {/* What This Means */}
           <Card className="border-slate-200">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base text-slate-900">What This Means</CardTitle>
+              <CardTitle className="text-base text-slate-900">The Math</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">

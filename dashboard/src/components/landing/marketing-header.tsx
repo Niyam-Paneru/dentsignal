@@ -34,7 +34,8 @@ export function MarketingHeader({ className }: { className?: string }) {
             width={160}
             height={48}
             priority
-            className="h-[36px] w-auto object-contain transition-transform duration-150 group-hover:scale-[1.02] sm:h-[40px]"
+            className="h-[36px] object-contain transition-transform duration-150 group-hover:scale-[1.02] sm:h-[40px]"
+            style={{ width: 'auto' }}
           />
         </Link>
 
