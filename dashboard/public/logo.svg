@@ -1,19 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 50" fill="none">
-  <defs>
-    <linearGradient id="toothGradient" x1="10" y1="5" x2="40" y2="45" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#0099CC"/>
-      <stop offset="1" stop-color="#1B3A7C"/>
-    </linearGradient>
-  </defs>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 60" fill="none">
+  <!-- Tooth Shape - Light Cyan Blue -->
+  <path d="M28 5C18 5 10 12 10 22C10 32 6 38 8 46C9 50 12 52 16 52C19 52 21 50 22 46C23 42 26 40 28 40C30 40 33 42 34 46C35 50 37 52 40 52C44 52 47 50 48 46C50 38 46 32 46 22C46 12 38 5 28 5Z" fill="#4CC9F0"/>
   
-  <!-- Tooth Shape -->
-  <path d="M25 8C18 8 12 14 12 22C12 28 16 32 18 38C19 41 22 44 25 44C28 44 31 41 32 38C34 32 38 28 38 22C38 14 32 8 25 8Z" fill="url(#toothGradient)"/>
-  
-  <!-- Signal Waves -->
-  <path d="M25 18C27.2091 18 29 19.7909 29 22" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
-  <path d="M25 14C29.4183 14 33 17.5817 33 22" stroke="white" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>
-  <path d="M25 22H25.01" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <!-- Signal Waves - Dark Navy Blue -->
+  <path d="M30 30C35 30 39 34 39 39" stroke="#1B3A7C" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <path d="M30 23C40 23 48 31 48 41" stroke="#1B3A7C" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <path d="M30 16C45 16 57 28 57 43" stroke="#1B3A7C" stroke-width="3" stroke-linecap="round" fill="none"/>
 
   <!-- Text -->
-  <text x="50" y="33" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="26" fill="#1B3A7C" letter-spacing="-0.5">Dent<tspan fill="#0099CC">Signal</tspan></text>
+  <text x="68" y="38" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="28" fill="#1B3A7C" letter-spacing="-0.5">Dent<tspan fill="#0099CC">Signal</tspan></text>
 </svg>

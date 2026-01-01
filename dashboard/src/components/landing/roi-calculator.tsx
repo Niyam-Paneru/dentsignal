@@ -202,8 +202,8 @@ export function ROICalculator() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl">
-      <div className="grid gap-8 lg:grid-cols-2">
+    <div className="mx-auto max-w-5xl overflow-x-hidden">
+      <div className="grid gap-6 lg:gap-8 lg:grid-cols-2">
         {/* Input Section */}
         <Card className="border-slate-200 bg-white shadow-sm">
           <CardHeader>
@@ -375,55 +375,55 @@ export function ROICalculator() {
         </Card>
 
         {/* Results Section */}
-        <div className="space-y-6" aria-live="polite">
+        <div className="space-y-6 overflow-hidden" aria-live="polite">
           {/* Loss vs Savings - 3 Column Layout */}
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
             {/* Current Loss - RED */}
-            <Card className="border-2 border-red-200 bg-red-50/50">
-              <CardContent className="pt-6 text-center">
-                <div className="mb-2 text-3xl">🔴</div>
-                <p className="mb-1 text-sm font-semibold text-red-600 uppercase tracking-wide">You&apos;re Losing</p>
-                <p className="text-3xl font-black text-red-600 transition-all duration-300" key={calculations.monthlyLoss}>
+            <Card className="border-2 border-red-300 bg-red-50 overflow-hidden">
+              <CardContent className="pt-4 sm:pt-6 text-center px-2 sm:px-4">
+                <div className="mb-1 sm:mb-2 text-2xl sm:text-3xl">🔴</div>
+                <p className="mb-1 text-xs sm:text-sm font-semibold text-red-700 uppercase tracking-wide">You&apos;re Losing</p>
+                <p className="text-xl sm:text-2xl lg:text-3xl font-black text-red-700 transition-all duration-300 break-all" key={`loss-${calculations.monthlyLoss}`}>
                   {formatCurrency(calculations.monthlyLoss)}
                 </p>
-                <p className="text-sm text-red-500/80">/month from missed calls</p>
+                <p className="text-xs sm:text-sm text-red-600 font-medium">/month from missed calls</p>
               </CardContent>
             </Card>
             
             {/* With DentSignal - GREEN */}
-            <Card className="border-2 border-emerald-200 bg-emerald-50/50">
-              <CardContent className="pt-6 text-center">
-                <div className="mb-2 text-3xl">✅</div>
-                <p className="mb-1 text-sm font-semibold text-emerald-600 uppercase tracking-wide">You&apos;ll Capture</p>
-                <p className="text-3xl font-black text-emerald-600 transition-all duration-300" key={calculations.capturedRevenue}>
+            <Card className="border-2 border-emerald-300 bg-emerald-50 overflow-hidden">
+              <CardContent className="pt-4 sm:pt-6 text-center px-2 sm:px-4">
+                <div className="mb-1 sm:mb-2 text-2xl sm:text-3xl">✅</div>
+                <p className="mb-1 text-xs sm:text-sm font-semibold text-emerald-700 uppercase tracking-wide">You&apos;ll Capture</p>
+                <p className="text-xl sm:text-2xl lg:text-3xl font-black text-emerald-700 transition-all duration-300 break-all" key={`capture-${calculations.capturedRevenue}`}>
                   +{formatCurrency(calculations.capturedRevenue)}
                 </p>
-                <p className="text-sm text-emerald-500/80">/month in recovered revenue</p>
+                <p className="text-xs sm:text-sm text-emerald-600 font-medium">/month in recovered revenue</p>
               </CardContent>
             </Card>
             
             {/* Net Profit - BLUE */}
-            <Card className="border-2 border-blue-200 bg-blue-50/50">
-              <CardContent className="pt-6 text-center">
-                <div className="mb-2 text-3xl">💰</div>
-                <p className="mb-1 text-sm font-semibold text-blue-600 uppercase tracking-wide">Net Gain</p>
-                <p className="text-3xl font-black text-blue-600 transition-all duration-300" key={calculations.monthlySavings}>
+            <Card className="border-2 border-blue-300 bg-blue-50 overflow-hidden">
+              <CardContent className="pt-4 sm:pt-6 text-center px-2 sm:px-4">
+                <div className="mb-1 sm:mb-2 text-2xl sm:text-3xl">💰</div>
+                <p className="mb-1 text-xs sm:text-sm font-semibold text-blue-700 uppercase tracking-wide">Net Gain</p>
+                <p className="text-xl sm:text-2xl lg:text-3xl font-black text-blue-700 transition-all duration-300 break-all" key={`gain-${calculations.monthlySavings}`}>
                   +{formatCurrency(calculations.monthlySavings)}
                 </p>
-                <p className="text-sm text-blue-500/80">/month after DentSignal cost</p>
+                <p className="text-xs sm:text-sm text-blue-600 font-medium">/month after DentSignal cost</p>
               </CardContent>
             </Card>
           </div>
           
           {/* ROI & Payback Row */}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-xl bg-slate-900 p-4 text-center">
-              <p className="text-sm text-slate-400">Return on Investment</p>
-              <p className="text-3xl font-black text-white transition-all duration-300" key={calculations.roiDisplay}>{calculations.roiDisplay}</p>
+          <div className="grid gap-3 sm:gap-4 grid-cols-2">
+            <div className="rounded-xl bg-slate-900 p-3 sm:p-4 text-center overflow-hidden">
+              <p className="text-xs sm:text-sm text-slate-400">Return on Investment</p>
+              <p className="text-xl sm:text-2xl lg:text-3xl font-black text-white transition-all duration-300" key={`roi-${calculations.roiDisplay}`}>{calculations.roiDisplay}</p>
             </div>
-            <div className="rounded-xl bg-slate-900 p-4 text-center">
-              <p className="text-sm text-slate-400">Payback Period</p>
-              <p className="text-3xl font-black text-white transition-all duration-300" key={calculations.paybackDisplay}>{calculations.paybackDisplay}</p>
+            <div className="rounded-xl bg-slate-900 p-3 sm:p-4 text-center overflow-hidden">
+              <p className="text-xs sm:text-sm text-slate-400">Payback Period</p>
+              <p className="text-xl sm:text-2xl lg:text-3xl font-black text-white transition-all duration-300" key={`payback-${calculations.paybackDisplay}`}>{calculations.paybackDisplay}</p>
             </div>
           </div>
 
