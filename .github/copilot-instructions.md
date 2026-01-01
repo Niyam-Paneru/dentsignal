@@ -1,101 +1,83 @@
 # Copilot Instructions for DentSignal
 
-## Big picture
-- **Product name**: DentSignal - AI Voice Agent for Dental Practices
-- Two apps live here: a FastAPI voice backend in `dental_agent/` and a Next.js dashboard in `dashboard/`. Backend handles telephony (Twilio ↔ Deepgram), AI routing, CRM-style data; frontend renders the multi-tenant SaaS dashboard with Supabase auth.
-- Inbound calls: Twilio webhook → `routes_inbound.py` builds TwiML, then media streams over WebSocket into the Deepgram bridge in `websocket_bridge.py` which converts mulaw↔linear16, buffers 200–400 ms chunks, tracks conversation state, and writes summary back to DB.
-- Outbound calls and SMS: Celery tasks in `tasks.py` call Twilio via `twilio_service.py`; retry with exponential backoff; status webhooks handled by the legacy `routes_twilio` router.
-- Prompts and voice configuration are per-clinic: `prompt_builder.py` loads research-based dental scripts and Deepgram Aura voice metadata, exposes `build_agent_config()` for the bridge.
-- AI cost routing: `ai_providers.py` maps task types to OpenAI (real-time voice), Gemini (analysis/summaries), and Hugging Face (embeddings/search) with price-aware fallbacks.
-- Practice-specific playbooks in `playbooks/` folder: `general-practice.md`, `pediatric-practice.md`, `solo-practice.md`, `specialty-practice.md`.
+## Architecture overview
+- **DentSignal**: Multi-tenant AI Voice Agent SaaS for dental practices
+- **Backend** (`dental_agent/`): FastAPI + Celery handling Twilio↔Deepgram telephony, AI routing, CRM data
+- **Frontend** (`dashboard/`): Next.js 16 App Router + Supabase auth, React 19, Tailwind 4, Radix UI
 
-## Run and develop (backend)
-- Quick start with env checks: `python run_server.py` (add `--ngrok` to auto-fill API_BASE_URL/WS_BASE_URL and print Twilio webhook steps). For pure Uvicorn: `uvicorn api_main:app --host 0.0.0.0 --port 8000 --reload`.
-- Copy `dental_agent/.env.example` to `.env`; required: DEEPGRAM_API_KEY, OPENAI_API_KEY, TWILIO_SID, TWILIO_TOKEN, TWILIO_NUMBER, DATABASE_URL (defaults to sqlite). TELEPHONY_MODE controls consent enforcement (SIMULATED vs TWILIO).
-- Startup seeds demo admin `admin@dental.local / admin123` and a sample clinic in `api_main.py`.
-- Celery/Redis optional for outbound calling; start Redis, then `celery -A celery_config worker --loglevel=info`. API_BASE_URL must be reachable by Twilio for webhooks.
-- Tests: `python test_voice_agent.py` for the main suite; targeted modes `python test_voice_agent.py prompt|api|audio`. Integration flow tests live in `tests/integration_simulated.py`.
-- PowerShell dev script: `start_dev.ps1` for local development setup.
+### Voice call flow
+1. Inbound: Twilio webhook → `routes_inbound.py` TwiML → WebSocket at `/inbound/ws/{call_id}`
+2. `websocket_bridge.py` converts mulaw↔linear16 (8kHz, no resampling), buffers 200-400ms chunks
+3. Deepgram Voice Agent handles STT+LLM+TTS via `wss://agent.deepgram.com/v1/agent/converse`
+4. Outbound: Celery tasks in `tasks.py` → `twilio_service.py` with exponential backoff retry
 
-## Data and models
-- Persistence uses SQLModel in `db.py`; `create_db()` runs at startup. Inbound and outbound calls are separate tables (`InboundCall` vs `Call`/`CallResult`). Enqueue outbound calls via `enqueue_calls_for_batch` on batches/leads.
-- API schemas for clinics and inbound calls sit in `models.py`; FastAPI router files expect these shapes.
-- Backend routers: `routes_inbound.py`, `routes_calls.py`, `routes_calendar.py`, `routes_analytics.py`, `routes_sms.py`, `routes_admin.py`, `routes_superadmin.py`, `routes_usage.py`, `routes_twilio.py`.
+### AI cost routing (`ai_providers.py`)
+- OpenAI: real-time voice (latency-critical)
+- Gemini: post-call analysis, sentiment, summaries (50% cheaper)
+- Hugging Face: embeddings, search (free)
+- Extend `TaskType` and `TASK_PROVIDER_MAP` for new AI tasks
 
-## Voice pipeline details
-- Inbound websocket handler calls `handle_voice_websocket()` inside `websocket_bridge.py`: converts audio, handles barge-in, tracks `ConversationTracker`, sends Deepgram agent config from PromptBuilder, and writes transcript/analytics back via `update_inbound_call` in `routes_inbound.py`.
-- Deepgram intents/STT/TTS helpers are in `deepgram_service.py`; Twilio call/SMS helpers are in `twilio_service.py`. Keep audio at 8 kHz; no resampling needed for Twilio streams.
-- Agent config stored in `agent_config/dental_receptionist.json`.
+## Development commands
 
-## Logging and security
-- Logging uses rotating files with PII masking in `utils.py`; prefer provided `setup_logger`/filters. JWT auth in `api_main.py` is demo-grade (plain password compare); do not ship as-is.
-- Phone numbers must be normalized E.164; validators in `api_main.py` and helpers in utils enforce this. Consent is required for PSTN mode.
-- Rate limiting middleware in `rate_limiter.py`.
+### Backend
+```bash
+cd dental_agent
+python run_server.py           # Quick start with env checks (--ngrok for tunnels)
+uvicorn api_main:app --reload  # Pure Uvicorn
+celery -A celery_config worker --loglevel=info  # Outbound calls (requires Redis)
+python test_voice_agent.py     # Main test suite (modes: prompt|api|audio)
+```
 
-## Frontend (dashboard)
-- **Stack**: Next.js 16 App Router, React 19, Tailwind CSS 4, Radix UI, Zustand, Recharts for analytics, TanStack Table for data tables.
-- Scripts: `npm run dev|build|start|lint` and `npm run test:e2e` (Playwright) in `dashboard/package.json`.
-- Supabase auth SSR: middleware delegates to `src/lib/supabase/middleware.ts` to refresh sessions and gate protected routes (/dashboard, /live-calls, /calls, /calendar, /settings, /analytics, /superadmin). Auth routes redirect to /dashboard when logged in.
-- Supabase clients: browser in `src/lib/supabase/client.ts`, server in `src/lib/supabase/server.ts`. Requires NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.
+### Frontend
+```bash
+cd dashboard
+npm run dev      # Development server at localhost:3000
+npm run build    # Production build
+npm run test:e2e # Playwright E2E tests
+```
 
-## Frontend structure
-- **Landing page**: `src/app/page.tsx` with marketing components in `src/components/landing/` (marketing-header.tsx, marketing-footer.tsx, roi-calculator.tsx).
-- **Auth pages**: `src/app/login/`, `src/app/signup/`, `src/app/logout/`.
-- **Legal pages**: `src/app/pricing/`, `src/app/privacy/`, `src/app/terms/`.
-- **Dashboard shell**: wraps pages with `src/app/(dashboard)/layout.tsx` and Sidebar component in `src/components/layout/sidebar.tsx`; global styles in `src/app/globals.css`.
-- **Dashboard pages**: `/dashboard`, `/live-calls`, `/calls`, `/calendar`, `/analytics`, `/settings`, `/superadmin`.
-- **Dashboard components**: `src/components/dashboard/` contains `calls-chart.tsx`, `recent-calls-table.tsx`, `onboarding-progress.tsx`, `call-forwarding-guide.tsx`.
-- **UI components**: `src/components/ui/` for Radix-based primitives.
-- **Cloudflare Turnstile**: Bot protection via `src/components/turnstile.tsx`.
+## Key patterns
 
-## Multi-tenant data
-- API functions in `src/lib/api/dental.ts` use `getUserClinicId()` to get the authenticated user's clinic from `dental_clinics.owner_id`. Never hardcode clinic IDs.
-- Dashboard stats, calls, appointments all filter by clinic_id automatically.
+### Multi-tenancy
+- Frontend: `getUserClinicId()` in `src/lib/api/dental.ts` resolves clinic from `dental_clinics.owner_id`
+- Backend: SQLModel in `db.py`, separate tables for `InboundCall` vs `Call`/`CallResult`
+- **Never hardcode clinic IDs** - all queries filter by authenticated user's clinic
 
-## Super admin
-- Super admin email: `founder@dentsignal.me`. Defined in `SUPER_ADMIN_EMAILS` array in:
-  - `dashboard/src/components/layout/sidebar.tsx`
-  - `dashboard/src/app/(dashboard)/superadmin/page.tsx`
-  - `dental_agent/routes_superadmin.py` (reads from env var `SUPER_ADMIN_EMAILS`)
-- Update all three locations when adding new platform admins.
+### Per-clinic configuration
+- `prompt_builder.py` → `build_agent_config()` loads clinic-specific prompts and Deepgram voice settings
+- Store overrides on `Client` model, not inline prompts
+- Playbooks in `playbooks/` folder define practice-type scripts
 
-## Database setup
-- Supabase migrations in `dashboard/supabase/migrations/`:
-  - `001_create_dental_tables.sql` - Core tables with RLS policies
-  - `002_seed_demo_data.sql` - Demo data template (replace YOUR_USER_ID_HERE)
-  - `003_add_clinic_onboarding_fields.sql` - Onboarding tracking
-  - `003_quick_setup.sql` - Quick setup helper
-  - `004_security_performance_fixes.sql` - Security and performance improvements
-- Tables: `dental_clinics` (owner_id links to auth.users), `dental_clinic_settings`, `dental_calls`, `dental_appointments`, `dental_patients`. RLS ensures users only see their own clinic data.
+### Protected routes (frontend)
+- Update `protectedRoutes` array in `src/lib/supabase/middleware.ts` when adding dashboard pages
+- Current: `/dashboard`, `/live-calls`, `/calls`, `/calendar`, `/settings`, `/analytics`, `/superadmin`
 
-## Public assets
-- Logo files in `dashboard/public/`: `logo.png`, `logo.svg`, `favicon.ico`, `favicon.png`, `icon.svg`.
-- Brand assets in `brand/logos/` folder.
-- SEO files: `robots.txt`, `sitemap.xml`.
+### Super admin sync
+- `SUPER_ADMIN_EMAILS` defined in **3 places** - update all when adding admins:
+  1. `dashboard/src/components/layout/sidebar.tsx`
+  2. `dashboard/src/app/(dashboard)/superadmin/page.tsx`
+  3. `dental_agent/routes_superadmin.py` (reads from env var)
 
-## Testing
-- Backend: `pytest` with config in `dental_agent/pytest.ini`. Test files: `test_voice_agent.py`, `test_api.py`, `test_ai_providers.py`, `test_agent_responses.py`, `test_deepgram_connection.py`.
-- Frontend: Playwright E2E tests in `dashboard/tests/e2e.spec.ts`. Run with `npm run test:e2e`.
-- TestSprite config in `dashboard/testsprite_tests/` and `dental_agent/testsprite_tests/`.
+### Phone number handling
+- Normalize to E.164 format using validators in `utils.py`
+- Consent required when `TELEPHONY_MODE=TWILIO`
 
-## Documentation
-- API docs: `dental_agent/API_DOCUMENTATION.md`
-- Troubleshooting: `dental_agent/TROUBLESHOOTING.md`
-- Research and planning docs in `docs/` folder: `copilot-context/`, `planning/`, `research/`, `technical/`.
-- Sales materials in `sales/` folder.
-- Site audit docs in `site-audit/` folder.
-- Psychology research in `psychology/` folder.
+## Database
+- Backend: SQLModel + SQLite (dev) or PostgreSQL via `DATABASE_URL`
+- Frontend: Supabase with RLS policies in `dashboard/supabase/migrations/`
+- Tables: `dental_clinics`, `dental_calls`, `dental_appointments`, `dental_patients`
 
-## Patterns to follow
-- Keep telephony URLs consistent with API_BASE_URL/WS_BASE_URL; Twilio Stream connects to /inbound/ws/{call_id} and posts status to /inbound/status/{call_id}.
-- Reuse PromptBuilder instead of hardcoding prompts; per-clinic overrides should be stored on `Client` and passed through agent config.
-- For new AI tasks, extend `TaskType` and `TASK_PROVIDER_MAP` in `ai_providers.py` so cost-aware routing stays centralized.
-- When adding protected frontend routes, update the `protectedRoutes` list in `src/lib/supabase/middleware.ts` to keep redirects consistent.
-- Use `date-fns` for date formatting in frontend.
-- Use Lucide icons consistently across the app.
+## Environment variables
+Backend (`dental_agent/.env`): `DEEPGRAM_API_KEY`, `OPENAI_API_KEY`, `TWILIO_SID`, `TWILIO_TOKEN`, `TWILIO_NUMBER`, `DATABASE_URL`, `TELEPHONY_MODE`
+Frontend (`dashboard/.env.local`): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
-## Deep research guidance
-- Before implementing complex features, **ask the user to do deep research** via web search or documentation review to understand best practices, edge cases, and common pitfalls.
-- For third-party integrations (Twilio, Deepgram, Supabase, etc.), always consult official docs first; API signatures and rate limits change frequently.
-- When unsure about architectural decisions (e.g., real-time audio pipelines, multi-tenant RLS), gather context from the existing codebase patterns before proposing changes.
-- Document research findings in relevant MD files (like those in `docs/research/`) so future sessions have context.
+## Conventions
+- Frontend icons: Lucide React exclusively
+- Date formatting: `date-fns`
+- Logging: Use `setup_logger()` from `utils.py` with PII masking
+- Telephony URLs: Match `API_BASE_URL`/`WS_BASE_URL` for Twilio webhooks
+
+## Key documentation
+- [API_DOCUMENTATION.md](dental_agent/API_DOCUMENTATION.md) - Backend API reference
+- [TROUBLESHOOTING.md](dental_agent/TROUBLESHOOTING.md) - Common issues
+- `docs/research/` - Integration research findings

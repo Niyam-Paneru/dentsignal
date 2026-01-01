@@ -44,6 +44,33 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Subscription check for protected routes (except superadmin)
+  const subscriptionRequiredRoutes = ['/dashboard', '/live-calls', '/calls', '/calendar', '/settings', '/analytics']
+  const needsSubscription = subscriptionRequiredRoutes.some(route => 
+    request.nextUrl.pathname.startsWith(route)
+  )
+
+  // Skip subscription check for /subscription-required page
+  if (needsSubscription && user && !request.nextUrl.pathname.startsWith('/subscription-required')) {
+    // Check if user has active subscription
+    const { data: clinic } = await supabase
+      .from('dental_clinics')
+      .select('subscription_status, subscription_expires_at')
+      .eq('owner_id', user.id)
+      .single()
+
+    const now = new Date()
+    const expiresAt = clinic?.subscription_expires_at ? new Date(clinic.subscription_expires_at) : null
+    const isExpired = !expiresAt || expiresAt < now
+    const isCancelled = clinic?.subscription_status === 'cancelled'
+
+    if (isExpired || isCancelled) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/subscription-required'
+      return NextResponse.redirect(url)
+    }
+  }
+
   // Redirect logged in users away from auth pages
   const authRoutes = ['/login', '/signup']
   const isAuthRoute = authRoutes.some(route => 

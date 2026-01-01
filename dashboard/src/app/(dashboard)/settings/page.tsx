@@ -24,10 +24,14 @@ import {
   Save,
   Play,
   Loader2,
-  Phone
+  Phone,
+  CreditCard,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react'
 import { getClinicSettings, getClinic, updateClinicSettings } from '@/lib/api/dental'
 import { CallForwardingGuide } from '@/components/dashboard/call-forwarding-guide'
+import { useSubscription, getPlanDisplayName, getPlanPrice } from '@/lib/hooks/use-subscription'
 
 interface ClinicData {
   name: string
@@ -58,6 +62,7 @@ export default function SettingsPage() {
   const [agentName, setAgentName] = useState('')
   const [agentVoice, setAgentVoice] = useState('alloy')
   const [greeting, setGreeting] = useState('')
+  const { subscription } = useSubscription()
 
   useEffect(() => {
     async function loadData() {
@@ -121,7 +126,7 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue="clinic" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:grid-cols-none">
+        <TabsList className="grid w-full grid-cols-7 lg:w-auto lg:grid-cols-none">
           <TabsTrigger value="clinic" className="gap-2">
             <Building2 className="h-4 w-4" />
             <span className="hidden sm:inline">Clinic</span>
@@ -141,6 +146,10 @@ export default function SettingsPage() {
           <TabsTrigger value="notifications" className="gap-2">
             <Bell className="h-4 w-4" />
             <span className="hidden sm:inline">Notifications</span>
+          </TabsTrigger>
+          <TabsTrigger value="billing" className="gap-2">
+            <CreditCard className="h-4 w-4" />
+            <span className="hidden sm:inline">Billing</span>
           </TabsTrigger>
           <TabsTrigger value="security" className="gap-2">
             <Shield className="h-4 w-4" />
@@ -488,6 +497,153 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Billing Settings */}
+        <TabsContent value="billing">
+          <div className="grid gap-6">
+            {/* Current Plan */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Current Plan</CardTitle>
+                <CardDescription>Your subscription details and billing information</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {subscription ? (
+                  <>
+                    <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50">
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+                          <CreditCard className="h-6 w-6 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-lg">
+                            {getPlanDisplayName(subscription.planType)} Plan
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            ${getPlanPrice(subscription.planType)}/month
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ${
+                          subscription.isActive 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {subscription.isActive ? (
+                            <CheckCircle2 className="h-4 w-4" />
+                          ) : (
+                            <AlertCircle className="h-4 w-4" />
+                          )}
+                          {subscription.status === 'trial' ? 'Trial' : 
+                           subscription.isActive ? 'Active' : 'Expired'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="rounded-lg border p-4">
+                        <p className="text-sm text-muted-foreground">Status</p>
+                        <p className="font-medium capitalize">{subscription.status}</p>
+                      </div>
+                      <div className="rounded-lg border p-4">
+                        <p className="text-sm text-muted-foreground">
+                          {subscription.isActive ? 'Renews On' : 'Expired On'}
+                        </p>
+                        <p className="font-medium">
+                          {subscription.expiresAt?.toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          }) || 'N/A'}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border p-4">
+                        <p className="text-sm text-muted-foreground">Days Remaining</p>
+                        <p className="font-medium">{subscription.daysRemaining} days</p>
+                      </div>
+                      <div className="rounded-lg border p-4">
+                        <p className="text-sm text-muted-foreground">Monthly Cost</p>
+                        <p className="font-medium">${getPlanPrice(subscription.planType)}</p>
+                      </div>
+                    </div>
+
+                    {subscription.isExpiringSoon && (
+                      <div className="rounded-lg bg-amber-50 border border-amber-200 p-4">
+                        <div className="flex items-start gap-3">
+                          <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
+                          <div>
+                            <p className="font-medium text-amber-800">Subscription Renewing Soon</p>
+                            <p className="text-sm text-amber-700 mt-1">
+                              Your subscription will renew in {subscription.daysRemaining} days. 
+                              Contact us if you need to make changes.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">Loading subscription info...</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Plan Features */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Plan Features</CardTitle>
+                <CardDescription>What&apos;s included in your plan</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {[
+                    'Unlimited inbound calls',
+                    'AI appointment booking',
+                    'Call transcriptions',
+                    'Real-time analytics',
+                    'Email notifications',
+                    'Calendar integration',
+                    'Custom AI voice',
+                    'Priority support',
+                  ].map((feature) => (
+                    <div key={feature} className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      <span className="text-sm">{feature}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Billing Contact */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Billing Support</CardTitle>
+                <CardDescription>Need help with billing or want to change your plan?</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  For billing inquiries, plan changes, or cancellations, please contact our support team.
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <Button asChild>
+                    <a href="mailto:hello@dentsignal.com?subject=Billing%20Inquiry">
+                      Contact Billing Support
+                    </a>
+                  </Button>
+                  <Button variant="outline" asChild>
+                    <a href="mailto:hello@dentsignal.com?subject=Plan%20Upgrade%20Request">
+                      Request Plan Change
+                    </a>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* Security Settings */}

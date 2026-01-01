@@ -14,6 +14,7 @@ import {
   LogOut,
   Menu,
   Shield,
+  CreditCard,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useState, useEffect } from 'react'
@@ -99,12 +100,22 @@ interface UserInfo {
   email: string | null
   clinicName: string | null
   clinicId: string | null
+  subscriptionStatus: string | null
+  subscriptionExpiresAt: Date | null
+  planType: string | null
 }
 
 export function Sidebar() {
   const [open, setOpen] = useState(false)
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
-  const [userInfo, setUserInfo] = useState<UserInfo>({ email: null, clinicName: null, clinicId: null })
+  const [userInfo, setUserInfo] = useState<UserInfo>({ 
+    email: null, 
+    clinicName: null, 
+    clinicId: null,
+    subscriptionStatus: null,
+    subscriptionExpiresAt: null,
+    planType: null
+  })
   const [loading, setLoading] = useState(true)
   
   // Check if user is a super admin and get user/clinic info
@@ -117,10 +128,10 @@ export function Sidebar() {
         const isAdmin = SUPER_ADMIN_EMAILS.map(e => e.toLowerCase()).includes(user.email.toLowerCase())
         setIsSuperAdmin(isAdmin)
         
-        // Get user's clinic from database
+        // Get user's clinic from database with subscription info
         const { data: clinicData } = await supabase
           .from('dental_clinics')
-          .select('id, name')
+          .select('id, name, subscription_status, subscription_expires_at, plan_type')
           .eq('owner_id', user.id)
           .single()
         
@@ -128,6 +139,9 @@ export function Sidebar() {
           email: user.email,
           clinicName: clinicData?.name || null,
           clinicId: clinicData?.id || null,
+          subscriptionStatus: clinicData?.subscription_status || null,
+          subscriptionExpiresAt: clinicData?.subscription_expires_at ? new Date(clinicData.subscription_expires_at) : null,
+          planType: clinicData?.plan_type || null,
         })
       }
       setLoading(false)
@@ -189,7 +203,40 @@ export function Sidebar() {
                   {userInfo.email}
                 </p>
               )}
+              {/* Subscription Status */}
+              {userInfo.subscriptionStatus && (
+                <div className="mt-2 pt-2 border-t border-border/50">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Plan</span>
+                    <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                      userInfo.subscriptionStatus === 'active' 
+                        ? 'bg-green-100 text-green-700' 
+                        : userInfo.subscriptionStatus === 'trial'
+                        ? 'bg-blue-100 text-blue-700'
+                        : 'bg-red-100 text-red-700'
+                    }`}>
+                      {userInfo.subscriptionStatus === 'trial' ? 'Trial' :
+                       userInfo.subscriptionStatus === 'active' ? 'Active' :
+                       'Expired'}
+                    </span>
+                  </div>
+                  {userInfo.subscriptionExpiresAt && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {userInfo.subscriptionStatus === 'active' || userInfo.subscriptionStatus === 'trial' 
+                        ? 'Renews' 
+                        : 'Expired'}: {userInfo.subscriptionExpiresAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
+            <Link 
+              href="/settings?tab=billing" 
+              className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground mb-3 px-1"
+            >
+              <CreditCard className="h-3.5 w-3.5" />
+              Manage Billing
+            </Link>
             <Button variant="ghost" className="w-full justify-start gap-3" asChild>
               <Link href="/logout">
                 <LogOut className="h-5 w-5" />
