@@ -202,10 +202,10 @@ export function ROICalculator() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl overflow-x-hidden">
-      <div className="grid gap-6 lg:gap-8 lg:grid-cols-2">
+    <div className="mx-auto max-w-7xl overflow-x-hidden px-4">
+      <div className="grid gap-6 lg:gap-8 lg:grid-cols-[1fr_1.3fr] items-start">
         {/* Input Section */}
-        <Card className="border-slate-200 bg-white shadow-sm">
+        <Card className="border-slate-200 bg-white shadow-sm h-fit">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-slate-900">
               <Building2 className="h-5 w-5 text-cyan-600" />
@@ -215,9 +215,9 @@ export function ROICalculator() {
               Adjust these to match your practice. We&apos;ll show a conservative estimate.
             </p>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4">
             {/* Practice Size Selection */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               <Label className="text-sm font-medium text-slate-700">Practice Size</Label>
               <div className="grid grid-cols-3 gap-2">
                 {(['small', 'medium', 'large'] as const).map((size) => (
@@ -240,9 +240,9 @@ export function ROICalculator() {
             </div>
 
             {/* Monthly Call Volume */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="call-volume-slider" className="flex items-center gap-2 text-slate-700">
+                <Label htmlFor="call-volume-slider" className="flex items-center gap-2 text-sm text-slate-700">
                   <Phone className="h-4 w-4 text-cyan-600" />
                   Monthly Call Volume
                 </Label>
@@ -268,9 +268,9 @@ export function ROICalculator() {
             </div>
 
             {/* Current Answer Rate */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="answer-rate-slider" className="flex items-center gap-2 text-slate-700">
+                <Label htmlFor="answer-rate-slider" className="flex items-center gap-2 text-sm text-slate-700">
                   <Clock className="h-4 w-4 text-cyan-600" />
                   Current Answer Rate
                 </Label>
@@ -296,9 +296,9 @@ export function ROICalculator() {
             </div>
 
             {/* Average Appointment Value */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="appointment-value-slider" className="flex items-center gap-2 text-slate-700">
+                <Label htmlFor="appointment-value-slider" className="flex items-center gap-2 text-sm text-slate-700">
                   <DollarSign className="h-4 w-4 text-cyan-600" />
                   Avg Revenue Per Appointment
                 </Label>
@@ -324,7 +324,7 @@ export function ROICalculator() {
             </div>
 
             {/* Scenario Selection */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               <Label className="text-sm font-medium text-slate-700" id="scenario-label">Projection Scenario</Label>
               <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-labelledby="scenario-label">
                 <button
@@ -375,55 +375,55 @@ export function ROICalculator() {
         </Card>
 
         {/* Results Section */}
-        <div className="space-y-6 overflow-hidden" aria-live="polite">
+        <div className="space-y-4" aria-live="polite">
           {/* Loss vs Savings - 3 Column Layout */}
-          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
             {/* Current Loss - RED */}
-            <Card className="border-2 border-red-300 bg-red-50 overflow-hidden">
-              <CardContent className="pt-4 sm:pt-6 text-center px-2 sm:px-4">
-                <div className="mb-1 sm:mb-2 text-2xl sm:text-3xl">🔴</div>
-                <p className="mb-1 text-xs sm:text-sm font-semibold text-red-700 uppercase tracking-wide">You&apos;re Losing</p>
-                <p className="text-xl sm:text-2xl lg:text-3xl font-black text-red-700 transition-all duration-300 break-all" key={`loss-${calculations.monthlyLoss}`}>
+            <Card className="border-2 border-red-300 bg-red-50">
+              <CardContent className="pt-4 sm:pt-5 pb-4 text-center px-3 sm:px-4">
+                <div className="mb-1 text-2xl">🔴</div>
+                <p className="mb-1 text-xs font-semibold text-red-700 uppercase tracking-wide">You&apos;re Losing</p>
+                <p className="text-2xl sm:text-3xl font-black text-red-700 transition-all duration-300 whitespace-nowrap" key={`loss-${calculations.monthlyLoss}`}>
                   {formatCurrency(calculations.monthlyLoss)}
                 </p>
-                <p className="text-xs sm:text-sm text-red-600 font-medium">/month from missed calls</p>
+                <p className="text-xs text-red-600 font-medium">/month from missed calls</p>
               </CardContent>
             </Card>
             
             {/* With DentSignal - GREEN */}
-            <Card className="border-2 border-emerald-300 bg-emerald-50 overflow-hidden">
-              <CardContent className="pt-4 sm:pt-6 text-center px-2 sm:px-4">
-                <div className="mb-1 sm:mb-2 text-2xl sm:text-3xl">✅</div>
-                <p className="mb-1 text-xs sm:text-sm font-semibold text-emerald-700 uppercase tracking-wide">You&apos;ll Capture</p>
-                <p className="text-xl sm:text-2xl lg:text-3xl font-black text-emerald-700 transition-all duration-300 break-all" key={`capture-${calculations.capturedRevenue}`}>
+            <Card className="border-2 border-emerald-300 bg-emerald-50">
+              <CardContent className="pt-4 sm:pt-5 pb-4 text-center px-3 sm:px-4">
+                <div className="mb-1 text-2xl">✅</div>
+                <p className="mb-1 text-xs font-semibold text-emerald-700 uppercase tracking-wide">You&apos;ll Capture</p>
+                <p className="text-2xl sm:text-3xl font-black text-emerald-700 transition-all duration-300 whitespace-nowrap" key={`capture-${calculations.capturedRevenue}`}>
                   +{formatCurrency(calculations.capturedRevenue)}
                 </p>
-                <p className="text-xs sm:text-sm text-emerald-600 font-medium">/month in recovered revenue</p>
+                <p className="text-xs text-emerald-600 font-medium">/month recovered</p>
               </CardContent>
             </Card>
             
             {/* Net Profit - BLUE */}
-            <Card className="border-2 border-blue-300 bg-blue-50 overflow-hidden">
-              <CardContent className="pt-4 sm:pt-6 text-center px-2 sm:px-4">
-                <div className="mb-1 sm:mb-2 text-2xl sm:text-3xl">💰</div>
-                <p className="mb-1 text-xs sm:text-sm font-semibold text-blue-700 uppercase tracking-wide">Net Gain</p>
-                <p className="text-xl sm:text-2xl lg:text-3xl font-black text-blue-700 transition-all duration-300 break-all" key={`gain-${calculations.monthlySavings}`}>
+            <Card className="border-2 border-blue-300 bg-blue-50">
+              <CardContent className="pt-4 sm:pt-5 pb-4 text-center px-3 sm:px-4">
+                <div className="mb-1 text-2xl">💰</div>
+                <p className="mb-1 text-xs font-semibold text-blue-700 uppercase tracking-wide">Net Gain</p>
+                <p className="text-2xl sm:text-3xl font-black text-blue-700 transition-all duration-300 whitespace-nowrap" key={`gain-${calculations.monthlySavings}`}>
                   +{formatCurrency(calculations.monthlySavings)}
                 </p>
-                <p className="text-xs sm:text-sm text-blue-600 font-medium">/month after DentSignal cost</p>
+                <p className="text-xs text-blue-600 font-medium">/month after cost</p>
               </CardContent>
             </Card>
           </div>
           
           {/* ROI & Payback Row */}
-          <div className="grid gap-3 sm:gap-4 grid-cols-2">
-            <div className="rounded-xl bg-slate-900 p-3 sm:p-4 text-center overflow-hidden">
+          <div className="grid gap-3 grid-cols-2">
+            <div className="rounded-xl bg-slate-800 p-3 sm:p-4 text-center">
               <p className="text-xs sm:text-sm text-slate-400">Return on Investment</p>
-              <p className="text-xl sm:text-2xl lg:text-3xl font-black text-white transition-all duration-300" key={`roi-${calculations.roiDisplay}`}>{calculations.roiDisplay}</p>
+              <p className="text-2xl sm:text-3xl font-black text-white transition-all duration-300" key={`roi-${calculations.roiDisplay}`}>{calculations.roiDisplay}</p>
             </div>
-            <div className="rounded-xl bg-slate-900 p-3 sm:p-4 text-center overflow-hidden">
+            <div className="rounded-xl bg-slate-800 p-3 sm:p-4 text-center">
               <p className="text-xs sm:text-sm text-slate-400">Payback Period</p>
-              <p className="text-xl sm:text-2xl lg:text-3xl font-black text-white transition-all duration-300" key={`payback-${calculations.paybackDisplay}`}>{calculations.paybackDisplay}</p>
+              <p className="text-2xl sm:text-3xl font-black text-white transition-all duration-300" key={`payback-${calculations.paybackDisplay}`}>{calculations.paybackDisplay}</p>
             </div>
           </div>
 
