@@ -13,7 +13,7 @@ interface ClinicSubscription {
   name: string
   subscription_status: 'trial' | 'active' | 'expired' | 'cancelled'
   subscription_expires_at: string | null
-  plan_type: 'starter_149' | 'pro_199'
+  plan_type: 'pro_199'
 }
 
 export default function SubscriptionRequiredPage() {
@@ -47,8 +47,8 @@ export default function SubscriptionRequiredPage() {
     })
   }
 
-  const getPlanName = (planType: string) => {
-    return planType === 'pro_199' ? 'Pro Plan ($199/mo)' : 'Starter Plan ($149/mo)'
+  const getPlanName = () => {
+    return 'Professional Plan ($199/mo)'
   }
 
   const getStatusMessage = () => {
@@ -114,7 +114,7 @@ export default function SubscriptionRequiredPage() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Plan</span>
-                  <span className="font-medium">{getPlanName(clinic.plan_type)}</span>
+                  <span className="font-medium">{getPlanName()}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Status</span>

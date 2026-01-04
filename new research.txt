@@ -1,0 +1,98 @@
+# DentSignal Website Copy Updates
+## STATUS: ✅ IMPLEMENTED (January 4, 2026)
+
+---
+
+## Changes Made:
+
+### 1. ✅ Pricing Consolidated to Single $199 Plan
+- Removed $149 Starter tier
+- Single "Professional Plan" at $199/month with unlimited calls
+- Added "Founding Member Pricing" badge
+- Added ROI math breakdown
+- Added "Founding Customer Guarantee" messaging
+
+### 2. ✅ Competitor Comparison Removed
+- Deleted table naming Weave and RevenueWell
+- Replaced with "What Sets Us Apart" checklist format
+- Features: Unlimited calls, No setup fees, Month-to-month, 48-hour setup, Direct founder support, Works out of the box
+
+### 3. ✅ "Built Different" Section Rewritten
+- Changed from comparison table to clean checklist cards
+- Removed all competitor references
+- Focus on DentSignal's own value props
+
+### 4. ✅ Founder Section Simplified
+- Removed "Built by a Solo Founder" heading and origin story
+- Changed to "Direct Founder Support" - 3 sentences max
+- Added to footer with email + phone
+
+### 5. ✅ CTAs Reordered
+- "Start 7-Day Free Trial" is now primary (green button)
+- Demo phone number is secondary
+- "No credit card required" added to pricing CTAs
+
+### 6. ✅ Subscription Page Updated
+- Removed two-tier plan_type ('starter_149' | 'pro_199')
+- Now single 'pro_199' plan type
+
+---
+
+## Files Changed:
+- `dashboard/src/app/pricing/page.tsx`
+- `dashboard/src/app/page.tsx`
+- `dashboard/src/app/subscription-required/page.tsx`
+- `dashboard/src/components/landing/marketing-footer.tsx`
+
+---
+
+## Original Brief (for reference):
+
+1. Remove the $149 Starter / $199 Professional pricing split ✅
+2. Change to ONE plan: $199/month, unlimited calls ✅
+3. Remove the "solo founder" origin story from the hero section ✅
+4. Remove any mention of competitor names (Weave, etc.) ✅
+5. Focus messaging on ROI and the $8,000-12,000/month lost to missed calls ✅
+6. Reorder CTAs: "Start 7-Day Free Trial" first, "Call Demo Line" second ✅
+7. Remove "Founded by Solo Founder" and move to footer as "Direct Founder Support" ✅
+8. Keep the ROI calculator (it's good) ✅
+9. Keep the features section (it's good) ✅
+10. Remove "Built Different" comparison table - replaced with checklist ✅
+
+---
+
+## Final Copy Reference:
+
+### Direct Founder Support (Footer)
+Built by someone who gets it. Questions? Email founder@dentsignal.me or call (904) 867-9643. 
+I read every message and respond within 4 hours.
+
+### Pricing Section
+**Professional Plan - $199/month**
+- Unlimited AI-handled calls (24/7)
+- Appointment scheduling & booking
+- Emergency call triage
+- Call recordings & transcripts
+- SMS appointment reminders
+- Custom AI voice & greeting
+- Priority email support (4h response)
+- Google Calendar integration
+- Advanced analytics dashboard
+
+No credit card required • No setup fees • Cancel anytime
+
+### The Math
+Your practice likely misses 10+ calls per day. At $400 per appointment, that's $8,000-12,000/month in lost revenue.
+DentSignal costs $199/month and captures 95%+ of those calls.
+ROI: Pays for itself after recovering just 1 missed call.
+
+### Founding Customer Guarantee
+Lock in $199/month forever. Price may increase for new customers after we reach 50 practices.
+
+### What Sets Us Apart
+✓ Unlimited calls (no caps, no overages)
+✓ No setup fees (others charge $500-2,000)
+✓ Month-to-month (no 12+ month lock-in)
+✓ 48-hour setup (not weeks or months)
+✓ Direct founder support (4h response time)
+✓ Works out of the box (no complex integrations)

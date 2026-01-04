@@ -35,163 +35,137 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* Pricing Cards */}
+      {/* Pricing Card - Single Plan */}
       <section className="bg-white py-16">
         <div className="container mx-auto px-4">
-          <div className="mx-auto grid max-w-3xl gap-8 md:grid-cols-2">
-            {/* Starter */}
-            <div className="rounded-xl border border-[#E8EBF0] bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-bold text-[#1B3A7C]">Starter</h3>
-              <p className="mt-1 text-sm text-[#718096]">Perfect for solo & small practices</p>
-              <div className="my-4">
-                <span className="text-4xl font-bold text-[#2D3748]">$149</span>
+          <div className="mx-auto max-w-lg">
+            {/* Professional Plan - The Only Plan */}
+            <div className="relative rounded-xl border-2 border-[#0099CC] bg-white p-8 shadow-lg">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#22C55E] px-4 py-1 text-xs font-bold text-white">
+                FOUNDING MEMBER PRICING
+              </div>
+              <h3 className="text-xl font-bold text-[#1B3A7C] text-center">Professional Plan</h3>
+              <p className="mt-1 text-sm text-[#718096] text-center">Everything you need. No upsells.</p>
+              <div className="my-6 text-center">
+                <span className="text-5xl font-bold text-[#2D3748]">$199</span>
                 <span className="text-[#718096]">/month</span>
               </div>
-              <ul className="mb-6 space-y-2 text-sm">
+              <ul className="mb-8 space-y-3 text-sm">
                 <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> Up to 300 AI-handled calls/month
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> 24/7 call answering
+                  <Check className="h-4 w-4 text-[#22C55E]" /> <strong>Unlimited</strong> AI-handled calls (24/7)
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> Appointment scheduling via Google Calendar
+                  <Check className="h-4 w-4 text-[#22C55E]" /> Appointment scheduling & booking
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> Emergency call triage
+                  <Check className="h-4 w-4 text-[#22C55E]" /> Emergency call triage
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> Call recordings & transcripts
+                  <Check className="h-4 w-4 text-[#22C55E]" /> Call recordings & transcripts
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> Basic analytics dashboard
+                  <Check className="h-4 w-4 text-[#22C55E]" /> SMS appointment reminders
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> Email support
+                  <Check className="h-4 w-4 text-[#22C55E]" /> Custom AI voice & greeting
                 </li>
-                <li className="flex items-center gap-2 text-[#718096]">
-                  <X className="h-4 w-4" /> SMS reminders
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-[#22C55E]" /> Priority email support (4h response)
                 </li>
-                <li className="flex items-center gap-2 text-[#718096]">
-                  <X className="h-4 w-4" /> Custom AI voice
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-[#22C55E]" /> Google Calendar integration
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-[#22C55E]" /> Advanced analytics dashboard
                 </li>
               </ul>
               <Link href="/signup">
-                <Button variant="outline" className="w-full border-[#1B3A7C] text-[#1B3A7C] hover:bg-[#1B3A7C] hover:text-white">
-                  Start 7-Day Trial
+                <Button className="w-full h-12 bg-[#22C55E] hover:bg-[#16a34a] text-white text-lg font-bold">
+                  Start 7-Day Free Trial
                 </Button>
               </Link>
+              <p className="mt-3 text-center text-xs text-[#718096]">
+                No credit card required • No setup fees • Cancel anytime
+              </p>
             </div>
 
-            {/* Professional - Most Popular */}
-            <div className="relative rounded-xl border-2 border-[#0099CC] bg-white p-6 shadow-lg">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#0099CC] px-4 py-1 text-xs font-bold text-white">
-                RECOMMENDED
-              </div>
-              <h3 className="text-lg font-bold text-[#1B3A7C]">Professional</h3>
-              <p className="mt-1 text-sm text-[#718096]">For growing practices</p>
-              <div className="my-4">
-                <span className="text-4xl font-bold text-[#2D3748]">$199</span>
-                <span className="text-[#718096]">/month</span>
-              </div>
-              <ul className="mb-6 space-y-2 text-sm">
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> Unlimited AI-handled calls
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> 24/7 call answering
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> Appointment scheduling via Google Calendar
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> Emergency call triage
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> Call recordings & transcripts
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> Advanced analytics dashboard
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> SMS appointment reminders
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> Custom AI voice & greeting
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#27AE60]" /> Priority email support (4h response)
-                </li>
-              </ul>
-              <Link href="/signup">
-                <Button className="w-full bg-[#0099CC] hover:bg-[#0077A3] text-white">
-                  Start 7-Day Trial
-                </Button>
-              </Link>
+            {/* The Math */}
+            <div className="mt-8 rounded-xl border border-[#E8EBF0] bg-[#F8F9FA] p-6">
+              <h4 className="font-bold text-[#1B3A7C] mb-3">The Math</h4>
+              <p className="text-sm text-[#718096] mb-2">
+                Your practice likely misses <strong className="text-[#EF4444]">10+ calls per day</strong>. At $400 per appointment, that&apos;s <strong className="text-[#EF4444]">$8,000-12,000/month</strong> in lost revenue.
+              </p>
+              <p className="text-sm text-[#718096]">
+                DentSignal costs $199/month and captures 95%+ of those calls.
+              </p>
+              <p className="text-sm font-bold text-[#22C55E] mt-3">
+                ROI: Pays for itself after recovering just 1 missed call.
+              </p>
+            </div>
+
+            {/* Founding Customer Guarantee */}
+            <div className="mt-6 text-center p-4 border border-dashed border-[#0099CC] rounded-lg bg-[#0099CC]/5">
+              <p className="text-sm text-[#718096]">
+                <strong className="text-[#1B3A7C]">Founding Customer Guarantee:</strong> Lock in $199/month forever. Price may increase for new customers after we reach 50 practices.
+              </p>
             </div>
           </div>
 
           {/* Note about integrations */}
           <p className="mt-8 text-center text-sm text-[#718096]">
-            Need PMS integration (Dentrix, Open Dental)? <Link href="mailto:founder@dentsignal.me" className="text-[#0099CC] hover:underline">Contact us</Link> for custom enterprise solutions.
+            Need PMS integration (Dentrix, Open Dental)? <Link href="mailto:founder@dentsignal.me" className="text-[#0099CC] hover:underline">Contact us</Link> for custom solutions.
           </p>
         </div>
       </section>
 
-      {/* Competitor Comparison */}
+      {/* What Sets Us Apart */}
       <section className="bg-[#E8EBF0]/50 py-16">
         <div className="container mx-auto px-4">
-          <h2 className="mb-8 text-center text-2xl font-bold text-[#1B3A7C]">Compare to Competitors</h2>
-          <div className="mx-auto max-w-3xl rounded-xl border border-[#E8EBF0] bg-white p-6 shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[#E8EBF0]">
-                    <th className="py-3 text-left text-[#718096]">Feature</th>
-                    <th className="py-3 text-center text-[#718096]">Weave</th>
-                    <th className="py-3 text-center text-[#718096]">RevenueWell</th>
-                    <th className="py-3 text-center font-bold text-[#0099CC]">DentSignal</th>
-                  </tr>
-                </thead>
-                <tbody className="text-[#2D3748]">
-                  <tr className="border-b border-[#E8EBF0]">
-                    <td className="py-3">Inbound Call AI</td>
-                    <td className="py-3 text-center">❌</td>
-                    <td className="py-3 text-center">❌</td>
-                    <td className="py-3 text-center text-[#27AE60]">✅</td>
-                  </tr>
-                  <tr className="border-b border-[#E8EBF0]">
-                    <td className="py-3">Auto Appointment Booking</td>
-                    <td className="py-3 text-center">❌</td>
-                    <td className="py-3 text-center">❌</td>
-                    <td className="py-3 text-center text-[#27AE60]">✅</td>
-                  </tr>
-                  <tr className="border-b border-[#E8EBF0]">
-                    <td className="py-3">24/7 Coverage</td>
-                    <td className="py-3 text-center text-[#27AE60]">✅</td>
-                    <td className="py-3 text-center">❌</td>
-                    <td className="py-3 text-center text-[#27AE60]">✅</td>
-                  </tr>
-                  <tr className="border-b border-[#E8EBF0]">
-                    <td className="py-3">Setup Time</td>
-                    <td className="py-3 text-center">3-6 weeks</td>
-                    <td className="py-3 text-center">2-4 weeks</td>
-                    <td className="py-3 text-center font-bold text-[#27AE60]">48 hours</td>
-                  </tr>
-                  <tr className="border-b border-[#E8EBF0]">
-                    <td className="py-3">Contract</td>
-                    <td className="py-3 text-center">12 months</td>
-                    <td className="py-3 text-center">Flexible</td>
-                    <td className="py-3 text-center font-bold text-[#27AE60]">Month-to-month</td>
-                  </tr>
-                  <tr>
-                    <td className="py-3 font-bold">Price</td>
-                    <td className="py-3 text-center">$300+/mo</td>
-                    <td className="py-3 text-center">$175/mo</td>
-                    <td className="py-3 text-center font-bold text-[#27AE60]">From $149/mo</td>
-                  </tr>
-                </tbody>
-              </table>
+          <h2 className="mb-8 text-center text-2xl font-bold text-[#1B3A7C]">What Sets Us Apart</h2>
+          <div className="mx-auto max-w-2xl">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="flex items-start gap-3 rounded-lg bg-white p-4 border border-[#E8EBF0]">
+                <Check className="h-5 w-5 text-[#22C55E] mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-semibold text-[#2D3748]">Unlimited calls</p>
+                  <p className="text-sm text-[#718096]">No caps, no overages</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 rounded-lg bg-white p-4 border border-[#E8EBF0]">
+                <Check className="h-5 w-5 text-[#22C55E] mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-semibold text-[#2D3748]">No setup fees</p>
+                  <p className="text-sm text-[#718096]">Others charge $500-2,000</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 rounded-lg bg-white p-4 border border-[#E8EBF0]">
+                <Check className="h-5 w-5 text-[#22C55E] mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-semibold text-[#2D3748]">Month-to-month</p>
+                  <p className="text-sm text-[#718096]">No 12+ month lock-in</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 rounded-lg bg-white p-4 border border-[#E8EBF0]">
+                <Check className="h-5 w-5 text-[#22C55E] mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-semibold text-[#2D3748]">48-hour setup</p>
+                  <p className="text-sm text-[#718096]">Not weeks or months</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 rounded-lg bg-white p-4 border border-[#E8EBF0]">
+                <Check className="h-5 w-5 text-[#22C55E] mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-semibold text-[#2D3748]">Direct founder support</p>
+                  <p className="text-sm text-[#718096]">4h response time</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 rounded-lg bg-white p-4 border border-[#E8EBF0]">
+                <Check className="h-5 w-5 text-[#22C55E] mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-semibold text-[#2D3748]">Works out of the box</p>
+                  <p className="text-sm text-[#718096]">No complex integrations</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
