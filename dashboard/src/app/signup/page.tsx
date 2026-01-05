@@ -379,12 +379,12 @@ export default function SignupPage() {
             {/* Title */}
             <div className="mb-6 text-center">
               <div className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full ${
-                step === 1 ? 'bg-[#0099CC]/10' : 'bg-[#27AE60]/10'
+                step === 1 ? 'bg-[#0099CC]/10' : 'bg-[#22C55E]/10'
               }`}>
                 {step === 1 ? (
                   <User className="h-6 w-6 text-[#0099CC]" />
                 ) : (
-                  <Building2 className="h-6 w-6 text-[#27AE60]" />
+                  <Building2 className="h-6 w-6 text-[#22C55E]" />
                 )}
               </div>
               <h1 className="text-2xl font-bold text-[#1B3A7C]">
@@ -642,15 +642,15 @@ export default function SignupPage() {
                   <p className="mb-3 text-sm font-medium text-[#1B3A7C]">What happens next:</p>
                   <ul className="space-y-2 text-sm text-[#718096]">
                     <li className="flex items-start gap-2">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#27AE60]" />
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#22C55E]" />
                       <span>Your AI receptionist will be ready in minutes</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#27AE60]" />
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#22C55E]" />
                       <span>Test it with a call before going live</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#27AE60]" />
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#22C55E]" />
                       <span>7 days free, cancel anytime</span>
                     </li>
                   </ul>
@@ -698,11 +698,11 @@ export default function SignupPage() {
           {/* Trust badges */}
           <div className="mt-6 flex items-center justify-center gap-6 text-xs text-[#718096]">
             <span className="flex items-center gap-1">
-              <Check className="h-3 w-3 text-[#27AE60]" />
+              <Check className="h-3 w-3 text-[#22C55E]" />
               No credit card required
             </span>
             <span className="flex items-center gap-1">
-              <Check className="h-3 w-3 text-[#27AE60]" />
+              <Check className="h-3 w-3 text-[#22C55E]" />
               HIPAA compliant
             </span>
           </div>

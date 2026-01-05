@@ -17,9 +17,10 @@ import {
   CreditCard,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { createClient } from '@/lib/supabase/client'
+import { Badge } from '@/components/ui/badge'
 
 // Super Admin emails - only platform owner(s)
 const SUPER_ADMIN_EMAILS = [
@@ -28,7 +29,7 @@ const SUPER_ADMIN_EMAILS = [
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Live Calls', href: '/live-calls', icon: PhoneCall },
+  { name: 'Live Calls', href: '/live-calls', icon: PhoneCall, showActiveCount: true },
   { name: 'Calls', href: '/calls', icon: Phone },
   { name: 'Calendar', href: '/calendar', icon: Calendar },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
@@ -40,27 +41,36 @@ const adminNavigation = [
   { name: 'Super Admin', href: '/superadmin', icon: Shield },
 ]
 
-function NavLinks({ onItemClick, isSuperAdmin }: { onItemClick?: () => void; isSuperAdmin?: boolean }) {
+function NavLinks({ onItemClick, isSuperAdmin, activeCallCount = 0 }: { onItemClick?: () => void; isSuperAdmin?: boolean; activeCallCount?: number }) {
   const pathname = usePathname()
 
   return (
     <nav className="flex flex-col gap-1">
       {navigation.map((item) => {
         const isActive = pathname.startsWith(item.href)
+        const showBadge = item.showActiveCount && activeCallCount > 0
+        
         return (
           <Link
             key={item.name}
             href={item.href}
             onClick={onItemClick}
             className={cn(
-              'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+              'flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors',
               isActive
                 ? 'bg-primary text-primary-foreground'
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground'
             )}
           >
-            <item.icon className="h-5 w-5" />
-            {item.name}
+            <span className="flex items-center gap-3">
+              <item.icon className="h-5 w-5" />
+              {item.name}
+            </span>
+            {showBadge && (
+              <Badge className="bg-red-500 text-white text-xs px-1.5 py-0 min-w-[20px] h-5 flex items-center justify-center animate-pulse">
+                {activeCallCount}
+              </Badge>
+            )}
           </Link>
         )
       })}
@@ -108,6 +118,7 @@ interface UserInfo {
 export function Sidebar() {
   const [open, setOpen] = useState(false)
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+  const [activeCallCount, setActiveCallCount] = useState(0)
   const [userInfo, setUserInfo] = useState<UserInfo>({ 
     email: null, 
     clinicName: null, 
@@ -117,6 +128,18 @@ export function Sidebar() {
     planType: null
   })
   const [loading, setLoading] = useState(true)
+
+  // Fetch active call count
+  const fetchActiveCallCount = useCallback(async (clinicId: string) => {
+    const supabase = createClient()
+    const { count } = await supabase
+      .from('dental_calls')
+      .select('*', { count: 'exact', head: true })
+      .eq('clinic_id', clinicId)
+      .eq('status', 'in_progress')
+    
+    setActiveCallCount(count || 0)
+  }, [])
   
   // Check if user is a super admin and get user/clinic info
   useEffect(() => {
@@ -143,12 +166,52 @@ export function Sidebar() {
           subscriptionExpiresAt: clinicData?.subscription_expires_at ? new Date(clinicData.subscription_expires_at) : null,
           planType: clinicData?.plan_type || null,
         })
+
+        // Fetch initial active call count
+        if (clinicData?.id) {
+          fetchActiveCallCount(clinicData.id)
+        }
       }
       setLoading(false)
     }
     
     loadUserData()
-  }, [])
+  }, [fetchActiveCallCount])
+
+  // Real-time subscription for active calls
+  useEffect(() => {
+    if (!userInfo.clinicId) return
+
+    const supabase = createClient()
+    
+    // Subscribe to call status changes
+    const channel = supabase
+      .channel('active-calls-count')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'dental_calls',
+          filter: `clinic_id=eq.${userInfo.clinicId}`,
+        },
+        () => {
+          // Refetch count on any change
+          fetchActiveCallCount(userInfo.clinicId!)
+        }
+      )
+      .subscribe()
+
+    // Also poll every 5 seconds as a fallback
+    const interval = setInterval(() => {
+      fetchActiveCallCount(userInfo.clinicId!)
+    }, 5000)
+
+    return () => {
+      supabase.removeChannel(channel)
+      clearInterval(interval)
+    }
+  }, [userInfo.clinicId, fetchActiveCallCount])
 
   return (
     <>
@@ -167,7 +230,7 @@ export function Sidebar() {
                 <span className="font-semibold">DentSignal</span>
               </div>
               <div className="flex-1 overflow-auto p-4">
-                <NavLinks onItemClick={() => setOpen(false)} isSuperAdmin={isSuperAdmin} />
+                <NavLinks onItemClick={() => setOpen(false)} isSuperAdmin={isSuperAdmin} activeCallCount={activeCallCount} />
               </div>
               <div className="border-t p-4">
                 <Button variant="ghost" className="w-full justify-start gap-3" asChild>
@@ -190,7 +253,7 @@ export function Sidebar() {
             <span className="text-lg font-semibold">DentSignal</span>
           </div>
           <div className="flex-1 overflow-auto p-4">
-            <NavLinks isSuperAdmin={isSuperAdmin} />
+            <NavLinks isSuperAdmin={isSuperAdmin} activeCallCount={activeCallCount} />
           </div>
           <div className="border-t p-4">
             <div className="mb-4 rounded-lg bg-muted p-3">

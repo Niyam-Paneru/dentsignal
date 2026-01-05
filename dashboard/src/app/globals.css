@@ -65,7 +65,7 @@
   --warm-dark: #E67330;
   
   /* Neutrals */
-  --charcoal-dark: #1A202C;
+  --charcoal-dark: #1f2937;
   --text-primary: #2D3748;
   --text-secondary: #718096;
   --text-muted: #A0AEC0;
@@ -76,7 +76,7 @@
   --bg-section: #E8EBF0;
   
   /* Status Colors */
-  --success-green: #27AE60;
+  --success-green: #22C55E;
   --success-dark: #1E8449;
   --warning-amber: #F59E0B;
   --error-red: #DC3545;
@@ -104,7 +104,7 @@
   
   /* Charts - Teal gradient for dental data viz */
   --chart-1: #0099CC;
-  --chart-2: #27AE60;
+  --chart-2: #22C55E;
   --chart-3: #1B3A7C;
   --chart-4: #F59E0B;
   --chart-5: #00B8E6;
@@ -122,7 +122,7 @@
 
 .dark {
   /* Dark mode - Charcoal base with teal accents */
-  --background: #1A202C;
+  --background: #1f2937;
   --foreground: #F8F9FA;
   --card: #2D3748;
   --card-foreground: #F8F9FA;
@@ -141,7 +141,7 @@
   --input: rgba(255, 255, 255, 0.15);
   --ring: #0099CC;
   --chart-1: #00B8E6;
-  --chart-2: #27AE60;
+  --chart-2: #22C55E;
   --chart-3: #0099CC;
   --chart-4: #F59E0B;
   --chart-5: #1B3A7C;

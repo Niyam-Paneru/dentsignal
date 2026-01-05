@@ -126,6 +126,45 @@ export async function getRecentCalls(limit: number = 5): Promise<RecentCall[]> {
   }))
 }
 
+export interface ActiveCall {
+  id: string
+  caller_phone: string
+  status: string
+  started_at: string
+  caller_name?: string
+  call_type?: string
+}
+
+export async function getActiveCalls(): Promise<ActiveCall[]> {
+  const supabase = createClient()
+  const clinicId = await getUserClinicId()
+  
+  if (!clinicId) {
+    return []
+  }
+
+  const { data, error } = await supabase
+    .from('dental_calls')
+    .select('id, caller_phone, status, started_at, caller_name, call_reason')
+    .eq('clinic_id', clinicId)
+    .eq('status', 'in_progress')
+    .order('started_at', { ascending: false })
+
+  if (error) {
+    console.error('Error fetching active calls:', error)
+    return []
+  }
+
+  return (data || []).map(call => ({
+    id: call.id,
+    caller_phone: call.caller_phone || 'Unknown',
+    status: call.status,
+    started_at: call.started_at,
+    caller_name: call.caller_name,
+    call_type: call.call_reason,
+  }))
+}
+
 export async function getCallTrends(days: number = 7): Promise<CallTrendData[]> {
   const supabase = createClient()
   const clinicId = await getUserClinicId()

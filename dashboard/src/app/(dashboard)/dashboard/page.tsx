@@ -1,14 +1,27 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
+import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Phone, CalendarCheck, TrendingUp, PhoneMissed, ArrowUpRight, ArrowDownRight, Loader2, Building2, DollarSign, Clock } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Phone, CalendarCheck, TrendingUp, PhoneMissed, ArrowUpRight, ArrowDownRight, Loader2, Building2, DollarSign, Clock, PhoneCall, PhoneForwarded } from 'lucide-react'
 import { RecentCallsTable } from '@/components/dashboard/recent-calls-table'
 import { CallsChart } from '@/components/dashboard/calls-chart'
 import { OnboardingProgress } from '@/components/dashboard/onboarding-progress'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { getDashboardStats, getRecentCalls, getCallTrends, getClinic, getClinicSettings } from '@/lib/api/dental'
+import { getDashboardStats, getRecentCalls, getCallTrends, getClinic, getClinicSettings, getActiveCalls } from '@/lib/api/dental'
 import type { DashboardStats, RecentCall, CallTrendData, Clinic } from '@/types/database'
+import { createClient } from '@/lib/supabase/client'
+
+interface ActiveCall {
+  id: string
+  caller_phone: string
+  status: string
+  started_at: string
+  caller_name?: string
+  call_type?: string
+}
 
 function StatCard({ 
   title, 
@@ -52,11 +65,67 @@ export default function DashboardPage() {
   const [recentCalls, setRecentCalls] = useState<RecentCall[]>([])
   const [chartData, setChartData] = useState<CallTrendData[]>([])
   const [clinic, setClinic] = useState<Clinic | null>(null)
+  const [activeCalls, setActiveCalls] = useState<ActiveCall[]>([])
   const [loading, setLoading] = useState(true)
   const [noClinic, setNoClinic] = useState(false)
   const [dateRange, setDateRange] = useState(7)
   const [hasCustomGreeting, setHasCustomGreeting] = useState(false)
   const [hasForwarding, setHasForwarding] = useState(false)
+
+  // Fetch active calls
+  const fetchActiveCalls = useCallback(async () => {
+    try {
+      const calls = await getActiveCalls()
+      setActiveCalls(calls || [])
+    } catch (error) {
+      console.error('Failed to fetch active calls:', error)
+    }
+  }, [])
+
+  // Format call duration
+  const formatDuration = (startedAt: string) => {
+    const start = new Date(startedAt)
+    const now = new Date()
+    const seconds = Math.floor((now.getTime() - start.getTime()) / 1000)
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
+
+  // Real-time subscription for active calls
+  useEffect(() => {
+    if (!clinic?.id) return
+
+    const supabase = createClient()
+    
+    // Subscribe to call status changes
+    const channel = supabase
+      .channel('dashboard-active-calls')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'dental_calls',
+          filter: `clinic_id=eq.${clinic.id}`,
+        },
+        () => {
+          fetchActiveCalls()
+        }
+      )
+      .subscribe()
+
+    // Initial fetch
+    fetchActiveCalls()
+
+    // Poll every 5 seconds for duration updates
+    const interval = setInterval(fetchActiveCalls, 5000)
+
+    return () => {
+      supabase.removeChannel(channel)
+      clearInterval(interval)
+    }
+  }, [clinic?.id, fetchActiveCalls])
 
   useEffect(() => {
     async function loadData() {
@@ -205,6 +274,73 @@ export default function DashboardPage() {
           trendLabel="fewer than avg"
         />
       </div>
+
+      {/* Active Calls Widget */}
+      {activeCalls.length > 0 && (
+        <Card className="border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <PhoneCall className="h-5 w-5 text-green-600 animate-pulse" />
+                <CardTitle className="text-green-800 dark:text-green-200">
+                  Live Calls ({activeCalls.length})
+                </CardTitle>
+              </div>
+              <Button asChild size="sm" variant="outline" className="border-green-300 hover:bg-green-100">
+                <Link href="/live-calls">View All</Link>
+              </Button>
+            </div>
+            <CardDescription className="text-green-700 dark:text-green-300">
+              Currently active calls being handled by AI
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {activeCalls.slice(0, 3).map((call) => (
+                <div 
+                  key={call.id} 
+                  className="flex items-center justify-between rounded-lg bg-white dark:bg-green-900/50 p-3 shadow-sm"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 dark:bg-green-800">
+                      <Phone className="h-5 w-5 text-green-600 dark:text-green-300" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">
+                        {call.caller_name || call.caller_phone || 'Unknown Caller'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {call.call_type || 'General Inquiry'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline" className="bg-green-100 text-green-700 border-green-200">
+                      {formatDuration(call.started_at)}
+                    </Badge>
+                    <Button 
+                      size="sm" 
+                      variant="ghost"
+                      className="text-green-700 hover:text-green-900 hover:bg-green-100"
+                      asChild
+                    >
+                      <Link href={`/live-calls?call=${call.id}`}>
+                        <PhoneForwarded className="h-4 w-4 mr-1" />
+                        Monitor
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              {activeCalls.length > 3 && (
+                <p className="text-center text-sm text-green-600 pt-2">
+                  +{activeCalls.length - 3} more active {activeCalls.length - 3 === 1 ? 'call' : 'calls'}
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Charts and Recent Calls */}
       <div className="grid gap-6 lg:grid-cols-7">
