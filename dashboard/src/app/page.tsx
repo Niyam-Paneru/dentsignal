@@ -10,7 +10,11 @@ import {
   Users,
   Calculator,
   Shield,
-  Headphones
+  Headphones,
+  PhoneForwarded,
+  Eye,
+  MousePointer,
+  User
 } from 'lucide-react'
 import { ROICalculator } from '@/components/landing/roi-calculator'
 import { MarketingHeader } from '@/components/landing/marketing-header'
@@ -337,6 +341,166 @@ export default function HomePage() {
                   <p className="text-sm text-[#718096]">No complex integrations</p>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* You're Always in Control Section */}
+      <section className="bg-white py-20">
+        <div className="container mx-auto px-4">
+          <div className="mb-12 text-center">
+            <div className="mb-4 inline-flex items-center rounded-full bg-[#22C55E]/10 px-4 py-2 text-sm font-semibold text-[#22C55E]">
+              🎛️ Full Control
+            </div>
+            <h2 className="mb-4 text-3xl font-bold text-[#1B3A7C]">You're Always in Control</h2>
+            <p className="text-lg text-[#718096] max-w-2xl mx-auto">
+              AI handles the calls, but you can take over anytime. See every live call and transfer it to your phone with one click.
+            </p>
+          </div>
+
+          {/* Visual Flow Diagram */}
+          <div className="mx-auto max-w-4xl">
+            <div className="rounded-2xl border-2 border-[#E8EBF0] bg-gradient-to-b from-[#F8F9FA] to-white p-8 shadow-lg">
+              {/* Diagram */}
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-4">
+                
+                {/* Step 1: Patient Calls */}
+                <div className="flex flex-col items-center text-center w-full md:w-1/5">
+                  <div className="h-16 w-16 rounded-full bg-[#1B3A7C] flex items-center justify-center mb-3 shadow-lg">
+                    <Phone className="h-8 w-8 text-white" />
+                  </div>
+                  <p className="text-sm font-bold text-[#2D3748]">Patient Calls</p>
+                  <p className="text-xs text-[#718096]">Your clinic number</p>
+                </div>
+                
+                {/* Arrow */}
+                <div className="hidden md:flex items-center text-[#0099CC]">
+                  <div className="w-8 h-0.5 bg-[#0099CC]" />
+                  <ArrowRight className="h-5 w-5 -ml-1" />
+                </div>
+                <div className="md:hidden text-[#0099CC]">
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
+                </div>
+                
+                {/* Step 2: AI Answers */}
+                <div className="flex flex-col items-center text-center w-full md:w-1/5">
+                  <div className="h-16 w-16 rounded-full bg-[#22C55E] flex items-center justify-center mb-3 shadow-lg animate-pulse">
+                    <Headphones className="h-8 w-8 text-white" />
+                  </div>
+                  <p className="text-sm font-bold text-[#2D3748]">AI Answers</p>
+                  <p className="text-xs text-[#718096]">24/7, instantly</p>
+                </div>
+                
+                {/* Arrow */}
+                <div className="hidden md:flex items-center text-[#0099CC]">
+                  <div className="w-8 h-0.5 bg-[#0099CC]" />
+                  <ArrowRight className="h-5 w-5 -ml-1" />
+                </div>
+                <div className="md:hidden text-[#0099CC]">
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
+                </div>
+                
+                {/* Step 3: You See It */}
+                <div className="flex flex-col items-center text-center w-full md:w-1/5">
+                  <div className="h-16 w-16 rounded-full bg-[#0099CC] flex items-center justify-center mb-3 shadow-lg">
+                    <Eye className="h-8 w-8 text-white" />
+                  </div>
+                  <p className="text-sm font-bold text-[#2D3748]">You See It Live</p>
+                  <p className="text-xs text-[#718096]">In your dashboard</p>
+                </div>
+                
+                {/* Arrow */}
+                <div className="hidden md:flex items-center text-[#0099CC]">
+                  <div className="w-8 h-0.5 bg-[#0099CC]" />
+                  <ArrowRight className="h-5 w-5 -ml-1" />
+                </div>
+                <div className="md:hidden text-[#0099CC]">
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
+                </div>
+                
+                {/* Step 4: Take Over */}
+                <div className="flex flex-col items-center text-center w-full md:w-1/5">
+                  <div className="relative">
+                    <div className="h-16 w-16 rounded-full bg-[#EF4444] flex items-center justify-center mb-3 shadow-lg">
+                      <PhoneForwarded className="h-8 w-8 text-white" />
+                    </div>
+                    <div className="absolute -top-1 -right-1 h-6 w-6 rounded-full bg-white flex items-center justify-center shadow">
+                      <MousePointer className="h-4 w-4 text-[#EF4444]" />
+                    </div>
+                  </div>
+                  <p className="text-sm font-bold text-[#EF4444]">Take Over</p>
+                  <p className="text-xs text-[#718096]">One click transfer</p>
+                </div>
+                
+                {/* Arrow */}
+                <div className="hidden md:flex items-center text-[#22C55E]">
+                  <div className="w-8 h-0.5 bg-[#22C55E]" />
+                  <ArrowRight className="h-5 w-5 -ml-1" />
+                </div>
+                <div className="md:hidden text-[#22C55E]">
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
+                </div>
+                
+                {/* Step 5: You Talk */}
+                <div className="flex flex-col items-center text-center w-full md:w-1/5">
+                  <div className="h-16 w-16 rounded-full bg-[#22C55E] flex items-center justify-center mb-3 shadow-lg">
+                    <User className="h-8 w-8 text-white" />
+                  </div>
+                  <p className="text-sm font-bold text-[#22C55E]">You Talk</p>
+                  <p className="text-xs text-[#718096]">Direct to patient</p>
+                </div>
+              </div>
+
+              {/* Explanation Box */}
+              <div className="mt-8 p-4 rounded-xl bg-[#1B3A7C]/5 border border-[#1B3A7C]/10">
+                <p className="text-center text-[#2D3748]">
+                  <span className="font-bold">When you click "Transfer to Me":</span> The AI says{' '}
+                  <span className="italic text-[#0099CC]">"I'm connecting you with the practice owner now"</span> → Your phone rings → You talk directly to the patient.
+                </p>
+              </div>
+            </div>
+
+            {/* Use Cases */}
+            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-xl bg-[#F8F9FA] border border-[#E8EBF0] p-4 text-center">
+                <span className="text-2xl">🦷</span>
+                <p className="mt-2 text-sm font-bold text-[#2D3748]">Urgent Cases</p>
+                <p className="text-xs text-[#718096]">"I'm in severe pain"</p>
+              </div>
+              <div className="rounded-xl bg-[#F8F9FA] border border-[#E8EBF0] p-4 text-center">
+                <span className="text-2xl">💰</span>
+                <p className="mt-2 text-sm font-bold text-[#2D3748]">High-Value Leads</p>
+                <p className="text-xs text-[#718096]">Implants, cosmetic work</p>
+              </div>
+              <div className="rounded-xl bg-[#F8F9FA] border border-[#E8EBF0] p-4 text-center">
+                <span className="text-2xl">⭐</span>
+                <p className="mt-2 text-sm font-bold text-[#2D3748]">VIP Patients</p>
+                <p className="text-xs text-[#718096]">Personal touch matters</p>
+              </div>
+              <div className="rounded-xl bg-[#F8F9FA] border border-[#E8EBF0] p-4 text-center">
+                <span className="text-2xl">🔧</span>
+                <p className="mt-2 text-sm font-bold text-[#2D3748]">AI Confusion</p>
+                <p className="text-xs text-[#718096]">Rescue the conversation</p>
+              </div>
+            </div>
+
+            {/* Bottom Line */}
+            <div className="mt-8 text-center">
+              <p className="text-lg font-bold text-[#1B3A7C]">
+                AI handles 80% of calls. You jump in for the 20% that matter most.
+              </p>
+              <p className="mt-2 text-[#718096]">
+                Never feel like you've lost control of your practice.
+              </p>
             </div>
           </div>
         </div>
