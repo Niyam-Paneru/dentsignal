@@ -486,24 +486,20 @@ export function ROICalculator() {
           </div>
 
           {/* CTA */}
-          <div className="rounded-xl bg-slate-900 p-6 text-center text-white">
-            <h3 className="mb-2 text-xl font-semibold">Ready to recover those missed calls?</h3>
+          <div className="rounded-xl bg-slate-900 p-5 text-center text-white">
+            <h3 className="mb-2 text-lg font-semibold">Ready to recover those missed calls?</h3>
             <p className="mb-4 text-sm text-slate-300">
-              Free trial. No credit card required. Cancel anytime.
+              7-day free trial. No credit card required.
             </p>
-            <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
-              <Link href="/signup">
-                <Button className="w-full gap-2 sm:w-auto bg-cyan-600 hover:bg-cyan-700 text-white font-semibold">
-                  Start Free Trial
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-              <a href="tel:+19048679643">
-                <Button variant="outline" className="w-full border-slate-600 bg-transparent text-white hover:bg-slate-800 sm:w-auto">
-                  📞 Try Demo Line
-                </Button>
-              </a>
-            </div>
+            <Link href="/signup">
+              <Button className="w-full gap-2 sm:w-auto bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-8">
+                Start 7-Day Free Trial
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+            <p className="mt-3 text-sm text-slate-400">
+              📞 Or call AI demo: <a href="tel:+19048679643" className="text-cyan-400 hover:underline">(904) 867-9643</a>
+            </p>
           </div>
         </div>
       </div>

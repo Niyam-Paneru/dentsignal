@@ -88,34 +88,34 @@ export default function HomePage() {
               <div className="lg:col-span-2">
                 <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-8 text-center">
                   <p className="mb-2 text-sm font-bold uppercase tracking-widest text-[#22C55E]">
-                    See Your Lost Revenue
+                    Start Capturing Missed Revenue
                   </p>
                   <p className="mb-6 text-white/70 text-sm">
-                    Calculate how much you&apos;re losing to missed calls
+                    7-day free trial. No credit card required.
                   </p>
                   
-                  <Link href="#calculator">
+                  <Link href="/signup">
                     <Button size="lg" className="w-full h-14 gap-3 bg-[#22C55E] hover:bg-[#16a34a] text-lg font-bold shadow-xl shadow-[#22C55E]/20 transition-all hover:shadow-[#22C55E]/40 hover:-translate-y-1 rounded-xl mb-4">
-                      Calculate My Loss
+                      Start 7-Day Free Trial
                       <ArrowRight className="h-5 w-5" />
                     </Button>
                   </Link>
                   
-                  <div className="text-center mb-6">
-                    <span className="text-white/40 text-sm">or</span>
+                  <div className="text-center mb-4">
+                    <span className="text-white/40 text-sm">or hear it first</span>
                   </div>
                   
-                  <p className="mb-2 text-sm font-bold uppercase tracking-widest text-[#0099CC]">
-                    🎧 Try It Yourself
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[#0099CC]">
+                    📞 AI Demo Line
                   </p>
                   <a 
                     href="tel:+19048679643" 
-                    className="block mb-3 text-3xl font-black tracking-wider text-white hover:text-[#0099CC] transition-colors font-mono"
+                    className="block mb-2 text-2xl font-bold tracking-wider text-white hover:text-[#0099CC] transition-colors font-mono"
                   >
                     (904) 867-9643
                   </a>
                   <p className="text-xs text-white/50">
-                    Call our demo line. Pretend you have a toothache.
+                    Call 24/7. Pretend you have a toothache.
                   </p>
                 </div>
               </div>
@@ -187,13 +187,13 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* How It Works - 5 Steps with Timeline */}
+      {/* How It Works - 5 Steps Self-Serve First */}
       <section className="bg-white py-20">
         <div className="container mx-auto px-4">
           <div className="mb-12 text-center">
             <h2 className="mb-4 text-3xl font-bold text-[#1B3A7C]">How It Works</h2>
             <p className="text-lg text-[#718096]">
-              From your first call to live calls in 48 hours. No technical knowledge needed.
+              Go from curious to fully live in under 48 hours. No technical knowledge needed.
             </p>
           </div>
 
@@ -205,9 +205,9 @@ export default function HomePage() {
                   📞
                 </div>
                 <div className="text-xs text-[#22C55E] font-semibold mb-1">Today</div>
-                <h3 className="mb-2 text-sm font-bold text-[#2D3748]">Schedule Setup Call</h3>
+                <h3 className="mb-2 text-sm font-bold text-[#2D3748]">Call the AI Demo</h3>
                 <p className="text-xs text-[#718096]">
-                  15-min call to discuss your practice needs
+                  Dial our AI and hear exactly how it handles real patient calls
                 </p>
                 <div className="hidden md:block absolute top-6 left-[60%] w-[80%] h-0.5 bg-[#E8EBF0]" />
               </div>
@@ -215,12 +215,12 @@ export default function HomePage() {
               {/* Step 2 */}
               <div className="text-center relative">
                 <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#0099CC] text-2xl shadow-lg">
-                  ⚙️
+                  ✍️
                 </div>
-                <div className="text-xs text-[#0099CC] font-semibold mb-1">24 hours</div>
-                <h3 className="mb-2 text-sm font-bold text-[#2D3748]">Phone Number Setup</h3>
+                <div className="text-xs text-[#0099CC] font-semibold mb-1">5 minutes</div>
+                <h3 className="mb-2 text-sm font-bold text-[#2D3748]">Start Free Trial</h3>
                 <p className="text-xs text-[#718096]">
-                  We configure your AI + calendar integration
+                  Create your account and connect your calendar. No setup call required.
                 </p>
                 <div className="hidden md:block absolute top-6 left-[60%] w-[80%] h-0.5 bg-[#E8EBF0]" />
               </div>
@@ -228,12 +228,12 @@ export default function HomePage() {
               {/* Step 3 */}
               <div className="text-center relative">
                 <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#0099CC] text-2xl shadow-lg">
-                  ✅
+                  ⚙️
                 </div>
-                <div className="text-xs text-[#0099CC] font-semibold mb-1">2 hours</div>
-                <h3 className="mb-2 text-sm font-bold text-[#2D3748]">Test With Team</h3>
+                <div className="text-xs text-[#0099CC] font-semibold mb-1">Same day</div>
+                <h3 className="mb-2 text-sm font-bold text-[#2D3748]">Connect Your Phone</h3>
                 <p className="text-xs text-[#718096]">
-                  Call the AI, verify bookings, give feedback
+                  Forward your existing line or get a new AI number in minutes
                 </p>
                 <div className="hidden md:block absolute top-6 left-[60%] w-[80%] h-0.5 bg-[#E8EBF0]" />
               </div>
@@ -241,12 +241,12 @@ export default function HomePage() {
               {/* Step 4 */}
               <div className="text-center relative">
                 <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#1B3A7C] text-2xl shadow-lg">
-                  🚀
+                  ✅
                 </div>
-                <div className="text-xs text-[#1B3A7C] font-semibold mb-1">48 hours</div>
-                <h3 className="mb-2 text-sm font-bold text-[#2D3748]">Go Live</h3>
+                <div className="text-xs text-[#1B3A7C] font-semibold mb-1">24-48 hours</div>
+                <h3 className="mb-2 text-sm font-bold text-[#2D3748]">Refine (Optional)</h3>
                 <p className="text-xs text-[#718096]">
-                  AI answers calls with live founder support
+                  Test with your team, tweak scripts. Email us for white-glove setup.
                 </p>
                 <div className="hidden md:block absolute top-6 left-[60%] w-[80%] h-0.5 bg-[#E8EBF0]" />
               </div>
@@ -259,19 +259,22 @@ export default function HomePage() {
                 <div className="text-xs text-[#22C55E] font-semibold mb-1">Ongoing</div>
                 <h3 className="mb-2 text-sm font-bold text-[#2D3748]">Track Results</h3>
                 <p className="text-xs text-[#718096]">
-                  See calls, appointments, and revenue in dashboard
+                  See calls, booked appointments, and recovered revenue in your dashboard
                 </p>
               </div>
             </div>
             
-            {/* CTA for Step 1 */}
+            {/* CTA */}
             <div className="mt-10 text-center">
               <Link href="/signup">
                 <Button size="lg" className="gap-2 bg-[#22C55E] hover:bg-[#16a34a] text-white font-bold shadow-lg">
-                  Schedule My 15-Min Call
+                  Start 7-Day Free Trial
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
+              <p className="mt-4 text-sm text-[#718096]">
+                📞 Or call our AI demo line: <a href="tel:+19048679643" className="font-medium text-[#0099CC] hover:underline">(904) 867-9643</a>
+              </p>
             </div>
           </div>
         </div>
@@ -388,12 +391,11 @@ export default function HomePage() {
       </section>
 
       {/* Direct Founder Support Section */}
-      <section className="py-12 bg-[#E8EBF0]/50">
+      <section className="py-10 bg-[#E8EBF0]/50">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="mb-3 text-xl font-bold text-[#1B3A7C]">Direct Founder Support</h2>
             <p className="text-[#718096]">
-              Built by someone who gets it. Questions? Email <a href="mailto:founder@dentsignal.me" className="font-medium text-[#0099CC] hover:underline">founder@dentsignal.me</a> or call <a href="tel:+19048679643" className="font-medium text-[#0099CC] hover:underline">(904) 867-9643</a>. I read every message and respond within 4 hours.
+              <span className="font-semibold text-[#1B3A7C]">Questions or custom needs?</span> Email <a href="mailto:founder@dentsignal.me" className="font-medium text-[#0099CC] hover:underline">founder@dentsignal.me</a> — replies within 4 hours.
             </p>
           </div>
         </div>
@@ -413,12 +415,15 @@ export default function HomePage() {
               <span>✓ Live in 48 hours</span>
             </div>
             <Link href="/signup">
-              <Button size="lg" className="gap-2 bg-[#0099CC] hover:bg-[#0077A3] text-white font-semibold shadow-lg shadow-[#0099CC]/25 px-8 py-6 text-lg">
-                Start Free Trial
+              <Button size="lg" className="gap-2 bg-[#22C55E] hover:bg-[#16a34a] text-white font-bold shadow-lg shadow-[#22C55E]/25 px-8 py-6 text-lg">
+                Start 7-Day Free Trial
                 <ArrowRight className="h-5 w-5" />
               </Button>
             </Link>
-            <p className="mt-4 text-xs text-white/60">
+            <p className="mt-3 text-sm text-white/70">
+              📞 Or call AI demo: <a href="tel:+19048679643" className="text-white hover:underline">(904) 867-9643</a>
+            </p>
+            <p className="mt-2 text-xs text-white/60">
               🔒 BAA included • Cancel anytime
             </p>
           </div>
