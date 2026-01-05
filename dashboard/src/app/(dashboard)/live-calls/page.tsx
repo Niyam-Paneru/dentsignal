@@ -18,8 +18,11 @@ import {
   RefreshCw,
   CheckCircle,
   AlertCircle,
-  ArrowUpRight
+  ArrowUpRight,
+  Settings,
+  Info
 } from 'lucide-react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import type { Call } from '@/types/database'
 
@@ -27,19 +30,34 @@ interface LiveCall extends Call {
   live_duration?: string
 }
 
-// Get user's clinic ID
-async function getUserClinicId(): Promise<string | null> {
+interface ClinicSettings {
+  owner_phone?: string
+  transfer_enabled?: boolean
+  transfer_timeout_seconds?: number
+  name?: string
+}
+
+// Get user's clinic ID and settings
+async function getUserClinicData(): Promise<{ clinicId: string | null; settings: ClinicSettings }> {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
+  if (!user) return { clinicId: null, settings: {} }
   
   const { data: clinic } = await supabase
     .from('dental_clinics')
-    .select('id')
+    .select('id, name, owner_phone, transfer_enabled, transfer_timeout_seconds')
     .eq('owner_id', user.id)
     .single()
   
-  return clinic?.id || null
+  return {
+    clinicId: clinic?.id || null,
+    settings: {
+      owner_phone: clinic?.owner_phone,
+      transfer_enabled: clinic?.transfer_enabled !== false,
+      transfer_timeout_seconds: clinic?.transfer_timeout_seconds || 20,
+      name: clinic?.name
+    }
+  }
 }
 
 // Status badge config
@@ -113,12 +131,17 @@ export default function LiveCallsPage() {
   const [notes, setNotes] = useState('')
   const [autoRefresh, setAutoRefresh] = useState(true)
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date())
+  const [clinicSettings, setClinicSettings] = useState<ClinicSettings>({})
+  const [transferringCallId, setTransferringCallId] = useState<string | null>(null)
+  const [transferError, setTransferError] = useState<string | null>(null)
   
   const supabase = createClient()
 
   const fetchCalls = useCallback(async () => {
-    const clinicId = await getUserClinicId()
+    const { clinicId, settings } = await getUserClinicData()
     if (!clinicId) return
+    
+    setClinicSettings(settings)
     
     // Fetch active calls
     const { data: active } = await supabase
@@ -150,6 +173,46 @@ export default function LiveCallsPage() {
     setLastUpdate(new Date())
     setLoading(false)
   }, [supabase])
+
+  // Handle transfer to owner
+  const handleTransfer = async (call: LiveCall) => {
+    if (!clinicSettings.owner_phone) {
+      setTransferError('No owner phone configured. Please set up your phone number in Settings > Takeover.')
+      return
+    }
+
+    setTransferringCallId(call.id)
+    setTransferError(null)
+
+    try {
+      const response = await fetch('/api/transfer/initiate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          call_sid: call.id, // Using call ID - backend will lookup Twilio SID
+          owner_phone: clinicSettings.owner_phone,
+          clinic_name: clinicSettings.name || 'the practice owner',
+          timeout_seconds: clinicSettings.transfer_timeout_seconds || 20
+        })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.detail || 'Transfer failed')
+      }
+
+      // Update local state to show transferring
+      setActiveCalls(prev => prev.map(c => 
+        c.id === call.id ? { ...c, status: 'transferring' } : c
+      ))
+
+    } catch (error) {
+      console.error('Transfer error:', error)
+      setTransferError(error instanceof Error ? error.message : 'Transfer failed')
+    } finally {
+      setTransferringCallId(null)
+    }
+  }
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -248,13 +311,52 @@ export default function LiveCallsPage() {
       {/* Active Calls Section */}
       <Card className="border-2 border-primary/20">
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <Volume2 className="h-5 w-5 text-primary" />
-            <CardTitle>Active Calls ({activeCalls.length})</CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Volume2 className="h-5 w-5 text-primary" />
+              <CardTitle>Active Calls ({activeCalls.length})</CardTitle>
+            </div>
+            {!clinicSettings.owner_phone && clinicSettings.transfer_enabled && (
+              <Link href="/settings?tab=takeover">
+                <Badge variant="outline" className="text-orange-600 border-orange-300 cursor-pointer hover:bg-orange-50">
+                  <Settings className="h-3 w-3 mr-1" />
+                  Setup Required
+                </Badge>
+              </Link>
+            )}
           </div>
-          <CardDescription>Real-time view of ongoing calls</CardDescription>
+          <CardDescription>Real-time view of ongoing calls • Click "Transfer to Me" to take over any call</CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Transfer Error Message */}
+          {transferError && (
+            <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm flex items-start gap-2 dark:bg-red-950 dark:border-red-800 dark:text-red-300">
+              <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-medium">Transfer Failed</p>
+                <p>{transferError}</p>
+              </div>
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                className="ml-auto text-red-600 hover:text-red-700 h-6 px-2"
+                onClick={() => setTransferError(null)}
+              >
+                Dismiss
+              </Button>
+            </div>
+          )}
+
+          {/* Info box when transfer is configured */}
+          {clinicSettings.owner_phone && activeCalls.length > 0 && (
+            <div className="mb-4 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-sm flex items-start gap-2 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-300">
+              <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
+              <p>
+                <span className="font-medium">You're in control.</span> Click "Transfer to Me" on any call. 
+                The AI will announce the transfer and ring your phone ({clinicSettings.owner_phone}).
+              </p>
+            </div>
+          )}
           {activeCalls.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Phone className="h-12 w-12 mx-auto mb-2 opacity-50" />
@@ -307,9 +409,43 @@ export default function LiveCallsPage() {
                       <Button size="sm" variant="outline">
                         View Transcript
                       </Button>
-                      <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                        Join Call
-                      </Button>
+                      {clinicSettings.transfer_enabled && clinicSettings.owner_phone ? (
+                        <Button 
+                          size="sm" 
+                          className="bg-green-600 hover:bg-green-700"
+                          onClick={() => handleTransfer(call)}
+                          disabled={transferringCallId === call.id || call.status === 'transferring'}
+                        >
+                          {transferringCallId === call.id ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                              Transferring...
+                            </>
+                          ) : call.status === 'transferring' ? (
+                            <>
+                              <PhoneForwarded className="h-4 w-4 mr-1 animate-pulse" />
+                              Ringing Your Phone
+                            </>
+                          ) : (
+                            <>
+                              <PhoneForwarded className="h-4 w-4 mr-1" />
+                              Transfer to Me
+                            </>
+                          )}
+                        </Button>
+                      ) : (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="text-orange-600 border-orange-300"
+                          asChild
+                        >
+                          <Link href="/settings?tab=takeover">
+                            <Settings className="h-4 w-4 mr-1" />
+                            Setup Transfer
+                          </Link>
+                        </Button>
+                      )}
                     </div>
                   </div>
                 )

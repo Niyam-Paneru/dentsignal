@@ -118,6 +118,7 @@ try:
     from dental_agent.routes_superadmin import router as superadmin_router
     from dental_agent.routes_usage import router as usage_router
     from dental_agent.routes_calendar import router as calendar_router
+    from dental_agent.routes_transfer import router as transfer_router
 except ImportError:
     from routes_calls import router as calls_router
     from routes_twilio import router as twilio_router
@@ -128,6 +129,7 @@ except ImportError:
     from routes_superadmin import router as superadmin_router
     from routes_usage import router as usage_router
     from routes_calendar import router as calendar_router
+    from routes_transfer import router as transfer_router
 
 app.include_router(calls_router, tags=["Calls & Batches"])
 app.include_router(twilio_router)  # Twilio webhooks (outbound)
@@ -138,6 +140,7 @@ app.include_router(analytics_router)  # Call analytics & insights
 app.include_router(superadmin_router)  # Super admin dashboard
 app.include_router(usage_router)  # Usage tracking & billing
 app.include_router(calendar_router)  # Calendar & appointment scheduling
+app.include_router(transfer_router)  # Call takeover/transfer
 
 
 # -----------------------------------------------------------------------------

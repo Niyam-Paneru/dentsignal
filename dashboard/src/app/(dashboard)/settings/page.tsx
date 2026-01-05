@@ -27,9 +27,11 @@ import {
   Phone,
   CreditCard,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  PhoneForwarded,
+  Info
 } from 'lucide-react'
-import { getClinicSettings, getClinic, updateClinicSettings } from '@/lib/api/dental'
+import { getClinicSettings, getClinic, updateClinicSettings, updateClinicInfo } from '@/lib/api/dental'
 import { CallForwardingGuide } from '@/components/dashboard/call-forwarding-guide'
 import { useSubscription, getPlanDisplayName, getPlanPrice } from '@/lib/hooks/use-subscription'
 
@@ -39,6 +41,9 @@ interface ClinicData {
   twilio_number: string
   address: string | null
   business_hours: Record<string, { open: string; close: string } | null>
+  owner_phone?: string
+  transfer_enabled?: boolean
+  transfer_timeout_seconds?: number
 }
 
 interface SettingsData {
@@ -62,6 +67,9 @@ export default function SettingsPage() {
   const [agentName, setAgentName] = useState('')
   const [agentVoice, setAgentVoice] = useState('alloy')
   const [greeting, setGreeting] = useState('')
+  const [ownerPhone, setOwnerPhone] = useState('')
+  const [transferEnabled, setTransferEnabled] = useState(true)
+  const [transferTimeout, setTransferTimeout] = useState('20')
   const { subscription } = useSubscription()
 
   useEffect(() => {
@@ -72,7 +80,12 @@ export default function SettingsPage() {
           getClinic(),
           getClinicSettings()
         ])
-        if (clinicData) setClinic(clinicData)
+        if (clinicData) {
+          setClinic(clinicData)
+          setOwnerPhone(clinicData.owner_phone || '')
+          setTransferEnabled(clinicData.transfer_enabled !== false)
+          setTransferTimeout(String(clinicData.transfer_timeout_seconds || 20))
+        }
         if (settingsData) {
           setSettings(settingsData)
           setAgentName(settingsData.agent_name || '')
@@ -91,10 +104,18 @@ export default function SettingsPage() {
   const handleSave = async () => {
     setIsSaving(true)
     try {
+      // Save agent settings
       await updateClinicSettings({
         agent_name: agentName,
         agent_voice: agentVoice,
         greeting_template: greeting,
+      })
+      
+      // Save clinic info including transfer settings
+      await updateClinicInfo({
+        owner_phone: ownerPhone || undefined,
+        transfer_enabled: transferEnabled,
+        transfer_timeout_seconds: parseInt(transferTimeout) || 20,
       })
     } catch (error) {
       console.error('Failed to save settings:', error)
@@ -126,7 +147,7 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue="clinic" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-7 lg:w-auto lg:grid-cols-none">
+        <TabsList className="grid w-full grid-cols-8 lg:w-auto lg:grid-cols-none">
           <TabsTrigger value="clinic" className="gap-2">
             <Building2 className="h-4 w-4" />
             <span className="hidden sm:inline">Clinic</span>
@@ -134,6 +155,10 @@ export default function SettingsPage() {
           <TabsTrigger value="forwarding" className="gap-2">
             <Phone className="h-4 w-4" />
             <span className="hidden sm:inline">Forwarding</span>
+          </TabsTrigger>
+          <TabsTrigger value="takeover" className="gap-2">
+            <PhoneForwarded className="h-4 w-4" />
+            <span className="hidden sm:inline">Takeover</span>
           </TabsTrigger>
           <TabsTrigger value="agent" className="gap-2">
             <Bot className="h-4 w-4" />
@@ -160,6 +185,174 @@ export default function SettingsPage() {
         {/* Call Forwarding Setup */}
         <TabsContent value="forwarding">
           <CallForwardingGuide twilioNumber={clinic?.twilio_number || '(904) 867-9643'} />
+        </TabsContent>
+
+        {/* Call Takeover Settings */}
+        <TabsContent value="takeover">
+          <div className="grid gap-6">
+            {/* Main Takeover Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <PhoneForwarded className="h-5 w-5" />
+                  Call Takeover Settings
+                </CardTitle>
+                <CardDescription>
+                  Configure how you can take over calls from the AI receptionist
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Info Box */}
+                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950">
+                  <div className="flex gap-3">
+                    <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm text-blue-800 dark:text-blue-200">
+                      <p className="font-medium mb-1">You're Always in Control</p>
+                      <p>When you see a live call in your dashboard, you can click "Transfer to Me" to take over from the AI. 
+                         The AI will politely tell the caller "I'm connecting you with the owner now" and transfer the call to your phone.</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Enable/Disable Toggle */}
+                <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50">
+                  <div>
+                    <p className="font-medium">Enable Call Takeover</p>
+                    <p className="text-sm text-muted-foreground">Allow transferring live calls to your phone</p>
+                  </div>
+                  <Switch 
+                    checked={transferEnabled} 
+                    onCheckedChange={setTransferEnabled}
+                  />
+                </div>
+
+                {/* Owner Phone Number */}
+                <div className="space-y-2">
+                  <Label htmlFor="ownerPhone">Your Personal Phone Number</Label>
+                  <Input 
+                    id="ownerPhone" 
+                    type="tel"
+                    placeholder="+1 (555) 123-4567"
+                    value={ownerPhone}
+                    onChange={(e) => setOwnerPhone(e.target.value)}
+                    disabled={!transferEnabled}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    When you click "Transfer to Me", calls will be forwarded to this number. 
+                    Use your cell phone or direct office line.
+                  </p>
+                </div>
+
+                {/* Timeout Setting */}
+                <div className="space-y-2">
+                  <Label>Ring Timeout</Label>
+                  <Select 
+                    value={transferTimeout} 
+                    onValueChange={setTransferTimeout}
+                    disabled={!transferEnabled}
+                  >
+                    <SelectTrigger className="w-48">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10 seconds</SelectItem>
+                      <SelectItem value="15">15 seconds</SelectItem>
+                      <SelectItem value="20">20 seconds (recommended)</SelectItem>
+                      <SelectItem value="30">30 seconds</SelectItem>
+                      <SelectItem value="45">45 seconds</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    How long to ring your phone before telling the caller you're unavailable
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* How It Works Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>How Call Takeover Works</CardTitle>
+                <CardDescription>Step-by-step guide to taking over a call</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex gap-4">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium flex-shrink-0">
+                      1
+                    </div>
+                    <div>
+                      <p className="font-medium">See Live Calls</p>
+                      <p className="text-sm text-muted-foreground">
+                        Go to "Live Calls" in your dashboard or watch the notification badge in your sidebar
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium flex-shrink-0">
+                      2
+                    </div>
+                    <div>
+                      <p className="font-medium">Click "Transfer to Me"</p>
+                      <p className="text-sm text-muted-foreground">
+                        Found a call you want to handle personally? Click the transfer button
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium flex-shrink-0">
+                      3
+                    </div>
+                    <div>
+                      <p className="font-medium">AI Announces Transfer</p>
+                      <p className="text-sm text-muted-foreground">
+                        The AI politely says: "I'm connecting you with the practice owner now. One moment please."
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium flex-shrink-0">
+                      4
+                    </div>
+                    <div>
+                      <p className="font-medium">Your Phone Rings</p>
+                      <p className="text-sm text-muted-foreground">
+                        Answer to speak directly with the caller. The AI drops off automatically.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Use Cases Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>When to Use This</CardTitle>
+                <CardDescription>Common scenarios where taking over makes sense</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-lg border p-3">
+                    <p className="font-medium text-green-700 dark:text-green-400">🦷 Urgent Cases</p>
+                    <p className="text-sm text-muted-foreground">Patient says "I'm in severe pain" - take over to assess urgency</p>
+                  </div>
+                  <div className="rounded-lg border p-3">
+                    <p className="font-medium text-green-700 dark:text-green-400">💰 High-Value Leads</p>
+                    <p className="text-sm text-muted-foreground">New patient asking about implants or cosmetic work</p>
+                  </div>
+                  <div className="rounded-lg border p-3">
+                    <p className="font-medium text-green-700 dark:text-green-400">⭐ VIP Patients</p>
+                    <p className="text-sm text-muted-foreground">Recognize a long-time patient who deserves personal touch</p>
+                  </div>
+                  <div className="rounded-lg border p-3">
+                    <p className="font-medium text-green-700 dark:text-green-400">🔧 AI Confusion</p>
+                    <p className="text-sm text-muted-foreground">The AI seems stuck or the caller is getting frustrated</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* Clinic Settings */}

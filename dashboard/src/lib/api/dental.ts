@@ -480,6 +480,34 @@ export async function updateClinicSettings(settings: {
   return true
 }
 
+export async function updateClinicInfo(info: {
+  name?: string
+  phone?: string
+  address?: string
+  owner_phone?: string
+  transfer_enabled?: boolean
+  transfer_timeout_seconds?: number
+}) {
+  const supabase = createClient()
+  const clinicId = await getUserClinicId()
+  
+  if (!clinicId) {
+    return false
+  }
+
+  const { error } = await supabase
+    .from('dental_clinics')
+    .update(info)
+    .eq('id', clinicId)
+
+  if (error) {
+    console.error('Error updating clinic info:', error)
+    return false
+  }
+
+  return true
+}
+
 // Analytics functions
 export async function getWeeklyCallStats(): Promise<{ day: string; calls: number; booked: number; transferred: number; missed: number }[]> {
   const supabase = createClient()
