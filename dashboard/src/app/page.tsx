@@ -110,7 +110,7 @@ export default function HomePage() {
                   </div>
                   
                   <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[#0099CC]">
-                    📞 AI Demo Line
+                    🤖 AI Demo Line (24/7 Robot)
                   </p>
                   <a 
                     href="tel:+19048679643" 
@@ -119,7 +119,7 @@ export default function HomePage() {
                     (904) 867-9643
                   </a>
                   <p className="text-xs text-white/50">
-                    Call 24/7. Pretend you have a toothache.
+                    Talk to our AI. Pretend you have a toothache.
                   </p>
                 </div>
               </div>
@@ -277,7 +277,7 @@ export default function HomePage() {
                 </Button>
               </Link>
               <p className="mt-4 text-sm text-[#718096]">
-                📞 Or call our AI demo line: <a href="tel:+19048679643" className="font-medium text-[#0099CC] hover:underline">(904) 867-9643</a>
+                🤖 Or call our AI demo: <a href="tel:+19048679643" className="font-medium text-[#0099CC] hover:underline">(904) 867-9643</a> — it's a robot, not a human
               </p>
             </div>
           </div>
@@ -585,7 +585,7 @@ export default function HomePage() {
               </Button>
             </Link>
             <p className="mt-3 text-sm text-white/70">
-              📞 Or call AI demo: <a href="tel:+19048679643" className="text-white hover:underline">(904) 867-9643</a>
+              🤖 Or call AI demo: <a href="tel:+19048679643" className="text-white hover:underline">(904) 867-9643</a> — 24/7 robot
             </p>
             <p className="mt-2 text-xs text-white/60">
               🔒 BAA included • Cancel anytime
