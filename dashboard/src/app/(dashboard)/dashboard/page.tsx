@@ -222,9 +222,30 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            {clinic?.name ? `Welcome, ${clinic.name}!` : 'Dashboard'}
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold tracking-tight">
+              {clinic?.name ? `Welcome, ${clinic.name}!` : 'Dashboard'}
+            </h1>
+            {/* Live Status Indicator */}
+            {hasForwarding && stats.totalCalls > 0 && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-900 border border-green-200 dark:border-green-800">
+                <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                <span className="text-xs font-medium text-green-700 dark:text-green-300">You're Live</span>
+              </div>
+            )}
+            {hasForwarding && stats.totalCalls === 0 && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-900 border border-amber-200 dark:border-amber-800">
+                <span className="flex h-2 w-2 rounded-full bg-amber-500" />
+                <span className="text-xs font-medium text-amber-700 dark:text-amber-300">Waiting for first call</span>
+              </div>
+            )}
+            {!hasForwarding && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                <span className="flex h-2 w-2 rounded-full bg-gray-400" />
+                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Setup Required</span>
+              </div>
+            )}
+          </div>
           <p className="text-muted-foreground">{currentDate}</p>
         </div>
         <Tabs value={dateRange.toString()} onValueChange={(v) => setDateRange(parseInt(v))} className="w-auto">

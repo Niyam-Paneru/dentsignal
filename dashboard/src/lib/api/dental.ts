@@ -485,8 +485,10 @@ export async function updateClinicInfo(info: {
   phone?: string
   address?: string
   owner_phone?: string
+  emergency_phone?: string
   transfer_enabled?: boolean
   transfer_timeout_seconds?: number
+  transfer_fallback?: string
 }) {
   const supabase = createClient()
   const clinicId = await getUserClinicId()

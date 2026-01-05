@@ -29,7 +29,8 @@ import {
   CheckCircle2,
   AlertCircle,
   PhoneForwarded,
-  Info
+  Info,
+  Clock
 } from 'lucide-react'
 import { getClinicSettings, getClinic, updateClinicSettings, updateClinicInfo } from '@/lib/api/dental'
 import { CallForwardingGuide } from '@/components/dashboard/call-forwarding-guide'
@@ -42,8 +43,10 @@ interface ClinicData {
   address: string | null
   business_hours: Record<string, { open: string; close: string } | null>
   owner_phone?: string
+  emergency_phone?: string
   transfer_enabled?: boolean
   transfer_timeout_seconds?: number
+  transfer_fallback?: string
 }
 
 interface SettingsData {
@@ -67,9 +70,11 @@ export default function SettingsPage() {
   const [agentName, setAgentName] = useState('')
   const [agentVoice, setAgentVoice] = useState('alloy')
   const [greeting, setGreeting] = useState('')
-  const [ownerPhone, setOwnerPhone] = useState('')
+  const [transferPhone, setTransferPhone] = useState('')
+  const [emergencyPhone, setEmergencyPhone] = useState('')
   const [transferEnabled, setTransferEnabled] = useState(true)
   const [transferTimeout, setTransferTimeout] = useState('20')
+  const [transferFallback, setTransferFallback] = useState('voicemail')
   const { subscription } = useSubscription()
 
   useEffect(() => {
@@ -82,9 +87,11 @@ export default function SettingsPage() {
         ])
         if (clinicData) {
           setClinic(clinicData)
-          setOwnerPhone(clinicData.owner_phone || '')
+          setTransferPhone(clinicData.owner_phone || '')
+          setEmergencyPhone(clinicData.emergency_phone || '')
           setTransferEnabled(clinicData.transfer_enabled !== false)
           setTransferTimeout(String(clinicData.transfer_timeout_seconds || 20))
+          setTransferFallback(clinicData.transfer_fallback || 'voicemail')
         }
         if (settingsData) {
           setSettings(settingsData)
@@ -113,9 +120,11 @@ export default function SettingsPage() {
       
       // Save clinic info including transfer settings
       await updateClinicInfo({
-        owner_phone: ownerPhone || undefined,
+        owner_phone: transferPhone || undefined,
+        emergency_phone: emergencyPhone || undefined,
         transfer_enabled: transferEnabled,
         transfer_timeout_seconds: parseInt(transferTimeout) || 20,
+        transfer_fallback: transferFallback,
       })
     } catch (error) {
       console.error('Failed to save settings:', error)
@@ -195,10 +204,10 @@ export default function SettingsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <PhoneForwarded className="h-5 w-5" />
-                  Call Takeover Settings
+                  Call Transfer Settings
                 </CardTitle>
                 <CardDescription>
-                  Configure how you can take over calls from the AI receptionist
+                  Configure where calls get transferred when AI hands off to a human
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -207,9 +216,9 @@ export default function SettingsPage() {
                   <div className="flex gap-3">
                     <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                     <div className="text-sm text-blue-800 dark:text-blue-200">
-                      <p className="font-medium mb-1">You're Always in Control</p>
-                      <p>When you see a live call in your dashboard, you can click "Transfer to Me" to take over from the AI. 
-                         The AI will politely tell the caller "I'm connecting you with the owner now" and transfer the call to your phone.</p>
+                      <p className="font-medium mb-1">Flexible Transfer Destinations</p>
+                      <p>Transfers can go to you, your office manager, a receptionist's direct line, or anyone you designate. 
+                         Set different numbers for routine vs emergency transfers.</p>
                     </div>
                   </div>
                 </div>
@@ -217,8 +226,8 @@ export default function SettingsPage() {
                 {/* Enable/Disable Toggle */}
                 <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50">
                   <div>
-                    <p className="font-medium">Enable Call Takeover</p>
-                    <p className="text-sm text-muted-foreground">Allow transferring live calls to your phone</p>
+                    <p className="font-medium">Enable Call Transfers</p>
+                    <p className="text-sm text-muted-foreground">Allow AI to transfer calls to a human</p>
                   </div>
                   <Switch 
                     checked={transferEnabled} 
@@ -226,20 +235,36 @@ export default function SettingsPage() {
                   />
                 </div>
 
-                {/* Owner Phone Number */}
+                {/* Primary Transfer Phone Number */}
                 <div className="space-y-2">
-                  <Label htmlFor="ownerPhone">Your Personal Phone Number</Label>
+                  <Label htmlFor="transferPhone">Primary Transfer Phone</Label>
                   <Input 
-                    id="ownerPhone" 
+                    id="transferPhone" 
                     type="tel"
                     placeholder="+1 (555) 123-4567"
-                    value={ownerPhone}
-                    onChange={(e) => setOwnerPhone(e.target.value)}
+                    value={transferPhone}
+                    onChange={(e) => setTransferPhone(e.target.value)}
                     disabled={!transferEnabled}
                   />
                   <p className="text-xs text-muted-foreground">
-                    When you click "Transfer to Me", calls will be forwarded to this number. 
-                    Use your cell phone or direct office line.
+                    Where routine transfers go: when you click "Transfer to Me" or patient asks for a human.
+                    Can be owner, office manager, or front desk direct line.
+                  </p>
+                </div>
+
+                {/* Emergency Transfer Phone Number */}
+                <div className="space-y-2">
+                  <Label htmlFor="emergencyPhone">Emergency Transfer Phone (Optional)</Label>
+                  <Input 
+                    id="emergencyPhone" 
+                    type="tel"
+                    placeholder="+1 (555) 999-0000"
+                    value={emergencyPhone}
+                    onChange={(e) => setEmergencyPhone(e.target.value)}
+                    disabled={!transferEnabled}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Where urgent cases go (severe pain, bleeding, etc.). Leave blank to use primary number.
                   </p>
                 </div>
 
@@ -263,8 +288,52 @@ export default function SettingsPage() {
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
-                    How long to ring your phone before telling the caller you're unavailable
+                    How long to ring before triggering the fallback action
                   </p>
+                </div>
+
+                {/* Fallback Behavior */}
+                <div className="space-y-2">
+                  <Label>If No One Answers</Label>
+                  <Select 
+                    value={transferFallback} 
+                    onValueChange={setTransferFallback}
+                    disabled={!transferEnabled}
+                  >
+                    <SelectTrigger className="w-full sm:w-80">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="voicemail">Take a voicemail message</SelectItem>
+                      <SelectItem value="callback">Promise callback within 30 minutes</SelectItem>
+                      <SelectItem value="callback_1h">Promise callback within 1 hour</SelectItem>
+                      <SelectItem value="callback_2h">Promise callback within 2 hours</SelectItem>
+                      <SelectItem value="retry">Try calling again (up to 2 retries)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    What the AI tells the caller if no one picks up the transfer
+                  </p>
+                </div>
+
+                {/* Test Transfer Button */}
+                <div className="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-900 dark:bg-green-950">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                      <p className="font-medium text-green-800 dark:text-green-200">Test Your Transfer Setup</p>
+                      <p className="text-sm text-green-700 dark:text-green-300">
+                        We'll call your transfer phone to make sure it's working
+                      </p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      className="border-green-600 text-green-700 hover:bg-green-100"
+                      disabled={!transferPhone || !transferEnabled}
+                    >
+                      <Phone className="mr-2 h-4 w-4" />
+                      Test Transfer
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -550,96 +619,207 @@ export default function SettingsPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* After-Hours Mode Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>After-Hours Mode</CardTitle>
+                <CardDescription>How the AI behaves outside business hours</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950">
+                  <div className="flex gap-3">
+                    <Clock className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm text-amber-800 dark:text-amber-200">
+                      <p className="font-medium mb-1">Business Hours Aware</p>
+                      <p>The AI automatically knows when you're open based on the hours set in the Clinic tab. 
+                         Outside those hours, it uses the after-hours behavior you configure here.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>After-Hours Behavior</Label>
+                  <Select defaultValue="message">
+                    <SelectTrigger className="w-full sm:w-80">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="message">Take a message for callback</SelectItem>
+                      <SelectItem value="book">Still allow appointment booking</SelectItem>
+                      <SelectItem value="emergency_only">Only handle emergencies, take messages for rest</SelectItem>
+                      <SelectItem value="redirect">Redirect to after-hours voicemail</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Announce Office is Closed</p>
+                    <p className="text-sm text-muted-foreground">"Thank you for calling. Our office is currently closed..."</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Emergency Transfers After Hours</p>
+                    <p className="text-sm text-muted-foreground">Transfer severe pain/bleeding cases to emergency phone</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>After-Hours Greeting (Optional)</Label>
+                  <Textarea 
+                    rows={2}
+                    placeholder="Thank you for calling {clinic_name}. Our office is currently closed. For emergencies, please press 1..."
+                  />
+                  <p className="text-xs text-muted-foreground">Leave blank to use default greeting</p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 
         {/* Calendar Settings */}
         <TabsContent value="calendar">
-          <Card>
-            <CardHeader>
-              <CardTitle>Calendar Integration</CardTitle>
-              <CardDescription>Connect and configure your calendar for appointment booking</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="rounded-lg border bg-muted/50 p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white">
-                      <Calendar className="h-5 w-5 text-blue-600" />
+          <div className="grid gap-6">
+            {/* Connection Status Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Calendar Integration</CardTitle>
+                <CardDescription>Connect your calendar so AI can check availability and book appointments</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Not Connected State */}
+                <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 text-center">
+                  <div className="flex justify-center gap-4 mb-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white shadow-sm border">
+                      <svg className="h-6 w-6" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
                     </div>
-                    <div>
-                      <p className="font-medium">Google Calendar</p>
-                      <p className="text-sm text-muted-foreground">Connected as dr-smith@clinic.com</p>
+                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white shadow-sm border">
+                      <svg className="h-6 w-6" viewBox="0 0 24 24"><path fill="#0078D4" d="M21.17 3H7.83A.83.83 0 0 0 7 3.83v16.34c0 .46.37.83.83.83h13.34c.46 0 .83-.37.83-.83V3.83a.83.83 0 0 0-.83-.83zM17 18H9v-2h8v2zm0-4H9v-2h8v2zm0-4H9V8h8v2z"/><path fill="#0078D4" opacity=".5" d="M3 7h2v14H3z"/></svg>
                     </div>
                   </div>
-                  <Button variant="outline">Disconnect</Button>
+                  <h3 className="font-medium mb-2">Connect Your Calendar</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    DentSignal needs calendar access to check your availability and book appointments.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <Button className="gap-2">
+                      <svg className="h-4 w-4" viewBox="0 0 24 24"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/></svg>
+                      Connect Google Calendar
+                    </Button>
+                    <Button variant="outline" className="gap-2">
+                      <svg className="h-4 w-4" viewBox="0 0 24 24"><path fill="currentColor" d="M21.17 3H7.83A.83.83 0 0 0 7 3.83v16.34c0 .46.37.83.83.83h13.34c.46 0 .83-.37.83-.83V3.83a.83.83 0 0 0-.83-.83z"/></svg>
+                      Connect Outlook
+                    </Button>
+                  </div>
                 </div>
-              </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>Sync Frequency</Label>
-                  <Select defaultValue="5">
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">Every 1 minute</SelectItem>
-                      <SelectItem value="5">Every 5 minutes</SelectItem>
-                      <SelectItem value="15">Every 15 minutes</SelectItem>
-                      <SelectItem value="30">Every 30 minutes</SelectItem>
-                    </SelectContent>
-                  </Select>
+                {/* Alternative: Manual Mode */}
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950">
+                  <div className="flex gap-3">
+                    <Info className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm text-amber-800 dark:text-amber-200">
+                      <p className="font-medium mb-1">Don't have Google or Outlook?</p>
+                      <p>DentSignal can work in "manual mode" - AI collects patient info and you confirm appointments manually. 
+                         Email <a href="mailto:founder@dentsignal.me" className="underline">founder@dentsignal.me</a> to set this up.</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Default Appointment Duration</Label>
-                  <Select defaultValue="60">
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="30">30 minutes</SelectItem>
-                      <SelectItem value="45">45 minutes</SelectItem>
-                      <SelectItem value="60">60 minutes</SelectItem>
-                      <SelectItem value="90">90 minutes</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
 
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Double-Booking Prevention</p>
-                  <p className="text-sm text-muted-foreground">Check calendar before booking</p>
+                {/* Practice Management Systems */}
+                <div className="space-y-3">
+                  <Label>Practice Management System (Coming Soon)</Label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="rounded-lg border p-3 text-center opacity-50">
+                      <p className="font-medium text-sm">Dentrix</p>
+                      <p className="text-xs text-muted-foreground">Coming Q1</p>
+                    </div>
+                    <div className="rounded-lg border p-3 text-center opacity-50">
+                      <p className="font-medium text-sm">Eaglesoft</p>
+                      <p className="text-xs text-muted-foreground">Coming Q1</p>
+                    </div>
+                    <div className="rounded-lg border p-3 text-center opacity-50">
+                      <p className="font-medium text-sm">Open Dental</p>
+                      <p className="text-xs text-muted-foreground">Coming Q2</p>
+                    </div>
+                    <div className="rounded-lg border p-3 text-center opacity-50">
+                      <p className="font-medium text-sm">Curve</p>
+                      <p className="text-xs text-muted-foreground">Coming Q2</p>
+                    </div>
+                  </div>
                 </div>
-                <Switch defaultChecked />
-              </div>
+              </CardContent>
+            </Card>
 
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Auto-Book Appointments</p>
-                  <p className="text-sm text-muted-foreground">AI directly adds to calendar (no confirmation needed)</p>
+            {/* Calendar Settings (shown when connected) */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Booking Settings</CardTitle>
+                <CardDescription>Configure how AI handles appointment booking</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Default Appointment Duration</Label>
+                    <Select defaultValue="60">
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="30">30 minutes</SelectItem>
+                        <SelectItem value="45">45 minutes</SelectItem>
+                        <SelectItem value="60">60 minutes</SelectItem>
+                        <SelectItem value="90">90 minutes</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Buffer Time Between Appointments</Label>
+                    <Select defaultValue="15">
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">No buffer</SelectItem>
+                        <SelectItem value="5">5 minutes</SelectItem>
+                        <SelectItem value="10">10 minutes</SelectItem>
+                        <SelectItem value="15">15 minutes</SelectItem>
+                        <SelectItem value="30">30 minutes</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <Switch />
-              </div>
 
-              <div className="space-y-2">
-                <Label>Buffer Time Between Appointments</Label>
-                <Select defaultValue="15">
-                  <SelectTrigger className="w-48">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">No buffer</SelectItem>
-                    <SelectItem value="5">5 minutes</SelectItem>
-                    <SelectItem value="10">10 minutes</SelectItem>
-                    <SelectItem value="15">15 minutes</SelectItem>
-                    <SelectItem value="30">30 minutes</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Double-Booking Prevention</p>
+                    <p className="text-sm text-muted-foreground">Check calendar before confirming</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Same-Day Appointments</p>
+                    <p className="text-sm text-muted-foreground">Allow booking appointments for today</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Require Phone Confirmation</p>
+                    <p className="text-sm text-muted-foreground">AI reads back appointment details to confirm</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* Notification Settings */}
@@ -834,6 +1014,41 @@ export default function SettingsPage() {
                     </a>
                   </Button>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Cancel Subscription */}
+            <Card className="border-red-200 dark:border-red-900">
+              <CardHeader>
+                <CardTitle className="text-red-700 dark:text-red-400">Cancel Subscription</CardTitle>
+                <CardDescription>End your DentSignal subscription</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950">
+                  <p className="text-sm text-red-800 dark:text-red-200">
+                    <strong>Before you go:</strong> Cancelling will immediately stop AI from answering your calls. 
+                    All your call data and settings will be preserved for 30 days in case you change your mind.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  <Button 
+                    variant="outline" 
+                    className="border-red-300 text-red-700 hover:bg-red-50 hover:text-red-800"
+                    asChild
+                  >
+                    <a href="mailto:hello@dentsignal.com?subject=Cancellation%20Request&body=Hi%2C%0A%0AI%20would%20like%20to%20cancel%20my%20DentSignal%20subscription.%0A%0AReason%20(optional)%3A%0A%0AClinic%20Name%3A%0AAccount%20Email%3A">
+                      Request Cancellation
+                    </a>
+                  </Button>
+                  <Button variant="ghost" asChild>
+                    <a href="mailto:founder@dentsignal.me?subject=Feedback%20Before%20Cancelling">
+                      Talk to Founder First
+                    </a>
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Cancellation requests are processed within 24 hours. You won't be charged after cancellation.
+                </p>
               </CardContent>
             </Card>
           </div>

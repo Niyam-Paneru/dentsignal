@@ -230,13 +230,42 @@ export default function CallsPage() {
                     </div>
                   </TabsContent>
                   <TabsContent value="recording" className="mt-4">
-                    <div className="flex items-center justify-center rounded-lg border bg-muted p-8">
-                      <div className="text-center">
-                        <Play className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">
-                          {selectedCall.recording_url ? 'Recording available' : 'Recording not available'}
-                        </p>
-                      </div>
+                    <div className="rounded-lg border bg-muted p-4">
+                      {selectedCall.recording_url ? (
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                              <Play className="h-6 w-6 text-primary" />
+                            </div>
+                            <div>
+                              <p className="font-medium">Call Recording</p>
+                              <p className="text-sm text-muted-foreground">
+                                {formatDuration(selectedCall.duration_seconds || 0)} duration
+                              </p>
+                            </div>
+                          </div>
+                          <audio 
+                            controls 
+                            className="w-full"
+                            src={selectedCall.recording_url}
+                          >
+                            Your browser does not support the audio element.
+                          </audio>
+                          <p className="text-xs text-muted-foreground">
+                            Recordings are stored securely and encrypted. HIPAA compliant.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center py-8 text-center">
+                          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted-foreground/10 mb-4">
+                            <Play className="h-8 w-8 text-muted-foreground" />
+                          </div>
+                          <p className="font-medium text-muted-foreground">Recording Not Available</p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            This call may not have been recorded, or the recording is still processing.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </TabsContent>
                 </Tabs>
