@@ -545,3 +545,250 @@ Thanks so much!
     
     return send_sms(to_number, message)
 
+
+# =============================================================================
+# PHONE NUMBER PROVISIONING (Auto-configure webhooks for new clinics)
+# =============================================================================
+# 
+# IMPORTANT: When you buy a Twilio number for a new clinic, webhooks must be set:
+#   - Voice Webhook: {API_BASE_URL}/inbound/voice (POST)
+#   - SMS Webhook: {API_BASE_URL}/api/sms/inbound (POST)
+#
+# Use provision_clinic_number() to automate this!
+# =============================================================================
+
+def list_available_numbers(
+    area_code: Optional[str] = None,
+    country: str = "US",
+    limit: int = 10,
+) -> list:
+    """
+    List available phone numbers to purchase.
+    
+    Args:
+        area_code: Specific area code (e.g., "415" for San Francisco)
+        country: Country code (default: US)
+        limit: Max numbers to return
+        
+    Returns:
+        List of available numbers with details
+    """
+    client = get_twilio_client()
+    if not client:
+        return {"error": "Twilio client not configured"}
+    
+    try:
+        if area_code:
+            numbers = client.available_phone_numbers(country).local.list(
+                area_code=area_code,
+                voice_enabled=True,
+                sms_enabled=True,
+                limit=limit,
+            )
+        else:
+            numbers = client.available_phone_numbers(country).local.list(
+                voice_enabled=True,
+                sms_enabled=True,
+                limit=limit,
+            )
+        
+        return [
+            {
+                "phone_number": n.phone_number,
+                "friendly_name": n.friendly_name,
+                "locality": n.locality,
+                "region": n.region,
+                "capabilities": {
+                    "voice": n.capabilities.get("voice", False),
+                    "sms": n.capabilities.get("sms", False),
+                }
+            }
+            for n in numbers
+        ]
+    except Exception as e:
+        logger.error(f"Error listing available numbers: {e}")
+        return {"error": str(e)}
+
+
+def provision_clinic_number(
+    clinic_id: int,
+    area_code: Optional[str] = None,
+    phone_number: Optional[str] = None,
+    friendly_name: Optional[str] = None,
+) -> dict:
+    """
+    Purchase a Twilio number and auto-configure webhooks for a clinic.
+    
+    THIS IS THE KEY FUNCTION - it automatically sets up:
+    - Voice webhook → /inbound/voice (for AI calls)
+    - SMS webhook → /api/sms/inbound (for patient replies)
+    
+    Args:
+        clinic_id: Database ID of the clinic
+        area_code: Preferred area code (e.g., "415")
+        phone_number: Specific number to buy (if known)
+        friendly_name: Display name (e.g., "Smile Dental Main Line")
+        
+    Returns:
+        dict with phone_number, sid, and status
+        
+    Example:
+        >>> result = provision_clinic_number(
+        ...     clinic_id=123,
+        ...     area_code="512",
+        ...     friendly_name="Austin Dental Clinic"
+        ... )
+        >>> print(result)
+        {'success': True, 'phone_number': '+15125551234', 'sid': 'PN...'}
+    """
+    client = get_twilio_client()
+    if not client:
+        return {"success": False, "error": "Twilio client not configured"}
+    
+    # Build webhook URLs
+    voice_webhook = f"{API_BASE_URL}/inbound/voice"
+    sms_webhook = f"{API_BASE_URL}/api/sms/inbound"
+    status_callback = f"{API_BASE_URL}/twilio/status"
+    
+    try:
+        # Option 1: Buy specific number
+        if phone_number:
+            number = client.incoming_phone_numbers.create(
+                phone_number=phone_number,
+                friendly_name=friendly_name or f"Clinic {clinic_id}",
+                voice_url=voice_webhook,
+                voice_method="POST",
+                sms_url=sms_webhook,
+                sms_method="POST",
+                status_callback=status_callback,
+                status_callback_method="POST",
+            )
+        # Option 2: Buy by area code
+        elif area_code:
+            number = client.incoming_phone_numbers.create(
+                area_code=area_code,
+                friendly_name=friendly_name or f"Clinic {clinic_id}",
+                voice_url=voice_webhook,
+                voice_method="POST",
+                sms_url=sms_webhook,
+                sms_method="POST",
+                status_callback=status_callback,
+                status_callback_method="POST",
+            )
+        else:
+            return {"success": False, "error": "Must provide area_code or phone_number"}
+        
+        logger.info(f"Provisioned {number.phone_number} for clinic {clinic_id}")
+        logger.info(f"  Voice webhook: {voice_webhook}")
+        logger.info(f"  SMS webhook: {sms_webhook}")
+        
+        return {
+            "success": True,
+            "phone_number": number.phone_number,
+            "sid": number.sid,
+            "friendly_name": number.friendly_name,
+            "webhooks": {
+                "voice": voice_webhook,
+                "sms": sms_webhook,
+            },
+            "message": "Number purchased and webhooks configured automatically!",
+        }
+        
+    except Exception as e:
+        logger.error(f"Error provisioning number for clinic {clinic_id}: {e}")
+        return {"success": False, "error": str(e)}
+
+
+def update_number_webhooks(phone_sid: str) -> dict:
+    """
+    Update webhooks for an existing Twilio number.
+    
+    Use this to fix numbers that were set up manually or need updating.
+    
+    Args:
+        phone_sid: Twilio Phone Number SID (starts with "PN")
+        
+    Returns:
+        dict with success status
+    """
+    client = get_twilio_client()
+    if not client:
+        return {"success": False, "error": "Twilio client not configured"}
+    
+    voice_webhook = f"{API_BASE_URL}/inbound/voice"
+    sms_webhook = f"{API_BASE_URL}/api/sms/inbound"
+    
+    try:
+        number = client.incoming_phone_numbers(phone_sid).update(
+            voice_url=voice_webhook,
+            voice_method="POST",
+            sms_url=sms_webhook,
+            sms_method="POST",
+        )
+        
+        logger.info(f"Updated webhooks for {number.phone_number}")
+        
+        return {
+            "success": True,
+            "phone_number": number.phone_number,
+            "webhooks": {
+                "voice": voice_webhook,
+                "sms": sms_webhook,
+            },
+        }
+    except Exception as e:
+        logger.error(f"Error updating number {phone_sid}: {e}")
+        return {"success": False, "error": str(e)}
+
+
+def release_number(phone_sid: str) -> dict:
+    """
+    Release (delete) a Twilio phone number.
+    
+    Use when a clinic cancels their subscription.
+    
+    Args:
+        phone_sid: Twilio Phone Number SID
+        
+    Returns:
+        dict with success status
+    """
+    client = get_twilio_client()
+    if not client:
+        return {"success": False, "error": "Twilio client not configured"}
+    
+    try:
+        client.incoming_phone_numbers(phone_sid).delete()
+        logger.info(f"Released phone number {phone_sid}")
+        return {"success": True, "message": f"Number {phone_sid} released"}
+    except Exception as e:
+        logger.error(f"Error releasing number {phone_sid}: {e}")
+        return {"success": False, "error": str(e)}
+
+
+def list_clinic_numbers() -> list:
+    """
+    List all phone numbers in your Twilio account.
+    
+    Useful for auditing and checking webhook configurations.
+    """
+    client = get_twilio_client()
+    if not client:
+        return {"error": "Twilio client not configured"}
+    
+    try:
+        numbers = client.incoming_phone_numbers.list()
+        return [
+            {
+                "sid": n.sid,
+                "phone_number": n.phone_number,
+                "friendly_name": n.friendly_name,
+                "voice_url": n.voice_url,
+                "sms_url": n.sms_url,
+                "date_created": str(n.date_created),
+            }
+            for n in numbers
+        ]
+    except Exception as e:
+        logger.error(f"Error listing numbers: {e}")
+        return {"error": str(e)}

@@ -427,3 +427,175 @@ async def get_dashboard_stats():
                 "average_duration_seconds": total_duration // completed_calls if completed_calls > 0 else 0,
             }
         }
+
+
+# -----------------------------------------------------------------------------
+# Phone Number Provisioning (Automated Twilio Setup)
+# -----------------------------------------------------------------------------
+
+from pydantic import BaseModel
+
+class ProvisionNumberRequest(BaseModel):
+    """Request to provision a new Twilio number for a clinic."""
+    clinic_id: int
+    area_code: Optional[str] = None
+    phone_number: Optional[str] = None  # Specific number to buy
+    friendly_name: Optional[str] = None
+
+
+@router.get("/admin/available-numbers")
+async def list_available_numbers(
+    area_code: Optional[str] = Query(None, description="Area code to search (e.g., 512)"),
+    limit: int = Query(10, ge=1, le=50),
+):
+    """
+    List available Twilio phone numbers to purchase.
+    
+    Use this to show clients which numbers are available in their area.
+    """
+    from twilio_service import list_available_numbers as twilio_list_numbers
+    
+    result = twilio_list_numbers(area_code=area_code, limit=limit)
+    
+    if isinstance(result, dict) and result.get("error"):
+        raise HTTPException(status_code=500, detail=result["error"])
+    
+    return {
+        "available_numbers": result,
+        "count": len(result) if isinstance(result, list) else 0,
+    }
+
+
+@router.post("/admin/provision-number")
+async def provision_phone_number(request: ProvisionNumberRequest):
+    """
+    Purchase a Twilio phone number and auto-configure webhooks for a clinic.
+    
+    This is the main endpoint for setting up new clinics!
+    
+    It will:
+    1. Buy the phone number from Twilio
+    2. Configure voice webhook → /inbound/voice
+    3. Configure SMS webhook → /api/sms/inbound
+    4. Update the clinic record with the new number
+    
+    Example:
+        POST /api/admin/provision-number
+        {
+            "clinic_id": 123,
+            "area_code": "512",
+            "friendly_name": "Austin Dental Clinic"
+        }
+    """
+    from twilio_service import provision_clinic_number
+    
+    # Verify clinic exists
+    with get_session() as session:
+        clinic = session.get(Client, request.clinic_id)
+        if not clinic:
+            raise HTTPException(status_code=404, detail="Clinic not found")
+        
+        if clinic.twilio_number:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Clinic already has a number: {clinic.twilio_number}"
+            )
+    
+    # Provision the number
+    result = provision_clinic_number(
+        clinic_id=request.clinic_id,
+        area_code=request.area_code,
+        phone_number=request.phone_number,
+        friendly_name=request.friendly_name or clinic.name,
+    )
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=500, detail=result.get("error", "Failed to provision number"))
+    
+    # Update clinic with new number
+    with get_session() as session:
+        clinic = session.get(Client, request.clinic_id)
+        if clinic:
+            clinic.twilio_number = result["phone_number"]
+            clinic.phone_display = result["phone_number"]  # Can be updated later
+            session.commit()
+    
+    return {
+        "success": True,
+        "clinic_id": request.clinic_id,
+        "phone_number": result["phone_number"],
+        "twilio_sid": result["sid"],
+        "webhooks": result["webhooks"],
+        "message": "Phone number purchased and configured! Clinic is ready to receive calls.",
+    }
+
+
+@router.get("/admin/clinic-numbers")
+async def list_all_clinic_numbers():
+    """
+    List all phone numbers in your Twilio account.
+    
+    Useful for auditing webhook configurations.
+    """
+    from twilio_service import list_clinic_numbers
+    
+    result = list_clinic_numbers()
+    
+    if isinstance(result, dict) and result.get("error"):
+        raise HTTPException(status_code=500, detail=result["error"])
+    
+    return {
+        "numbers": result,
+        "count": len(result) if isinstance(result, list) else 0,
+    }
+
+
+@router.post("/admin/fix-webhooks/{phone_sid}")
+async def fix_number_webhooks(phone_sid: str):
+    """
+    Update webhooks for an existing Twilio number.
+    
+    Use this if a number was set up manually with wrong webhooks.
+    
+    Args:
+        phone_sid: Twilio Phone Number SID (starts with "PN")
+    """
+    from twilio_service import update_number_webhooks
+    
+    result = update_number_webhooks(phone_sid)
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=500, detail=result.get("error", "Failed to update webhooks"))
+    
+    return result
+
+
+@router.delete("/admin/release-number/{phone_sid}")
+async def release_phone_number(phone_sid: str, clinic_id: Optional[int] = None):
+    """
+    Release (delete) a Twilio phone number.
+    
+    Use when a clinic cancels their subscription.
+    
+    WARNING: This permanently releases the number back to Twilio!
+    
+    Args:
+        phone_sid: Twilio Phone Number SID
+        clinic_id: Optional clinic ID to clear from database
+    """
+    from twilio_service import release_number
+    
+    result = release_number(phone_sid)
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=500, detail=result.get("error", "Failed to release number"))
+    
+    # Clear from clinic record if provided
+    if clinic_id:
+        with get_session() as session:
+            clinic = session.get(Client, clinic_id)
+            if clinic:
+                clinic.twilio_number = None
+                session.commit()
+    
+    return result
