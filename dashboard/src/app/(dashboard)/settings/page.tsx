@@ -55,6 +55,7 @@ interface SettingsData {
   greeting_template: string
   services: string[]
   dentist_names: string[]
+  insurance_accepted: string
   insurance_verification: boolean
   emergency_transfers: boolean
   appointment_confirmations: boolean
@@ -563,6 +564,17 @@ export default function SettingsPage() {
                     rows={2}
                     defaultValue={settings?.services?.join(', ') || ''}
                   />
+                  <p className="text-xs text-muted-foreground">Comma-separated list of services (cleanings, fillings, crowns, etc.)</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Accepted Insurance Plans</Label>
+                  <Textarea 
+                    rows={2}
+                    placeholder="Delta Dental, Cigna, Aetna, MetLife, United Healthcare"
+                    defaultValue={settings?.insurance_accepted || ''}
+                  />
+                  <p className="text-xs text-muted-foreground">Comma-separated list of insurance plans you accept. AI will tell callers which plans you take.</p>
                 </div>
               </CardContent>
             </Card>
