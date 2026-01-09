@@ -6,13 +6,14 @@ Endpoints for:
 - Managing SMS templates
 - Viewing SMS history
 - Automated reminder scheduling
+- Inbound SMS webhook for patient responses (No-Show Reduction)
 """
 
 import logging
 from datetime import datetime, timedelta
 from typing import Optional, List
 
-from fastapi import APIRouter, HTTPException, Query, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Query, BackgroundTasks, Form, Request
 from pydantic import BaseModel, Field
 
 from twilio_service import (
@@ -23,6 +24,11 @@ from twilio_service import (
     send_recall_reminder,
     send_review_request,
 )
+
+try:
+    from tasks_reminder import handle_patient_sms_response
+except ImportError:
+    from dental_agent.tasks_reminder import handle_patient_sms_response
 
 logger = logging.getLogger(__name__)
 
@@ -342,6 +348,109 @@ async def get_sms_templates():
             for k, v in DEFAULT_TEMPLATES.items()
         ]
     }
+
+
+# =============================================================================
+# Inbound SMS Webhook (No-Show Reduction)
+# =============================================================================
+
+@router.post("/inbound")
+async def inbound_sms_webhook(
+    request: Request,
+    From: str = Form(None),
+    To: str = Form(None),
+    Body: str = Form(None),
+):
+    """
+    Twilio webhook for incoming SMS messages.
+    
+    Processes patient responses to appointment reminders:
+    - YES/CONFIRM → Mark appointment confirmed
+    - NO/RESCHEDULE → Flag for follow-up
+    - BOOK → Provide booking info
+    
+    Configure this URL in Twilio Console:
+    Messaging > Phone Number > Messaging Configuration > Webhook URL
+    
+    Set to: https://your-domain.com/api/sms/inbound (POST)
+    """
+    # Handle both Form data and JSON
+    if From is None or Body is None:
+        try:
+            form_data = await request.form()
+            From = form_data.get("From", "")
+            To = form_data.get("To", "")
+            Body = form_data.get("Body", "")
+        except:
+            pass
+    
+    if not From or not Body:
+        logger.warning("Inbound SMS missing From or Body")
+        return {"status": "error", "message": "Missing required fields"}
+    
+    logger.info(f"Inbound SMS from {From}: {Body[:50]}...")
+    
+    # Process the response
+    result = handle_patient_sms_response(
+        from_number=From,
+        message_body=Body,
+    )
+    
+    # Send response SMS if we have one
+    if result.get("response"):
+        try:
+            send_sms(From, result["response"])
+            result["response_sent"] = True
+        except Exception as e:
+            logger.error(f"Failed to send response SMS: {e}")
+            result["response_sent"] = False
+    
+    logger.info(f"Inbound SMS processed: {result.get('action', 'unknown')}")
+    
+    # Return TwiML response (empty is fine - we send response via API)
+    return {
+        "status": "success",
+        "from": From,
+        "intent": result.get("intent"),
+        "action": result.get("action"),
+        "appointment_id": result.get("appointment_id"),
+    }
+
+
+class AppointmentConfirmationStatusRequest(BaseModel):
+    """Request to get confirmation status."""
+    appointment_id: int
+
+
+@router.get("/appointments/{appointment_id}/confirmation-status")
+async def get_appointment_confirmation_status(appointment_id: int):
+    """
+    Get the confirmation status of an appointment.
+    
+    Returns the current SMS sequence step and confirmation status.
+    """
+    try:
+        from db import get_session, Appointment
+    except ImportError:
+        from dental_agent.db import get_session, Appointment
+    
+    with get_session() as session:
+        appointment = session.get(Appointment, appointment_id)
+        if not appointment:
+            raise HTTPException(status_code=404, detail="Appointment not found")
+        
+        return {
+            "appointment_id": appointment_id,
+            "confirmation_status": appointment.confirmation_status,
+            "sms_sequence_step": appointment.sms_sequence_step,
+            "confirmation_sent": appointment.confirmation_sent,
+            "reminder_24h_sent": appointment.reminder_24h_sent,
+            "reminder_2h_sent": appointment.reminder_2h_sent,
+            "last_sms_sent_at": appointment.last_sms_sent_at.isoformat() if appointment.last_sms_sent_at else None,
+            "patient_response": appointment.patient_response,
+            "escalation_needed": appointment.escalation_needed,
+            "confirmed_at": appointment.confirmed_at.isoformat() if appointment.confirmed_at else None,
+        }
 
 
 def _extract_variables(template: str) -> List[str]:

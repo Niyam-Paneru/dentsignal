@@ -1029,27 +1029,47 @@ async def mark_followed_up(
 # -----------------------------------------------------------------------------
 
 async def _send_appointment_confirmation(appointment: Appointment, db: Session):
-    """Send confirmation SMS for new appointment."""
+    """
+    Send confirmation SMS and schedule the full no-show reduction sequence.
+    
+    4-touch sequence:
+    1. Confirmation (immediate) - triggered here
+    2. 24-hour reminder - scheduled by Celery
+    3. 2-hour reminder - scheduled by Celery  
+    4. Escalation - if no response
+    """
     try:
-        from twilio_service import send_sms
+        # Use the new Celery task for the full 4-touch sequence
+        from tasks_reminder import send_booking_confirmation
         
-        time_str = appointment.scheduled_time.strftime("%A, %B %d at %I:%M %p")
-        message = (
-            f"Your dental appointment is confirmed for {time_str}. "
-            f"Reply YES to confirm or call us to reschedule. "
-            f"- {appointment.patient_name.split()[0]}, we look forward to seeing you!"
-        )
+        # Queue the confirmation task (which will also schedule 24h/2h reminders)
+        send_booking_confirmation.delay(appointment.id)
         
-        send_sms(appointment.patient_phone, message)
+        logger.info(f"Queued confirmation SMS + reminder sequence for appointment {appointment.id}")
         
-        # Update appointment
-        appointment.confirmation_sent = True
-        db.commit()
-        
-        logger.info(f"Sent confirmation SMS for appointment {appointment.id}")
-        
+    except ImportError:
+        # Fallback to direct SMS if Celery not available
+        try:
+            from twilio_service import send_sms
+            
+            time_str = appointment.scheduled_time.strftime("%A, %B %d at %I:%M %p")
+            message = (
+                f"Your dental appointment is confirmed for {time_str}. "
+                f"Reply YES to confirm or call us to reschedule. "
+                f"- {appointment.patient_name.split()[0]}, we look forward to seeing you!"
+            )
+            
+            send_sms(appointment.patient_phone, message)
+            
+            # Update appointment
+            appointment.confirmation_sent = True
+            db.commit()
+            
+            logger.info(f"Sent confirmation SMS for appointment {appointment.id} (fallback mode)")
+        except Exception as e:
+            logger.error(f"Failed to send confirmation SMS: {e}")
     except Exception as e:
-        logger.error(f"Failed to send confirmation SMS: {e}")
+        logger.error(f"Failed to queue confirmation task: {e}")
 
 
 async def _send_no_show_followup(appointment: Appointment, db: Session):

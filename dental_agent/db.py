@@ -425,6 +425,13 @@ class Appointment(SQLModel, table=True):
     reminder_2h_sent: bool = Field(default=False)
     confirmation_sent: bool = Field(default=False)
     
+    # No-Show Reduction SMS Sequence (4-touch)
+    confirmation_status: str = Field(default="pending")  # pending, confirmed, declined, no_response
+    sms_sequence_step: int = Field(default=0)  # 0=none, 1=confirmation, 2=24h, 3=2h, 4=escalation
+    last_sms_sent_at: Optional[datetime] = None
+    patient_response: Optional[str] = None  # Raw response text from patient
+    escalation_needed: bool = Field(default=False)
+    
     # Timestamps
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)

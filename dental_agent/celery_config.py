@@ -24,7 +24,7 @@ celery_app = Celery(
     "dental_agent",
     broker=REDIS_URL,
     backend=REDIS_URL,
-    include=["dental_agent.tasks"],  # Auto-discover tasks
+    include=["dental_agent.tasks", "dental_agent.tasks_reminder"],  # Auto-discover tasks
 )
 
 # Celery configuration
@@ -58,6 +58,19 @@ celery_app.conf.update(
         "dental_agent.tasks.retry_call": {
             "rate_limit": "5/m"  # Max 5 retries per minute
         },
+        # SMS reminder rate limits
+        "dental_agent.tasks_reminder.send_booking_confirmation": {
+            "rate_limit": "30/m"  # Max 30 confirmations per minute
+        },
+        "dental_agent.tasks_reminder.send_24h_reminder": {
+            "rate_limit": "60/m"  # Max 60 reminders per minute
+        },
+        "dental_agent.tasks_reminder.send_2h_reminder": {
+            "rate_limit": "60/m"
+        },
+        "dental_agent.tasks_reminder.escalation_check": {
+            "rate_limit": "20/m"
+        },
     },
     
     # Beat schedule for periodic tasks
@@ -67,6 +80,11 @@ celery_app.conf.update(
             "schedule": 86400.0,  # Every 24 hours (in seconds)
             # Or use crontab: schedule=crontab(hour=0, minute=0)
         },
+        # No-Show Reduction: Check for appointments needing reminders every 15 minutes
+        "appointment-reminder-check": {
+            "task": "dental_agent.tasks_reminder.process_appointment_reminders",
+            "schedule": 900.0,  # Every 15 minutes
+        },
     },
 )
 
@@ -75,6 +93,12 @@ celery_app.conf.task_routes = {
     "dental_agent.tasks.start_call": {"queue": "calls"},
     "dental_agent.tasks.retry_call": {"queue": "calls"},
     "dental_agent.tasks.daily_billing_summary": {"queue": "billing"},
+    # SMS reminder tasks
+    "dental_agent.tasks_reminder.send_booking_confirmation": {"queue": "sms"},
+    "dental_agent.tasks_reminder.send_24h_reminder": {"queue": "sms"},
+    "dental_agent.tasks_reminder.send_2h_reminder": {"queue": "sms"},
+    "dental_agent.tasks_reminder.escalation_check": {"queue": "sms"},
+    "dental_agent.tasks_reminder.process_appointment_reminders": {"queue": "sms"},
 }
 
 
