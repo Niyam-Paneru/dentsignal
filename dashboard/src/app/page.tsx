@@ -179,8 +179,8 @@ export default function HomePage() {
             />
             <FeatureCard
               icon={Users}
-              title="🛡️ Insurance Verified in Seconds"
-              description="AI verifies insurance coverage during the call. No more 'Do you take my insurance?' callbacks. Fewer payment surprises."
+              title="🛡️ Insurance Questions Answered"
+              description="AI instantly tells callers which plans you accept. No more 'Do you take my insurance?' callbacks. Real-time eligibility checks coming soon."
             />
             <FeatureCard
               icon={DollarSign}
