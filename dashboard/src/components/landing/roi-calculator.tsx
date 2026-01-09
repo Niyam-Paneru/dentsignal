@@ -209,87 +209,26 @@ export function ROICalculator() {
           </CardContent>
         </Card>
 
-        {/* Results Section - Clean 3-block layout per spec */}
-        <div className="space-y-3" aria-live="polite">
-          {/* 3 Result Cards - Stacked */}
-          <div className="grid gap-2 sm:gap-3">
-            {/* Block 1: You're Losing - RED/ORANGE */}
-            <Card className="border-2 border-orange-300 bg-orange-50">
-              <CardContent className="py-3 px-4 text-center">
-                <p className="text-xs font-semibold text-orange-700 uppercase tracking-wide mb-1">You&apos;re Losing</p>
-                <p className="text-2xl sm:text-3xl font-black text-orange-700">
-                  {formatCurrency(calculations.monthlyLoss)}
-                </p>
-                <p className="text-xs text-orange-600">/month from missed calls</p>
-              </CardContent>
-            </Card>
-            
-            {/* Block 2: With DentSignal - BLUE */}
-            <Card className="border-2 border-cyan-300 bg-cyan-50">
-              <CardContent className="py-3 px-4 text-center">
-                <p className="text-xs font-semibold text-cyan-700 uppercase tracking-wide mb-1">With DentSignal</p>
-                <p className="text-2xl sm:text-3xl font-black text-cyan-700">
-                  +{formatCurrency(calculations.monthlyRecovered)}
-                </p>
-                <p className="text-xs text-cyan-600">/month captured &amp; booked</p>
-                <p className="text-xs text-slate-500 mt-1">Assumes DentSignal converts ~50% of missed calls</p>
-              </CardContent>
-            </Card>
-            
-            {/* Block 3: Your Profit - GREEN */}
-            <Card className="border-2 border-emerald-400 bg-emerald-50">
-              <CardContent className="py-3 px-4 text-center">
-                <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wide mb-1">Your Profit</p>
-                <p className="text-2xl sm:text-3xl font-black text-emerald-700">
-                  +{formatCurrency(calculations.monthlyProfit)}
-                </p>
-                <p className="text-xs text-emerald-600">/month after DentSignal</p>
-                <p className="text-xs text-slate-500 mt-1">Recovered revenue minus ${DENTSIGNAL_MONTHLY_PRICE}/month</p>
-              </CardContent>
-            </Card>
-          </div>
-          
-          {/* Payback - Dynamic, not static "1-2 weeks" */}
-          <div className="rounded-lg bg-slate-800 py-3 px-4 text-center">
-            <p className="text-sm text-slate-300">
-              Pays for itself in <span className="font-bold text-white">~{calculations.paybackDays} days</span>
-            </p>
-          </div>
-
-          {/* The Math - Compact */}
-          <Card className="border-slate-200">
-            <CardContent className="py-3 px-4">
-              <p className="text-xs font-semibold text-slate-700 uppercase mb-2">The Math</p>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Missed calls/month</span>
-                  <span className="font-medium text-slate-900">{calculations.missedCalls}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Extra appointments with AI</span>
-                  <span className="font-medium text-emerald-600">+{calculations.extraAppointments}</span>
-                </div>
-                <div className="flex justify-between border-t border-slate-100 pt-2">
-                  <span className="text-slate-600">DentSignal cost</span>
-                  <span className="font-medium text-slate-900">${DENTSIGNAL_MONTHLY_PRICE}/mo</span>
-                </div>
-              </div>
+        {/* Results Section - Single focus on loss */}
+        <div className="space-y-4" aria-live="polite">
+          {/* Main Loss Card - Big scary number */}
+          <Card className="border-2 border-[#EF4444] bg-red-50">
+            <CardContent className="py-6 px-4 text-center">
+              <p className="text-sm font-semibold text-[#EF4444] uppercase tracking-wide mb-2">You&apos;re Losing</p>
+              <p className="text-4xl sm:text-5xl font-black text-[#EF4444]">
+                {formatCurrency(calculations.monthlyLoss)}
+              </p>
+              <p className="text-base text-red-600 mt-1">/month from missed calls</p>
+              <p className="text-sm text-slate-600 mt-3">
+                DentSignal recovers ~50% of this on average.
+              </p>
             </CardContent>
           </Card>
-
-          {/* CTA - Compact */}
-          <div className="rounded-xl bg-slate-900 p-4 text-center text-white">
-            <h3 className="mb-2 text-base font-semibold">Ready to stop losing calls?</h3>
-            <Link href="/signup">
-              <Button className="w-full sm:w-auto gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-6">
-                Start Free Trial
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-            <p className="mt-2 text-xs text-slate-400">
-              7-day free trial • No credit card • Cancel anytime
-            </p>
-          </div>
+          
+          {/* Payback line */}
+          <p className="text-center text-sm text-slate-600">
+            At $199/mo, pays for itself in <span className="font-bold text-slate-900">~{calculations.paybackDays} days</span>
+          </p>
         </div>
       </div>
 

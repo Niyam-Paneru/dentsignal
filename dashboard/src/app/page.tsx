@@ -40,90 +40,46 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Hero Section - Loss-Focused Dark Design */}
-      <section className="relative overflow-hidden bg-[#1f2937] py-16 sm:py-24">
+      {/* Hero Section - Clean, Single Focus */}
+      <section className="relative overflow-hidden bg-[#1f2937] py-16 sm:py-20">
         <div className="container relative mx-auto px-4">
-          <div className="mx-auto max-w-5xl">
-            <div className="grid gap-12 lg:grid-cols-5 lg:gap-8 items-center">
-              
-              {/* Left Column (60%) - Problem Statement */}
-              <div className="lg:col-span-3 text-center lg:text-left">
-                {/* Social Proof Badge */}
-                <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-[#22C55E]/10 px-4 py-2 text-sm font-semibold text-[#22C55E] border border-[#22C55E]/20">
-                  <span className="flex h-2 w-2 rounded-full bg-[#22C55E] animate-pulse" />
-                  ✨ Trusted by 50+ dental practices nationwide
-                </div>
-                
-                {/* Big RED Loss Amount - Realistic range per spec */}
-                <div className="mb-6">
-                  <span className="text-5xl sm:text-6xl lg:text-7xl font-black text-[#EF4444] tracking-tight">
-                    $7K–$10K
-                  </span>
-                  <span className="block text-2xl sm:text-3xl font-bold text-white/80 mt-2">
-                    /month lost to missed calls
-                  </span>
-                </div>
-                
-                <h1 className="mb-6 text-2xl sm:text-3xl font-bold text-white/90 leading-relaxed">
-                  Right now, patients are calling your practice and hanging up.<br className="hidden sm:block" />
-                  <span className="text-[#EF4444]">They book with someone else.</span>
-                </h1>
-                
-                <p className="mb-8 text-lg text-white/70">
-                  DentSignal captures those calls. Every single one.<br />
-                  AI answers 24/7, books appointments, transfers emergencies.
-                </p>
-                
-                {/* Trust Line */}
-                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 text-sm text-white/60">
-                  <span className="flex items-center gap-1.5">
-                    <span className="text-[#22C55E]">✓</span> HIPAA compliant
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="text-[#22C55E]">✓</span> Setup in 48 hours
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="text-[#22C55E]">✓</span> Cancel anytime
-                  </span>
-                </div>
-              </div>
-              
-              {/* Right Column (40%) - CTA Area */}
-              <div className="lg:col-span-2">
-                <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-8 text-center">
-                  <p className="mb-2 text-sm font-bold uppercase tracking-widest text-[#22C55E]">
-                    Start Capturing Missed Revenue
-                  </p>
-                  <p className="mb-6 text-white/70 text-sm">
-                    7-day free trial. No credit card required.
-                  </p>
-                  
-                  <Link href="/signup">
-                    <Button size="lg" className="w-full h-14 gap-3 bg-[#22C55E] hover:bg-[#16a34a] text-lg font-bold shadow-xl shadow-[#22C55E]/20 transition-all hover:shadow-[#22C55E]/40 hover:-translate-y-1 rounded-xl mb-4">
-                      Start 7-Day Free Trial
-                      <ArrowRight className="h-5 w-5" />
-                    </Button>
-                  </Link>
-                  
-                  <div className="text-center mb-4">
-                    <span className="text-white/40 text-sm">or hear it first</span>
-                  </div>
-                  
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[#0099CC]">
-                    🤖 AI Demo Line (24/7 Robot)
-                  </p>
-                  <a 
-                    href="tel:+19048679643" 
-                    className="block mb-2 text-2xl font-bold tracking-wider text-white hover:text-[#0099CC] transition-colors font-mono"
-                  >
-                    (904) 867-9643
-                  </a>
-                  <p className="text-xs text-white/50">
-                    Talk to our AI. Pretend you have a toothache.
-                  </p>
-                </div>
-              </div>
+          <div className="mx-auto max-w-3xl text-center">
+            <h1 className="mb-4 text-3xl sm:text-4xl lg:text-5xl font-black text-white leading-tight">
+              Stop Losing Patients to <span className="text-[#EF4444]">Missed Calls</span>
+            </h1>
+            
+            <p className="mb-8 text-lg sm:text-xl text-white/70 max-w-2xl mx-auto">
+              AI answers every call 24/7, books appointments, and transfers emergencies to you.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+              <Link href="/signup">
+                <Button size="lg" className="h-14 gap-3 bg-[#22C55E] hover:bg-[#16a34a] text-lg font-bold shadow-xl shadow-[#22C55E]/20 transition-all hover:shadow-[#22C55E]/40 hover:-translate-y-1 rounded-xl px-8">
+                  Start 7-Day Free Trial
+                  <ArrowRight className="h-5 w-5" />
+                </Button>
+              </Link>
             </div>
+            
+            <p className="text-sm text-white/50 mb-6">No credit card required. Cancel anytime.</p>
+            
+            <p className="text-sm text-white/60">
+              🤖 Or call the AI demo: <a href="tel:+19048679643" className="font-mono text-[#0099CC] hover:underline">(904) 867-9643</a>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Social Proof Bar - Moved below hero */}
+      <section className="bg-[#1f2937] border-t border-white/10 py-4">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-white/70">
+            <span className="flex items-center gap-2">
+              <span className="flex h-2 w-2 rounded-full bg-[#22C55E] animate-pulse" />
+              Trusted by 50+ dental practices
+            </span>
+            <span className="hidden sm:inline text-white/30">|</span>
+            <span className="text-[#EF4444] font-semibold">$7K–$10K/month lost to missed calls</span>
           </div>
         </div>
       </section>
@@ -271,17 +227,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="mt-6 text-center">
-            <Link href="/signup">
-              <Button size="lg" className="gap-2 bg-[#22C55E] hover:bg-[#16a34a] text-white font-bold shadow-lg">
-                Start 7-Day Free Trial
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-            <p className="mt-3 text-sm text-[#718096]">
-              🤖 Or call our AI demo: <a href="tel:+19048679643" className="font-medium text-[#0099CC] hover:underline">(904) 867-9643</a>
-            </p>
-          </div>
         </div>
       </section>
 
@@ -332,25 +277,17 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Final CTA Section */}
+      {/* Final CTA Section - Minimal, links to pricing */}
       <section className="py-10 bg-[#1B3A7C]">
         <div className="container mx-auto px-4 text-center">
           <h2 className="mb-3 text-2xl font-bold text-white">Ready to Stop Losing Patients?</h2>
-          <p className="mb-4 text-white/80">7-day free trial. No credit card. Cancel anytime.</p>
-          <div className="mb-4 flex flex-wrap items-center justify-center gap-4 text-sm text-white/70">
-            <span>✓ HIPAA compliant</span>
-            <span>✓ No contracts</span>
-            <span>✓ Live in 48h</span>
-          </div>
+          <p className="mb-6 text-white/80">No credit card required. Cancel anytime.</p>
           <Link href="/signup">
             <Button size="lg" className="gap-2 bg-[#22C55E] hover:bg-[#16a34a] text-white font-bold">
-              Start Free Trial
+              Start 7-Day Free Trial
               <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>
-          <p className="mt-3 text-sm text-white/60">
-            🤖 Demo: <a href="tel:+19048679643" className="text-white/80 hover:underline">(904) 867-9643</a> • 📧 <a href="mailto:founder@dentsignal.me" className="text-white/80 hover:underline">founder@dentsignal.me</a>
-          </p>
         </div>
       </section>
 

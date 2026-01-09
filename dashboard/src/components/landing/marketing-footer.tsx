@@ -88,13 +88,8 @@ export function MarketingFooter() {
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col gap-4 text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-10 text-sm text-slate-400 text-center sm:text-left">
           <p>© 2026 DentSignal. Built for modern dental practices.</p>
-          <div className="flex items-center gap-4">
-            <span>🛡️ HIPAA Compliant</span>
-            <span className="hidden sm:inline">•</span>
-            <span>⚡ Live in 48 Hours</span>
-          </div>
         </div>
       </div>
     </footer>
