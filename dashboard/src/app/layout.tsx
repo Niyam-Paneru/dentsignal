@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "DentSignal - AI Dental Receptionist | 24/7 Call Answering",
-  description: "Stop losing $7K-$10K/month to missed calls. DentSignal AI receptionist answers 24/7, books appointments automatically. $199/month flat rate. Live in 48 hours.",
+  description: "Stop losing $100K-$150K/year to missed calls. DentSignal AI receptionist answers 24/7, books appointments automatically. $199/month flat rate. Live in 48 hours.",
   keywords: ["dental AI", "dental receptionist", "AI phone answering", "dental practice software", "missed calls dental", "appointment booking AI", "HIPAA compliant AI"],
   authors: [{ name: "DentSignal" }],
   creator: "DentSignal",
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "DentSignal - AI Dental Receptionist",
-    description: "Stop losing $7K-$10K/month to missed calls. AI answers 24/7, books appointments. $199/month flat rate.",
+    description: "Stop losing $100K-$150K/year to missed calls. AI answers 24/7, books appointments. $199/month flat rate.",
     images: ["/og-image.png"],
   },
   robots: {

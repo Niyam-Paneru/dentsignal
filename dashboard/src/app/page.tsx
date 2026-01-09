@@ -9,10 +9,12 @@ import {
   Bell,
   Shield,
   Globe,
-  ChevronRight
+  ChevronRight,
+  CheckCircle2
 } from 'lucide-react'
 import { MarketingHeader } from '@/components/landing/marketing-header'
 import { MarketingFooter } from '@/components/landing/marketing-footer'
+import { HeroCalculator } from '@/components/landing/hero-calculator'
 
 export default function HomePage() {
   return (
@@ -32,87 +34,98 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Hero Section - Clean, Single Focus */}
-      <section className="relative overflow-hidden bg-[#1f2937] py-20 sm:py-28">
-        {/* Background Decorations */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
-          <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] bg-blue-400 rounded-full blur-[100px]" />
-          <div className="absolute top-[30%] -right-[10%] w-[40%] h-[60%] bg-cyan-300 rounded-full blur-[100px]" />
+      {/* Hero Section - Two Column with Calculator */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#4A90E2] via-[#1B3A7C] to-[#0F2347] py-12 sm:py-16">
+        {/* Background Decorations - Softer */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
+          <div className="absolute -top-[20%] -left-[10%] w-[40%] h-[40%] bg-[#0099CC] rounded-full blur-[120px]" />
+          <div className="absolute bottom-[10%] -right-[10%] w-[35%] h-[50%] bg-[#22C55E] rounded-full blur-[120px]" />
         </div>
 
         <div className="container relative mx-auto px-4">
-          <div className="mx-auto max-w-3xl text-center">
-            <h1 className="mb-6 text-4xl sm:text-5xl lg:text-6xl font-black text-white leading-tight">
-              Stop Losing Patients to <span className="text-[#EF4444]">Missed Calls</span>
-            </h1>
-            
-            <p className="mb-8 text-lg sm:text-xl text-white/70 max-w-2xl mx-auto">
-              AI answers every call 24/7, books appointments, and transfers emergencies to you.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
-              <Link href="/signup">
-                <Button size="lg" className="h-14 gap-3 bg-[#22C55E] hover:bg-[#16a34a] text-lg font-bold shadow-xl shadow-[#22C55E]/20 transition-all hover:shadow-[#22C55E]/40 hover:-translate-y-1 rounded-xl px-8">
-                  Start 7-Day Free Trial
-                  <ArrowRight className="h-5 w-5" />
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            {/* Left: Copy */}
+            <div className="text-center lg:text-left">
+              {/* Urgency Badge */}
+              <div className="inline-flex items-center gap-2 bg-[#EF4444]/20 border border-[#EF4444]/30 rounded-full px-4 py-1.5 mb-6">
+                <span className="flex h-2 w-2 rounded-full bg-[#EF4444] animate-pulse" />
+                <span className="text-sm font-semibold text-white">Practices lose $100K–$150K/year to missed calls</span>
+              </div>
+
+              <h1 className="mb-4 text-3xl sm:text-4xl lg:text-5xl font-black text-white leading-tight">
+                Stop Losing Patients to <span className="text-[#EF4444]">Missed Calls</span>
+              </h1>
+              
+              <p className="mb-6 text-base sm:text-lg text-white/80 max-w-xl">
+                AI answers every call 24/7, books appointments instantly, and transfers emergencies. See how much you&apos;re losing →
+              </p>
+              
+              <div className="flex flex-col sm:flex-row items-center lg:items-start gap-3 mb-4">
+                <Link href="/signup">
+                  <Button size="lg" className="h-12 gap-2 bg-[#22C55E] hover:bg-[#16a34a] text-base font-bold shadow-lg shadow-[#22C55E]/25 transition-all hover:shadow-[#22C55E]/40 hover:-translate-y-0.5 rounded-lg px-6">
+                    Start 7-Day Free Trial
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <Button size="lg" variant="outline" className="h-12 gap-2 bg-white/10 text-white border-white/20 hover:bg-white/20 font-semibold px-5">
+                  <Phone className="h-4 w-4" />
+                  Call Demo: (904) 867-9643
                 </Button>
-              </Link>
-              <Link href="/features">
-                <Button size="lg" variant="outline" className="h-14 gap-2 bg-transparent text-white border-white/30 hover:bg-white/10 font-semibold px-6">
-                  See All Features
-                  <ChevronRight className="h-5 w-5" />
-                </Button>
-              </Link>
+              </div>
+              
+              <p className="text-xs text-white/50">No credit card required • Cancel anytime • Live in 48 hours</p>
             </div>
-            
-            <p className="text-sm text-white/50 mb-4">No credit card required. Cancel anytime.</p>
-            
-            <p className="text-sm text-white/60">
-              🤖 Or call the AI demo: <a href="tel:+19048679643" className="font-mono text-[#0099CC] hover:underline">(904) 867-9643</a>
-            </p>
+
+            {/* Right: Calculator */}
+            <div className="lg:pl-4">
+              <HeroCalculator />
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Social Proof Bar */}
-      <section className="bg-[#1f2937] border-t border-white/10 py-4">
+      {/* Social Proof Bar - Cleaner */}
+      <section className="bg-white border-b border-gray-100 py-3">
         <div className="container mx-auto px-4">
-          <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-white/70">
-            <span className="flex items-center gap-2">
-              <span className="flex h-2 w-2 rounded-full bg-[#22C55E] animate-pulse" />
+          <div className="flex flex-wrap items-center justify-center gap-6 text-sm">
+            <span className="flex items-center gap-2 text-gray-600">
+              <CheckCircle2 className="h-4 w-4 text-[#22C55E]" />
               Trusted by 50+ dental practices
             </span>
-            <span className="hidden sm:inline text-white/30">|</span>
-            <span className="text-[#EF4444] font-semibold">$7K–$10K/month lost to missed calls</span>
+            <span className="hidden sm:inline text-gray-300">|</span>
+            <span className="flex items-center gap-2 text-gray-600">
+              <CheckCircle2 className="h-4 w-4 text-[#22C55E]" />
+              HIPAA Compliant
+            </span>
+            <span className="hidden sm:inline text-gray-300">|</span>
+            <span className="flex items-center gap-2 text-gray-600">
+              <CheckCircle2 className="h-4 w-4 text-[#22C55E]" />
+              Integrates with Dentrix, Eaglesoft, Open Dental
+            </span>
           </div>
         </div>
       </section>
 
-      {/* Quick Features Overview - Links to /features */}
-      <section className="bg-[#F8F9FA] py-16">
+      {/* Quick Features Overview - Compact */}
+      <section className="bg-[#F8F9FA] py-12">
         <div className="container mx-auto px-4">
-          <div className="mb-12 text-center">
-            <h2 className="mb-4 text-3xl font-bold text-[#1B3A7C]">Everything You Need</h2>
-            <p className="text-lg text-[#718096]">
-              Built specifically for dental practices
-            </p>
+          <div className="mb-8 text-center">
+            <h2 className="mb-2 text-2xl font-bold text-[#1B3A7C]">Everything You Need</h2>
+            <p className="text-gray-600">Built specifically for dental practices</p>
           </div>
 
-          <div className="mx-auto grid max-w-4xl gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            <QuickFeature icon={Phone} title="24/7 Call Handling" />
-            <QuickFeature icon={Calendar} title="Instant Booking" />
-            <QuickFeature icon={Bell} title="SMS Reminders" />
-            <QuickFeature icon={Shield} title="Emergency Triage" />
-            <QuickFeature icon={BarChart3} title="Live Dashboard" />
-            <QuickFeature icon={Globe} title="30+ Languages" />
+          <div className="mx-auto grid max-w-5xl gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+            <QuickFeature icon={Phone} title="24/7 Calls" desc="Never miss a patient" />
+            <QuickFeature icon={Calendar} title="Instant Booking" desc="Books appointments live" />
+            <QuickFeature icon={Bell} title="SMS Reminders" desc="Reduce no-shows 60%" />
+            <QuickFeature icon={Shield} title="Emergency Triage" desc="Routes urgent calls" />
+            <QuickFeature icon={BarChart3} title="Dashboard" desc="Real-time analytics" />
+            <QuickFeature icon={Globe} title="30+ Languages" desc="Serve all patients" />
           </div>
 
-          <div className="mt-10 text-center">
-            <Link href="/features">
-              <Button variant="outline" className="gap-2 text-[#1B3A7C] border-[#1B3A7C]/30 hover:bg-[#1B3A7C]/5">
-                View All Features
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+          <div className="mt-6 text-center">
+            <Link href="/features" className="text-sm text-[#0099CC] hover:underline font-medium inline-flex items-center gap-1">
+              See all features <ChevronRight className="h-3 w-3" />
             </Link>
           </div>
         </div>
@@ -200,17 +213,20 @@ export default function HomePage() {
 
 function QuickFeature({ 
   icon: Icon, 
-  title 
+  title,
+  desc
 }: { 
   icon: React.ElementType
-  title: string 
+  title: string
+  desc: string
 }) {
   return (
-    <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-[#E8EBF0] hover:shadow-sm hover:border-[#0099CC]/30 transition-all">
-      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#1B3A7C]/10">
-        <Icon className="h-6 w-6 text-[#1B3A7C]" />
+    <div className="flex flex-col items-center text-center p-3 bg-white rounded-lg border border-gray-100 hover:shadow-sm hover:border-[#0099CC]/30 transition-all">
+      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0099CC]/10 mb-2">
+        <Icon className="h-5 w-5 text-[#0099CC]" />
       </div>
-      <span className="font-semibold text-[#2D3748]">{title}</span>
+      <span className="font-semibold text-sm text-[#2D3748]">{title}</span>
+      <span className="text-xs text-gray-500 mt-0.5">{desc}</span>
     </div>
   )
 }

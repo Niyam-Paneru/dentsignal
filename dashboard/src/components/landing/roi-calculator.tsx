@@ -1,257 +1,153 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
 import { Button } from '@/components/ui/button'
 import { 
   DollarSign, 
   Phone, 
   ArrowRight,
-  CheckCircle2,
-  Percent,
-  Calendar,
+  TrendingDown,
+  TrendingUp,
 } from 'lucide-react'
 import Link from 'next/link'
 
 // =============================================================================
-// ROI CALCULATOR - January 2026
-// Based on dentsignal_roi_spec.md - honest, simple, 4 sliders only
+// ROI CALCULATOR - Based on 2025-2026 Industry Research
+// =============================================================================
+// Miss rate: 35% of calls go unanswered (industry avg, up to 68% peak times)
+// New patient calls: ~20% of missed calls are new patients  
+// Conversion: 30-40% would convert → use 35%
+// First-year value: $850 per new patient
+// Annual loss: $100K-$150K (industry standard)
 // =============================================================================
 
-// PRICING - Single source of truth
-const DENTSIGNAL_MONTHLY_PRICE = 199  // $199/month - CORRECT PRICE
+const DENTSIGNAL_MONTHLY_PRICE = 199
+const NEW_PATIENT_RATE = 0.20
+const CONVERSION_RATE = 0.35
 
-// DentSignal's conversion rate for missed calls (conservative estimate)
-const DENTSIGNAL_CONVERSION_RATE = 0.50  // 50% of missed calls get booked
-
-// Helper: round to nearest $100 for cleaner display
 function roundToHundred(value: number): number {
   return Math.round(value / 100) * 100
 }
 
-// Helper: clamp payback days to reasonable range
-function clampPaybackDays(days: number): number {
-  if (days < 1) return 1
-  if (days > 30) return 30
-  return Math.round(days)
-}
-
-interface CalculatorInputs {
-  // 4 sliders only - per spec
-  monthlyCalls: number           // 500-3000, default 1000
-  missedCallPercent: number      // 5-25%, default 15
-  currentConversionRate: number  // 30-60%, default 45
-  avgAppointmentValue: number    // 150-600, default 350
-}
-
 export function ROICalculator() {
-  const [inputs, setInputs] = useState<CalculatorInputs>({
-    monthlyCalls: 1000,           // Default: 1000 calls/month
-    missedCallPercent: 15,        // Default: 15% missed
-    currentConversionRate: 45,    // Default: 45% current human conversion
-    avgAppointmentValue: 350,     // Default: $350 per appointment
-  })
+  const [monthlyCalls, setMonthlyCalls] = useState(1000)
+  const [missedPercent, setMissedPercent] = useState(35)
+  const [patientValue, setPatientValue] = useState(850)
 
-  const calculations = useMemo(() => {
-    // ========== FORMULA FROM SPEC ==========
-    // monthlyLostRevenue = monthlyCalls × missedCallRate% × currentConversionRate% × avgAppointmentValue
-    // This represents what you're currently losing because missed calls × your current conversion rate
-    const monthlyLostRevenue = 
-      inputs.monthlyCalls * 
-      (inputs.missedCallPercent / 100) * 
-      (inputs.currentConversionRate / 100) * 
-      inputs.avgAppointmentValue
-
-    // monthlyRecoveredRevenue = monthlyCalls × missedCallRate% × dentSignalConversionRate% × avgAppointmentValue
-    // DentSignal converts 50% of missed calls (conservative estimate)
-    const monthlyRecoveredRevenue = 
-      inputs.monthlyCalls * 
-      (inputs.missedCallPercent / 100) * 
-      DENTSIGNAL_CONVERSION_RATE * 
-      inputs.avgAppointmentValue
-
-    // monthlyNetProfit = monthlyRecoveredRevenue - $199
-    const monthlyNetProfit = monthlyRecoveredRevenue - DENTSIGNAL_MONTHLY_PRICE
-
-    // paybackDays = 199 / (monthlyRecoveredRevenue / 30)
-    // How many days until DentSignal pays for itself
-    const paybackDays = monthlyRecoveredRevenue > 0 
-      ? (DENTSIGNAL_MONTHLY_PRICE / (monthlyRecoveredRevenue / 30))
-      : 999
-
-    // Calculate extra appointments for display
-    const missedCalls = Math.round(inputs.monthlyCalls * (inputs.missedCallPercent / 100))
-    const extraAppointments = Math.round(missedCalls * DENTSIGNAL_CONVERSION_RATE)
+  const calc = useMemo(() => {
+    const missed = monthlyCalls * (missedPercent / 100)
+    const newPatientMissed = missed * NEW_PATIENT_RATE
+    const lostPatients = newPatientMissed * CONVERSION_RATE
+    const monthlyLoss = lostPatients * patientValue
+    const yearlyLoss = monthlyLoss * 12
+    const recovered = monthlyLoss * 0.5
+    const paybackDays = recovered > 0 ? Math.min(30, Math.max(1, Math.round(DENTSIGNAL_MONTHLY_PRICE / (recovered / 30)))) : 30
 
     return {
-      // What you're losing (rounded to nearest $100)
-      monthlyLoss: roundToHundred(monthlyLostRevenue),
-      
-      // What DentSignal recovers (rounded to nearest $100)
-      monthlyRecovered: roundToHundred(monthlyRecoveredRevenue),
-      
-      // Your profit after paying for DentSignal (rounded to nearest $100)
-      monthlyProfit: roundToHundred(Math.max(0, monthlyNetProfit)),
-      
-      // Payback period in days (clamped 1-30 for display)
-      paybackDays: clampPaybackDays(paybackDays),
-      
-      // Extra stats for "The Math" section
-      missedCalls,
-      extraAppointments,
-      
-      // Cost display
-      monthlyCost: DENTSIGNAL_MONTHLY_PRICE,
+      monthlyLoss: roundToHundred(monthlyLoss),
+      yearlyLoss: roundToHundred(yearlyLoss),
+      recovered: roundToHundred(recovered),
+      lostPatients: Math.round(lostPatients),
+      paybackDays,
     }
-  }, [inputs])
+  }, [monthlyCalls, missedPercent, patientValue])
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      maximumFractionDigits: 0,
-    }).format(value)
-  }
+  const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
 
   return (
-    <div className="mx-auto max-w-5xl overflow-x-hidden px-4">
-      <div className="grid gap-4 lg:gap-6 lg:grid-cols-[1fr_1.2fr] items-start">
-        {/* Input Section - Compact */}
-        <Card className="border-slate-200 bg-white shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg text-slate-900">
-              Your Practice
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 pt-0">
-            {/* Slider 1: Monthly Calls (500-3000, default 1000) */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <Label className="flex items-center gap-1.5 text-sm text-slate-700">
-                  <Phone className="h-3.5 w-3.5 text-cyan-600" />
-                  Monthly Calls
-                </Label>
-                <span className="text-sm font-semibold text-slate-900">{inputs.monthlyCalls.toLocaleString()}</span>
-              </div>
-              <Slider
-                min={500}
-                max={3000}
-                step={100}
-                value={[inputs.monthlyCalls]}
-                onValueChange={([value]) => setInputs(prev => ({ ...prev, monthlyCalls: value }))}
-                className="cursor-pointer"
-              />
+    <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 lg:p-8 shadow-2xl max-w-4xl mx-auto">
+      {/* Header */}
+      <div className="text-center mb-6">
+        <h3 className="text-2xl font-bold text-white mb-1">Calculate Your Loss</h3>
+        <p className="text-slate-400 text-sm">Based on 2025-2026 industry research • 35% avg miss rate</p>
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* Left: Sliders */}
+        <div className="space-y-5">
+          {/* Monthly Calls */}
+          <div>
+            <div className="flex justify-between text-sm mb-2">
+              <span className="text-slate-300 flex items-center gap-1.5">
+                <Phone className="h-4 w-4 text-cyan-400" /> Monthly calls
+              </span>
+              <span className="font-bold text-white">{monthlyCalls.toLocaleString()}</span>
             </div>
+            <Slider
+              min={500} max={3000} step={100}
+              value={[monthlyCalls]}
+              onValueChange={([v]) => setMonthlyCalls(v)}
+              className="cursor-pointer"
+            />
+          </div>
 
-            {/* Slider 2: Missed Call % (5-25%, default 15%) */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <Label className="flex items-center gap-1.5 text-sm text-slate-700">
-                  <Percent className="h-3.5 w-3.5 text-cyan-600" />
-                  Missed Calls
-                </Label>
-                <span className="text-sm font-semibold text-slate-900">{inputs.missedCallPercent}%</span>
-              </div>
-              <Slider
-                min={5}
-                max={25}
-                step={1}
-                value={[inputs.missedCallPercent]}
-                onValueChange={([value]) => setInputs(prev => ({ ...prev, missedCallPercent: value }))}
-                className="cursor-pointer"
-              />
+          {/* Miss Rate */}
+          <div>
+            <div className="flex justify-between text-sm mb-2">
+              <span className="text-slate-300 flex items-center gap-1.5">
+                <TrendingDown className="h-4 w-4 text-red-400" /> Miss rate
+              </span>
+              <span className="font-bold text-white">{missedPercent}%</span>
             </div>
+            <Slider
+              min={20} max={50} step={1}
+              value={[missedPercent]}
+              onValueChange={([v]) => setMissedPercent(v)}
+              className="cursor-pointer"
+            />
+            <p className="text-xs text-slate-500 mt-1">Industry avg: 35% (68% at peak)</p>
+          </div>
 
-            {/* Slider 3: Current Conversion Rate (30-60%, default 45%) */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <Label className="flex items-center gap-1.5 text-sm text-slate-700">
-                  <Calendar className="h-3.5 w-3.5 text-cyan-600" />
-                  Your Booking Rate
-                </Label>
-                <span className="text-sm font-semibold text-slate-900">{inputs.currentConversionRate}%</span>
-              </div>
-              <Slider
-                min={30}
-                max={60}
-                step={1}
-                value={[inputs.currentConversionRate]}
-                onValueChange={([value]) => setInputs(prev => ({ ...prev, currentConversionRate: value }))}
-                className="cursor-pointer"
-              />
+          {/* Patient Value */}
+          <div>
+            <div className="flex justify-between text-sm mb-2">
+              <span className="text-slate-300 flex items-center gap-1.5">
+                <DollarSign className="h-4 w-4 text-emerald-400" /> First-year value
+              </span>
+              <span className="font-bold text-white">{fmt(patientValue)}</span>
             </div>
+            <Slider
+              min={500} max={1500} step={50}
+              value={[patientValue]}
+              onValueChange={([v]) => setPatientValue(v)}
+              className="cursor-pointer"
+            />
+            <p className="text-xs text-slate-500 mt-1">Lifetime value: $8K-$25K</p>
+          </div>
 
-            {/* Slider 4: Average Appointment Value (150-600, default 350) */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <Label className="flex items-center gap-1.5 text-sm text-slate-700">
-                  <DollarSign className="h-3.5 w-3.5 text-cyan-600" />
-                  Avg Appointment Value
-                </Label>
-                <span className="text-sm font-semibold text-slate-900">{formatCurrency(inputs.avgAppointmentValue)}</span>
-              </div>
-              <Slider
-                min={150}
-                max={600}
-                step={25}
-                value={[inputs.avgAppointmentValue]}
-                onValueChange={([value]) => setInputs(prev => ({ ...prev, avgAppointmentValue: value }))}
-                className="cursor-pointer"
-              />
-            </div>
+          {/* Math breakdown */}
+          <div className="bg-slate-800/50 rounded-lg p-3 text-xs text-slate-400 border border-slate-700">
+            <span className="text-slate-500">The math:</span> {Math.round(monthlyCalls * missedPercent / 100)} missed × 20% new patients × 35% convert = <span className="text-white font-semibold">{calc.lostPatients} patients lost/mo</span>
+          </div>
+        </div>
 
-            {/* Formula explanation - small gray text */}
-            <p className="text-xs text-slate-400 pt-2 border-t border-slate-100">
-              Based on: {inputs.monthlyCalls.toLocaleString()} calls × {inputs.missedCallPercent}% missed × {inputs.currentConversionRate}% conversion × {formatCurrency(inputs.avgAppointmentValue)}
-            </p>
-          </CardContent>
-        </Card>
+        {/* Right: Results */}
+        <div className="flex flex-col justify-between">
+          {/* Loss Display */}
+          <div className="bg-gradient-to-br from-red-500/20 to-red-600/10 border border-red-500/30 rounded-xl p-5 text-center mb-4">
+            <p className="text-red-400 text-xs font-bold uppercase tracking-wider mb-1">You&apos;re Losing</p>
+            <p className="text-4xl lg:text-5xl font-black text-red-400">{fmt(calc.yearlyLoss)}</p>
+            <p className="text-red-300/80 text-sm mt-1">/year • {fmt(calc.monthlyLoss)}/month</p>
+          </div>
 
-        {/* Results Section - Single focus on loss */}
-        <div className="space-y-4" aria-live="polite">
-          {/* Main Loss Card - Big scary number */}
-          <Card className="border-2 border-[#EF4444] bg-red-50">
-            <CardContent className="py-6 px-4 text-center">
-              <p className="text-sm font-semibold text-[#EF4444] uppercase tracking-wide mb-2">You&apos;re Losing</p>
-              <p className="text-4xl sm:text-5xl font-black text-[#EF4444]">
-                {formatCurrency(calculations.monthlyLoss)}
-              </p>
-              <p className="text-base text-red-600 mt-1">/month from missed calls</p>
-              <p className="text-sm text-slate-600 mt-3">
-                DentSignal recovers ~50% of this on average.
-              </p>
-            </CardContent>
-          </Card>
-          
-          {/* Payback line */}
-          <p className="text-center text-sm text-slate-600">
-            At $199/mo, pays for itself in <span className="font-bold text-slate-900">~{calculations.paybackDays} days</span>
-          </p>
+          {/* Recovery Display */}
+          <div className="bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 border border-emerald-500/30 rounded-xl p-4 text-center mb-4">
+            <p className="text-emerald-400 text-xs font-bold uppercase tracking-wider mb-1">DentSignal Recovers</p>
+            <p className="text-2xl lg:text-3xl font-bold text-emerald-400">~{fmt(calc.recovered)}<span className="text-lg">/mo</span></p>
+            <p className="text-emerald-300/70 text-xs mt-1">Pays for itself in ~{calc.paybackDays} days</p>
+          </div>
+
+          {/* CTA */}
+          <Link href="/signup" className="block">
+            <Button className="w-full h-12 gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-base shadow-lg shadow-emerald-500/25">
+              Stop Losing {fmt(calc.monthlyLoss)}/mo
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </Link>
+          <p className="text-center text-xs text-slate-500 mt-2">7-day free trial • No credit card • $199/mo</p>
         </div>
       </div>
-
-      {/* Trust indicators - Compact */}
-      <div className="mt-6 flex flex-wrap justify-center gap-4 text-xs text-slate-500">
-        <span className="flex items-center gap-1">
-          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-          No contracts
-        </span>
-        <span className="flex items-center gap-1">
-          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-          HIPAA compliant
-        </span>
-        <span className="flex items-center gap-1">
-          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-          Cancel anytime
-        </span>
-      </div>
-
-      {/* Disclaimer */}
-      <p className="mt-4 text-center text-xs text-slate-400">
-        Estimates based on industry benchmarks. Your results depend on call quality and practice type.
-      </p>
     </div>
   )
 }
