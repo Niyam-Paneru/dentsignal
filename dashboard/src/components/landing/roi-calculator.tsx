@@ -7,189 +7,103 @@ import { Slider } from '@/components/ui/slider'
 import { Button } from '@/components/ui/button'
 import { 
   DollarSign, 
-  TrendingUp, 
-  Clock, 
   Phone, 
   ArrowRight,
   CheckCircle2,
-  Building2,
+  Percent,
+  Calendar,
 } from 'lucide-react'
 import Link from 'next/link'
 
 // =============================================================================
-// HONEST ROI CALCULATOR - December 2025
-// Based on roi-calculator-honest.md - realistic, conservative, credible
+// ROI CALCULATOR - January 2026
+// Based on dentsignal_roi_spec.md - honest, simple, 4 sliders only
 // =============================================================================
 
-// Practice size defaults (realistic starting values)
-const PRACTICE_DEFAULTS = {
-  small: {
-    label: '1–2 dentists',
-    monthlyCallVolume: 900,      // 700-1,100 typical
-    currentAnswerRate: 70,       // 30% missed
-    currentConversionRate: 45,   // within 40-60% range
-    avgAppointmentValue: 350,    // between $250-500
-  },
-  medium: {
-    label: '3–4 dentists',
-    monthlyCallVolume: 1500,     // 1,300-1,800 typical
-    currentAnswerRate: 68,
-    currentConversionRate: 48,
-    avgAppointmentValue: 375,
-  },
-  large: {
-    label: '5+ dentists',
-    monthlyCallVolume: 2200,
-    currentAnswerRate: 65,
-    currentConversionRate: 50,
-    avgAppointmentValue: 400,
-  },
+// PRICING - Single source of truth
+const DENTSIGNAL_MONTHLY_PRICE = 199  // $199/month - CORRECT PRICE
+
+// DentSignal's conversion rate for missed calls (conservative estimate)
+const DENTSIGNAL_CONVERSION_RATE = 0.50  // 50% of missed calls get booked
+
+// Helper: round to nearest $100 for cleaner display
+function roundToHundred(value: number): number {
+  return Math.round(value / 100) * 100
 }
 
-// AI performance (sane ranges, don't oversell)
-const AI_BENCHMARKS = {
-  answerRate: 0.97,  // 97%, not 99% - don't promise perfection
-  conversion: {
-    conservative: 0.42,
-    base: 0.50,
-    optimistic: 0.55,
-  },
-  // Key insight: only SOME missed calls are real booking opportunities
-  missedToBookedFactor: {
-    conservative: 0.15,  // 15% of missed calls
-    base: 0.25,          // 25%
-    optimistic: 0.35,    // 35%
-  },
+// Helper: clamp payback days to reasonable range
+function clampPaybackDays(days: number): number {
+  if (days < 1) return 1
+  if (days > 30) return 30
+  return Math.round(days)
 }
-
-// Pricing
-const AI_MONTHLY_PRICE = 149
-
-// Receptionist comparison
-const RECEPTIONIST_ANNUAL_COST = 65000  // Conservative estimate
 
 interface CalculatorInputs {
-  practiceSize: 'small' | 'medium' | 'large'
-  monthlyCallVolume: number
-  currentAnswerRate: number
-  avgAppointmentValue: number
-  scenario: 'conservative' | 'base' | 'optimistic'
-}
-
-// Helper: clamp numbers to avoid cartoonish output
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value))
+  // 4 sliders only - per spec
+  monthlyCalls: number           // 500-3000, default 1000
+  missedCallPercent: number      // 5-25%, default 15
+  currentConversionRate: number  // 30-60%, default 45
+  avgAppointmentValue: number    // 150-600, default 350
 }
 
 export function ROICalculator() {
   const [inputs, setInputs] = useState<CalculatorInputs>({
-    practiceSize: 'small',
-    monthlyCallVolume: PRACTICE_DEFAULTS.small.monthlyCallVolume,
-    currentAnswerRate: PRACTICE_DEFAULTS.small.currentAnswerRate,
-    avgAppointmentValue: PRACTICE_DEFAULTS.small.avgAppointmentValue,
-    scenario: 'base',
+    monthlyCalls: 1000,           // Default: 1000 calls/month
+    missedCallPercent: 15,        // Default: 15% missed
+    currentConversionRate: 45,    // Default: 45% current human conversion
+    avgAppointmentValue: 350,     // Default: $350 per appointment
   })
 
-  const handlePracticeSizeChange = (size: 'small' | 'medium' | 'large') => {
-    const preset = PRACTICE_DEFAULTS[size]
-    setInputs({
-      practiceSize: size,
-      monthlyCallVolume: preset.monthlyCallVolume,
-      currentAnswerRate: preset.currentAnswerRate,
-      avgAppointmentValue: preset.avgAppointmentValue,
-      scenario: inputs.scenario,
-    })
-  }
-
   const calculations = useMemo(() => {
-    const preset = PRACTICE_DEFAULTS[inputs.practiceSize]
-    const answerRate = inputs.currentAnswerRate / 100
-    const conversionRate = preset.currentConversionRate / 100
-    
-    // ========== CURRENT STATE ==========
-    const totalCalls = inputs.monthlyCallVolume
-    const answeredNow = totalCalls * answerRate
-    const apptsNow = answeredNow * conversionRate
-    // Calculate missed calls: callVolume * (1 - answerRate/100)
-    const missedCalls = Math.round(totalCalls * (1 - answerRate))
-    
-    // ========== WITH AI ==========
-    // Recovery percentage based on scenario
-    const recoveryPercentage = inputs.scenario === 'conservative' ? 15 : inputs.scenario === 'base' ? 25 : 35
-    // Extra appointments = missedCalls * (recoveryPercentage / 100)
-    const extraApptsFromMissed = Math.round(missedCalls * (recoveryPercentage / 100))
-    
-    // Debug logging to verify calculations run on input changes
-    console.log('[ROI Calculator] Inputs changed:', {
-      practiceSize: inputs.practiceSize,
-      callVolume: totalCalls,
-      answerRate: inputs.currentAnswerRate,
-      scenario: inputs.scenario,
-      missedCalls,
-      recoveryPercentage,
-      extraAppointments: extraApptsFromMissed
-    })
-    
-    // Total appointments with AI = current + recovered from missed
-    const extraAppts = extraApptsFromMissed
-    const extraRevenue = extraAppts * inputs.avgAppointmentValue
-    
-    // ========== NET GAIN ==========
-    const netMonthlyGain = extraRevenue - AI_MONTHLY_PRICE
-    const netAnnualGain = netMonthlyGain * 12
-    
-    // ========== ROI & PAYBACK ==========
-    const roiPercent = AI_MONTHLY_PRICE > 0 ? (netMonthlyGain / AI_MONTHLY_PRICE) * 100 : 0
-    const paybackDays = netMonthlyGain > 0 ? (AI_MONTHLY_PRICE / netMonthlyGain) * 30 : 999
-    
-    // ========== LOSS CALCULATION (for display) ==========
-    // How much revenue is lost from missed calls (assuming 40% would have converted)
-    const monthlyLoss = missedCalls * inputs.avgAppointmentValue * 0.4
-    
-    // ========== APPLY HARD CAPS (credibility) ==========
-    // Cap ROI at 500% for credibility (even if mathematically higher)
-    const safeNetMonthlyGain = clamp(netMonthlyGain, 0, 25000)   // Max $25,000/month
-    const safeNetAnnualGain = clamp(netAnnualGain, 0, 300000)    // Max $300k/year
-    const safeRoiPercent = clamp(roiPercent, 0, 500)             // Cap at 500% for credibility
-    const safePaybackDays = clamp(paybackDays, 1, 90)            // 1 day - 3 months
-    const safeExtraAppts = clamp(Math.round(extraAppts), 0, 300) // Max 300/month
-    const safeMonthlyLoss = clamp(monthlyLoss, 0, 150000)        // Max $150k/month loss display
-    const safeCapturedRevenue = clamp(extraRevenue, 0, 50000)    // Max $50k/month captured
-    
-    // Payback display
-    const paybackDisplay = safePaybackDays <= 14 ? '1–2 weeks' :
-                           safePaybackDays <= 30 ? '2–4 weeks' :
-                           safePaybackDays <= 45 ? '4–6 weeks' :
-                           '6–8 weeks'
-    
-    // ROI display (cap display at 500%+ for credibility)
-    const roiDisplay = roiPercent > 500 ? '500%+' : `${Math.round(safeRoiPercent)}%`
-    
-    // Receptionist comparison
-    const aiAnnualCost = AI_MONTHLY_PRICE * 12
-    const savingsVsHiring = RECEPTIONIST_ANNUAL_COST - aiAnnualCost
-    
+    // ========== FORMULA FROM SPEC ==========
+    // monthlyLostRevenue = monthlyCalls × missedCallRate% × currentConversionRate% × avgAppointmentValue
+    // This represents what you're currently losing because missed calls × your current conversion rate
+    const monthlyLostRevenue = 
+      inputs.monthlyCalls * 
+      (inputs.missedCallPercent / 100) * 
+      (inputs.currentConversionRate / 100) * 
+      inputs.avgAppointmentValue
+
+    // monthlyRecoveredRevenue = monthlyCalls × missedCallRate% × dentSignalConversionRate% × avgAppointmentValue
+    // DentSignal converts 50% of missed calls (conservative estimate)
+    const monthlyRecoveredRevenue = 
+      inputs.monthlyCalls * 
+      (inputs.missedCallPercent / 100) * 
+      DENTSIGNAL_CONVERSION_RATE * 
+      inputs.avgAppointmentValue
+
+    // monthlyNetProfit = monthlyRecoveredRevenue - $199
+    const monthlyNetProfit = monthlyRecoveredRevenue - DENTSIGNAL_MONTHLY_PRICE
+
+    // paybackDays = 199 / (monthlyRecoveredRevenue / 30)
+    // How many days until DentSignal pays for itself
+    const paybackDays = monthlyRecoveredRevenue > 0 
+      ? (DENTSIGNAL_MONTHLY_PRICE / (monthlyRecoveredRevenue / 30))
+      : 999
+
+    // Calculate extra appointments for display
+    const missedCalls = Math.round(inputs.monthlyCalls * (inputs.missedCallPercent / 100))
+    const extraAppointments = Math.round(missedCalls * DENTSIGNAL_CONVERSION_RATE)
+
     return {
-      // Current state
-      missedCalls: Math.round(missedCalls),
-      currentAppts: Math.round(apptsNow),
-      monthlyLoss: Math.round(safeMonthlyLoss),
+      // What you're losing (rounded to nearest $100)
+      monthlyLoss: roundToHundred(monthlyLostRevenue),
       
-      // With AI (capped for credibility)
-      extraAppts: safeExtraAppts,
-      capturedRevenue: Math.round(safeCapturedRevenue),
+      // What DentSignal recovers (rounded to nearest $100)
+      monthlyRecovered: roundToHundred(monthlyRecoveredRevenue),
       
-      // Financial (HONEST numbers)
-      monthlySavings: Math.round(safeNetMonthlyGain),
-      annualSavings: Math.round(safeNetAnnualGain),
-      roiPercent: Math.round(safeRoiPercent),
-      roiDisplay,
-      paybackDisplay,
+      // Your profit after paying for DentSignal (rounded to nearest $100)
+      monthlyProfit: roundToHundred(Math.max(0, monthlyNetProfit)),
       
-      // Comparison
-      aiMonthlyCost: AI_MONTHLY_PRICE,
-      aiAnnualCost,
-      savingsVsHiring: Math.round(savingsVsHiring),
+      // Payback period in days (clamped 1-30 for display)
+      paybackDays: clampPaybackDays(paybackDays),
+      
+      // Extra stats for "The Math" section
+      missedCalls,
+      extraAppointments,
+      
+      // Cost display
+      monthlyCost: DENTSIGNAL_MONTHLY_PRICE,
     }
   }, [inputs])
 
@@ -202,332 +116,202 @@ export function ROICalculator() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl overflow-x-hidden px-4">
-      <div className="grid gap-6 lg:gap-8 lg:grid-cols-[1fr_1.3fr] items-start">
-        {/* Input Section */}
-        <Card className="border-slate-200 bg-white shadow-sm h-fit">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-slate-900">
-              <Building2 className="h-5 w-5 text-cyan-600" />
-              Your Practice Details
+    <div className="mx-auto max-w-5xl overflow-x-hidden px-4">
+      <div className="grid gap-4 lg:gap-6 lg:grid-cols-[1fr_1.2fr] items-start">
+        {/* Input Section - Compact */}
+        <Card className="border-slate-200 bg-white shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg text-slate-900">
+              Your Practice
             </CardTitle>
-            <p className="text-sm text-slate-500">
-              Adjust these to match your practice. We&apos;ll show a conservative estimate.
-            </p>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Practice Size Selection */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-slate-700">Practice Size</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {(['small', 'medium', 'large'] as const).map((size) => (
-                  <button
-                    key={size}
-                    onClick={() => handlePracticeSizeChange(size)}
-                    className={`rounded-lg border-2 p-3 text-center transition-all ${
-                      inputs.practiceSize === size
-                        ? 'border-cyan-600 bg-cyan-50'
-                        : 'border-slate-200 hover:border-cyan-300'
-                    }`}
-                  >
-                    <div className="text-sm font-medium text-slate-800">{PRACTICE_DEFAULTS[size].label}</div>
-                    <div className="text-xs text-slate-500">
-                      ~{PRACTICE_DEFAULTS[size].monthlyCallVolume.toLocaleString()} calls/mo
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Monthly Call Volume */}
-            <div className="space-y-2">
+          <CardContent className="space-y-3 pt-0">
+            {/* Slider 1: Monthly Calls (500-3000, default 1000) */}
+            <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <Label htmlFor="call-volume-slider" className="flex items-center gap-2 text-sm text-slate-700">
-                  <Phone className="h-4 w-4 text-cyan-600" />
-                  Monthly Call Volume
+                <Label className="flex items-center gap-1.5 text-sm text-slate-700">
+                  <Phone className="h-3.5 w-3.5 text-cyan-600" />
+                  Monthly Calls
                 </Label>
-                <span className="text-sm font-medium text-slate-900" aria-live="polite">{inputs.monthlyCallVolume.toLocaleString()} calls</span>
+                <span className="text-sm font-semibold text-slate-900">{inputs.monthlyCalls.toLocaleString()}</span>
               </div>
               <Slider
-                id="call-volume-slider"
                 min={500}
                 max={3000}
-                step={50}
-                value={[inputs.monthlyCallVolume]}
-                onValueChange={([value]) => setInputs(prev => ({ ...prev, monthlyCallVolume: value }))}
+                step={100}
+                value={[inputs.monthlyCalls]}
+                onValueChange={([value]) => setInputs(prev => ({ ...prev, monthlyCalls: value }))}
                 className="cursor-pointer"
-                aria-label={`Monthly call volume: ${inputs.monthlyCallVolume} calls`}
-                aria-valuemin={500}
-                aria-valuemax={3000}
-                aria-valuenow={inputs.monthlyCallVolume}
               />
-              <div className="flex justify-between text-xs text-slate-500">
-                <span>500</span>
-                <span>3,000</span>
-              </div>
             </div>
 
-            {/* Current Answer Rate */}
-            <div className="space-y-2">
+            {/* Slider 2: Missed Call % (5-25%, default 15%) */}
+            <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <Label htmlFor="answer-rate-slider" className="flex items-center gap-2 text-sm text-slate-700">
-                  <Clock className="h-4 w-4 text-cyan-600" />
-                  Current Answer Rate
+                <Label className="flex items-center gap-1.5 text-sm text-slate-700">
+                  <Percent className="h-3.5 w-3.5 text-cyan-600" />
+                  Missed Calls
                 </Label>
-                <span className="text-sm font-medium text-slate-900" aria-live="polite">{inputs.currentAnswerRate}%</span>
+                <span className="text-sm font-semibold text-slate-900">{inputs.missedCallPercent}%</span>
               </div>
               <Slider
-                id="answer-rate-slider"
-                min={50}
-                max={85}
+                min={5}
+                max={25}
                 step={1}
-                value={[inputs.currentAnswerRate]}
-                onValueChange={([value]) => setInputs(prev => ({ ...prev, currentAnswerRate: value }))}
+                value={[inputs.missedCallPercent]}
+                onValueChange={([value]) => setInputs(prev => ({ ...prev, missedCallPercent: value }))}
                 className="cursor-pointer"
-                aria-label={`Current answer rate: ${inputs.currentAnswerRate}%`}
-                aria-valuemin={50}
-                aria-valuemax={85}
-                aria-valuenow={inputs.currentAnswerRate}
               />
-              <div className="flex justify-between text-xs text-slate-500">
-                <span>50% (Struggling)</span>
-                <span>85% (Excellent)</span>
-              </div>
             </div>
 
-            {/* Average Appointment Value */}
-            <div className="space-y-2">
+            {/* Slider 3: Current Conversion Rate (30-60%, default 45%) */}
+            <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <Label htmlFor="appointment-value-slider" className="flex items-center gap-2 text-sm text-slate-700">
-                  <DollarSign className="h-4 w-4 text-cyan-600" />
-                  Avg Revenue Per Appointment
+                <Label className="flex items-center gap-1.5 text-sm text-slate-700">
+                  <Calendar className="h-3.5 w-3.5 text-cyan-600" />
+                  Your Booking Rate
                 </Label>
-                <span className="text-sm font-medium text-slate-900" aria-live="polite">{formatCurrency(inputs.avgAppointmentValue)}</span>
+                <span className="text-sm font-semibold text-slate-900">{inputs.currentConversionRate}%</span>
               </div>
               <Slider
-                id="appointment-value-slider"
-                min={200}
+                min={30}
+                max={60}
+                step={1}
+                value={[inputs.currentConversionRate]}
+                onValueChange={([value]) => setInputs(prev => ({ ...prev, currentConversionRate: value }))}
+                className="cursor-pointer"
+              />
+            </div>
+
+            {/* Slider 4: Average Appointment Value (150-600, default 350) */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-1.5 text-sm text-slate-700">
+                  <DollarSign className="h-3.5 w-3.5 text-cyan-600" />
+                  Avg Appointment Value
+                </Label>
+                <span className="text-sm font-semibold text-slate-900">{formatCurrency(inputs.avgAppointmentValue)}</span>
+              </div>
+              <Slider
+                min={150}
                 max={600}
                 step={25}
                 value={[inputs.avgAppointmentValue]}
                 onValueChange={([value]) => setInputs(prev => ({ ...prev, avgAppointmentValue: value }))}
                 className="cursor-pointer"
-                aria-label={`Average appointment value: ${formatCurrency(inputs.avgAppointmentValue)}`}
-                aria-valuemin={200}
-                aria-valuemax={600}
-                aria-valuenow={inputs.avgAppointmentValue}
               />
-              <div className="flex justify-between text-xs text-slate-500">
-                <span>$200</span>
-                <span>$600</span>
-              </div>
             </div>
 
-            {/* Scenario Selection */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-slate-700" id="scenario-label">Projection Scenario</Label>
-              <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-labelledby="scenario-label">
-                <button
-                  onClick={() => setInputs(prev => ({ ...prev, scenario: 'conservative' }))}
-                  role="radio"
-                  aria-checked={inputs.scenario === 'conservative'}
-                  className={`rounded-lg border-2 p-2 text-center transition-all ${
-                    inputs.scenario === 'conservative'
-                      ? 'border-amber-500 bg-amber-50'
-                      : 'border-slate-200 hover:border-amber-300'
-                  }`}
-                >
-                  <div className="text-xs font-medium text-slate-800">Conservative</div>
-                  <div className="text-xs text-slate-500">15% recovery</div>
-                </button>
-                <button
-                  onClick={() => setInputs(prev => ({ ...prev, scenario: 'base' }))}
-                  role="radio"
-                  aria-checked={inputs.scenario === 'base'}
-                  className={`rounded-lg border-2 p-2 text-center transition-all ${
-                    inputs.scenario === 'base'
-                      ? 'border-cyan-600 bg-cyan-50'
-                      : 'border-slate-200 hover:border-cyan-300'
-                  }`}
-                >
-                  <div className="text-xs font-medium text-slate-800">Base Case</div>
-                  <div className="text-xs text-slate-500">25% recovery</div>
-                </button>
-                <button
-                  onClick={() => setInputs(prev => ({ ...prev, scenario: 'optimistic' }))}
-                  role="radio"
-                  aria-checked={inputs.scenario === 'optimistic'}
-                  className={`rounded-lg border-2 p-2 text-center transition-all ${
-                    inputs.scenario === 'optimistic'
-                      ? 'border-emerald-500 bg-emerald-50'
-                      : 'border-slate-200 hover:border-emerald-300'
-                  }`}
-                >
-                  <div className="text-xs font-medium text-slate-800">Optimistic</div>
-                  <div className="text-xs text-slate-500">35% recovery</div>
-                </button>
-              </div>
-              <p className="text-xs text-slate-500">
-                % of missed calls that become actual bookings with AI
-              </p>
-            </div>
+            {/* Formula explanation - small gray text */}
+            <p className="text-xs text-slate-400 pt-2 border-t border-slate-100">
+              Based on: {inputs.monthlyCalls.toLocaleString()} calls × {inputs.missedCallPercent}% missed × {inputs.currentConversionRate}% conversion × {formatCurrency(inputs.avgAppointmentValue)}
+            </p>
           </CardContent>
         </Card>
 
-        {/* Results Section */}
-        <div className="space-y-4" aria-live="polite">
-          {/* Loss vs Savings - 3 Column Layout */}
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
-            {/* Current Loss - RED */}
-            <Card className="border-2 border-red-300 bg-red-50">
-              <CardContent className="pt-4 sm:pt-5 pb-4 text-center px-3 sm:px-4">
-                <div className="mb-1 text-2xl">🔴</div>
-                <p className="mb-1 text-xs font-semibold text-red-700 uppercase tracking-wide">You&apos;re Losing</p>
-                <p className="text-2xl sm:text-3xl font-black text-red-700 transition-all duration-300 whitespace-nowrap" key={`loss-${calculations.monthlyLoss}`}>
+        {/* Results Section - Clean 3-block layout per spec */}
+        <div className="space-y-3" aria-live="polite">
+          {/* 3 Result Cards - Stacked */}
+          <div className="grid gap-2 sm:gap-3">
+            {/* Block 1: You're Losing - RED/ORANGE */}
+            <Card className="border-2 border-orange-300 bg-orange-50">
+              <CardContent className="py-3 px-4 text-center">
+                <p className="text-xs font-semibold text-orange-700 uppercase tracking-wide mb-1">You&apos;re Losing</p>
+                <p className="text-2xl sm:text-3xl font-black text-orange-700">
                   {formatCurrency(calculations.monthlyLoss)}
                 </p>
-                <p className="text-xs text-red-600 font-medium">/month from missed calls</p>
+                <p className="text-xs text-orange-600">/month from missed calls</p>
               </CardContent>
             </Card>
             
-            {/* With DentSignal - GREEN */}
-            <Card className="border-2 border-emerald-300 bg-emerald-50">
-              <CardContent className="pt-4 sm:pt-5 pb-4 text-center px-3 sm:px-4">
-                <div className="mb-1 text-2xl">✅</div>
-                <p className="mb-1 text-xs font-semibold text-emerald-700 uppercase tracking-wide">You&apos;ll Capture</p>
-                <p className="text-2xl sm:text-3xl font-black text-emerald-700 transition-all duration-300 whitespace-nowrap" key={`capture-${calculations.capturedRevenue}`}>
-                  +{formatCurrency(calculations.capturedRevenue)}
+            {/* Block 2: With DentSignal - BLUE */}
+            <Card className="border-2 border-cyan-300 bg-cyan-50">
+              <CardContent className="py-3 px-4 text-center">
+                <p className="text-xs font-semibold text-cyan-700 uppercase tracking-wide mb-1">With DentSignal</p>
+                <p className="text-2xl sm:text-3xl font-black text-cyan-700">
+                  +{formatCurrency(calculations.monthlyRecovered)}
                 </p>
-                <p className="text-xs text-emerald-600 font-medium">/month recovered</p>
+                <p className="text-xs text-cyan-600">/month captured &amp; booked</p>
+                <p className="text-xs text-slate-500 mt-1">Assumes DentSignal converts ~50% of missed calls</p>
               </CardContent>
             </Card>
             
-            {/* Net Profit - BLUE */}
-            <Card className="border-2 border-blue-300 bg-blue-50">
-              <CardContent className="pt-4 sm:pt-5 pb-4 text-center px-3 sm:px-4">
-                <div className="mb-1 text-2xl">💰</div>
-                <p className="mb-1 text-xs font-semibold text-blue-700 uppercase tracking-wide">Net Gain</p>
-                <p className="text-2xl sm:text-3xl font-black text-blue-700 transition-all duration-300 whitespace-nowrap" key={`gain-${calculations.monthlySavings}`}>
-                  +{formatCurrency(calculations.monthlySavings)}
+            {/* Block 3: Your Profit - GREEN */}
+            <Card className="border-2 border-emerald-400 bg-emerald-50">
+              <CardContent className="py-3 px-4 text-center">
+                <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wide mb-1">Your Profit</p>
+                <p className="text-2xl sm:text-3xl font-black text-emerald-700">
+                  +{formatCurrency(calculations.monthlyProfit)}
                 </p>
-                <p className="text-xs text-blue-600 font-medium">/month after cost</p>
+                <p className="text-xs text-emerald-600">/month after DentSignal</p>
+                <p className="text-xs text-slate-500 mt-1">Recovered revenue minus ${DENTSIGNAL_MONTHLY_PRICE}/month</p>
               </CardContent>
             </Card>
           </div>
           
-          {/* ROI & Payback Row */}
-          <div className="grid gap-3 grid-cols-2">
-            <div className="rounded-xl bg-slate-800 p-3 sm:p-4 text-center">
-              <p className="text-xs sm:text-sm text-slate-400">Return on Investment</p>
-              <p className="text-2xl sm:text-3xl font-black text-white transition-all duration-300" key={`roi-${calculations.roiDisplay}`}>{calculations.roiDisplay}</p>
-            </div>
-            <div className="rounded-xl bg-slate-800 p-3 sm:p-4 text-center">
-              <p className="text-xs sm:text-sm text-slate-400">Payback Period</p>
-              <p className="text-2xl sm:text-3xl font-black text-white transition-all duration-300" key={`payback-${calculations.paybackDisplay}`}>{calculations.paybackDisplay}</p>
-            </div>
+          {/* Payback - Dynamic, not static "1-2 weeks" */}
+          <div className="rounded-lg bg-slate-800 py-3 px-4 text-center">
+            <p className="text-sm text-slate-300">
+              Pays for itself in <span className="font-bold text-white">~{calculations.paybackDays} days</span>
+            </p>
           </div>
 
-          {/* What This Means */}
+          {/* The Math - Compact */}
           <Card className="border-slate-200">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base text-slate-900">The Math</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between rounded-lg border border-slate-200 p-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-cyan-100">
-                      <Phone className="h-4 w-4 text-cyan-600" />
-                    </div>
-                    <span className="text-sm text-slate-700">Missed calls currently</span>
-                  </div>
-                  <span className="font-semibold text-slate-900">{calculations.missedCalls}/mo</span>
+            <CardContent className="py-3 px-4">
+              <p className="text-xs font-semibold text-slate-700 uppercase mb-2">The Math</p>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Missed calls/month</span>
+                  <span className="font-medium text-slate-900">{calculations.missedCalls}</span>
                 </div>
-
-                <div className="flex items-center justify-between rounded-lg border border-slate-200 p-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                    </div>
-                    <span className="text-sm text-slate-700">Extra appointments recovered</span>
-                  </div>
-                  <span className="font-semibold text-emerald-600">+{calculations.extraAppts}/mo</span>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Extra appointments with AI</span>
+                  <span className="font-medium text-emerald-600">+{calculations.extraAppointments}</span>
                 </div>
-
-                <div className="flex items-center justify-between rounded-lg border border-slate-200 p-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100">
-                      <DollarSign className="h-4 w-4 text-slate-600" />
-                    </div>
-                    <span className="text-sm text-slate-700">AI receptionist cost</span>
-                  </div>
-                  <span className="font-semibold text-slate-900">{formatCurrency(calculations.aiMonthlyCost)}/mo</span>
+                <div className="flex justify-between border-t border-slate-100 pt-2">
+                  <span className="text-slate-600">DentSignal cost</span>
+                  <span className="font-medium text-slate-900">${DENTSIGNAL_MONTHLY_PRICE}/mo</span>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* vs Hiring Comparison */}
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <div className="mb-3 text-center text-sm font-medium text-slate-600">vs. Hiring a Receptionist</div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="rounded-lg bg-white p-3 text-center border border-slate-200">
-                <p className="text-xs text-slate-500">Full-Time Receptionist</p>
-                <p className="text-lg font-bold text-slate-700">{formatCurrency(RECEPTIONIST_ANNUAL_COST)}/yr</p>
-              </div>
-              <div className="rounded-lg bg-cyan-50 p-3 text-center border border-cyan-200">
-                <p className="text-xs text-slate-500">AI Receptionist</p>
-                <p className="text-lg font-bold text-cyan-700">{formatCurrency(calculations.aiAnnualCost)}/yr</p>
-              </div>
-            </div>
-            <p className="mt-3 text-center text-sm text-slate-600">
-              Save {formatCurrency(calculations.savingsVsHiring)}/year vs. hiring
-            </p>
-          </div>
-
-          {/* CTA */}
-          <div className="rounded-xl bg-slate-900 p-5 text-center text-white">
-            <h3 className="mb-2 text-lg font-semibold">Ready to recover those missed calls?</h3>
-            <p className="mb-4 text-sm text-slate-300">
-              7-day free trial. No credit card required.
-            </p>
+          {/* CTA - Compact */}
+          <div className="rounded-xl bg-slate-900 p-4 text-center text-white">
+            <h3 className="mb-2 text-base font-semibold">Ready to stop losing calls?</h3>
             <Link href="/signup">
-              <Button className="w-full gap-2 sm:w-auto bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-8">
-                Start 7-Day Free Trial
+              <Button className="w-full sm:w-auto gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-6">
+                Start Free Trial
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
-            <p className="mt-3 text-sm text-slate-400">
-              📞 Or call AI demo: <a href="tel:+19048679643" className="text-cyan-400 hover:underline">(904) 867-9643</a>
+            <p className="mt-2 text-xs text-slate-400">
+              7-day free trial • No credit card • Cancel anytime
             </p>
           </div>
         </div>
       </div>
 
-      {/* Trust indicators */}
-      <div className="mt-10 grid gap-4 text-center sm:grid-cols-4">
-        <div className="flex items-center justify-center gap-2 text-sm text-slate-600">
-          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+      {/* Trust indicators - Compact */}
+      <div className="mt-6 flex flex-wrap justify-center gap-4 text-xs text-slate-500">
+        <span className="flex items-center gap-1">
+          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
           No contracts
-        </div>
-        <div className="flex items-center justify-center gap-2 text-sm text-slate-600">
-          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-          Free trial included
-        </div>
-        <div className="flex items-center justify-center gap-2 text-sm text-slate-600">
-          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-          Cancel anytime
-        </div>
-        <div className="flex items-center justify-center gap-2 text-sm text-slate-600">
-          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+        </span>
+        <span className="flex items-center gap-1">
+          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
           HIPAA compliant
-        </div>
+        </span>
+        <span className="flex items-center gap-1">
+          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+          Cancel anytime
+        </span>
       </div>
 
       {/* Disclaimer */}
-      <p className="mt-6 text-center text-xs text-slate-400">
-        Estimates are based on typical practices (60–75% answer rate, 40–60% conversion).
-        Your actual results will depend on your existing systems, staff, and call quality.
+      <p className="mt-4 text-center text-xs text-slate-400">
+        Estimates based on industry benchmarks. Your results depend on call quality and practice type.
       </p>
     </div>
   )
