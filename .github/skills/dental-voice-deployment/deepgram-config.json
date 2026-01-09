@@ -1,0 +1,116 @@
+{
+  "$schema": "https://agent.deepgram.com/v1/schema/settings",
+  "type": "Settings",
+  "audio": {
+    "input": {
+      "encoding": "linear16",
+      "sample_rate": 8000
+    },
+    "output": {
+      "encoding": "linear16",
+      "sample_rate": 8000,
+      "container": "none"
+    }
+  },
+  "agent": {
+    "language": "en",
+    "listen": {
+      "provider": {
+        "type": "deepgram",
+        "model": "nova-2-phonecall"
+      }
+    },
+    "speak": {
+      "provider": {
+        "type": "deepgram",
+        "model": "aura-asteria-en"
+      }
+    },
+    "think": {
+      "provider": {
+        "type": "open_ai",
+        "model": "gpt-4o-mini"
+      },
+      "instructions": "{{SYSTEM_PROMPT}}",
+      "functions": [
+        {
+          "name": "book_appointment",
+          "description": "Book a dental appointment for a patient",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "patient_name": {
+                "type": "string",
+                "description": "Full name of the patient"
+              },
+              "phone_number": {
+                "type": "string",
+                "description": "Patient's phone number"
+              },
+              "date": {
+                "type": "string",
+                "description": "Appointment date (YYYY-MM-DD)"
+              },
+              "time": {
+                "type": "string",
+                "description": "Appointment time (HH:MM 24-hour)"
+              },
+              "reason": {
+                "type": "string",
+                "description": "Reason for visit"
+              }
+            },
+            "required": ["patient_name", "date", "time", "reason"]
+          }
+        },
+        {
+          "name": "check_availability",
+          "description": "Check available appointment slots",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "date": {
+                "type": "string",
+                "description": "Date to check (YYYY-MM-DD)"
+              },
+              "time_preference": {
+                "type": "string",
+                "enum": ["morning", "afternoon", "evening", "any"]
+              }
+            },
+            "required": ["date"]
+          }
+        },
+        {
+          "name": "lookup_patient",
+          "description": "Look up existing patient record",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "patient_name": {"type": "string"},
+              "phone_number": {"type": "string"}
+            }
+          }
+        },
+        {
+          "name": "transfer_to_human",
+          "description": "Transfer call to human staff",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "reason": {
+                "type": "string",
+                "description": "Why transfer is needed"
+              },
+              "department": {
+                "type": "string",
+                "enum": ["front_desk", "billing", "clinical", "manager"]
+              }
+            },
+            "required": ["reason"]
+          }
+        }
+      ]
+    }
+  }
+}

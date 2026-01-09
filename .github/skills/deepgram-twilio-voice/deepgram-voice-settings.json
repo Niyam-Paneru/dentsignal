@@ -1,0 +1,72 @@
+{
+  "$schema": "https://agent.deepgram.com/v1/schema/settings",
+  "type": "Settings",
+  
+  "_comment_audio": "Audio settings optimized for Twilio telephony (8kHz mulaw)",
+  "audio": {
+    "input": {
+      "encoding": "linear16",
+      "sample_rate": 8000
+    },
+    "output": {
+      "encoding": "linear16",
+      "sample_rate": 8000,
+      "container": "none"
+    }
+  },
+  
+  "_comment_agent": "Agent configuration with optimal models for dental use case",
+  "agent": {
+    "language": "en",
+    
+    "_comment_listen": "STT configuration - nova-2-phonecall is fastest for telephony",
+    "listen": {
+      "provider": {
+        "type": "deepgram",
+        "model": "nova-2-phonecall",
+        "language": "en-US",
+        "smart_format": true,
+        "diarize": false,
+        "punctuate": true,
+        "profanity_filter": false,
+        "redact": false
+      }
+    },
+    
+    "_comment_speak": "TTS configuration - Asteria is warm professional female voice",
+    "speak": {
+      "provider": {
+        "type": "deepgram",
+        "model": "aura-asteria-en"
+      }
+    },
+    
+    "_comment_think": "LLM configuration with function calling",
+    "think": {
+      "provider": {
+        "type": "open_ai",
+        "model": "gpt-4o-mini"
+      },
+      "instructions": "{{SYSTEM_PROMPT_FROM_PROMPT_BUILDER}}",
+      "functions": []
+    }
+  },
+  
+  "_comment_models": "Available voice models for different use cases:",
+  "_voice_options": {
+    "female_warm": "aura-asteria-en (recommended for dental)",
+    "female_friendly": "aura-luna-en (good for pediatric)",
+    "female_conversational": "aura-stella-en (casual tone)",
+    "female_british": "aura-athena-en (professional UK)",
+    "male_professional": "aura-orion-en (authoritative)",
+    "male_deep": "aura-arcas-en (formal)",
+    "male_energetic": "aura-helios-en (sales/enthusiasm)"
+  },
+  
+  "_comment_stt_models": "Available STT models:",
+  "_stt_options": {
+    "telephony_fast": "nova-2-phonecall (recommended - fastest)",
+    "general_accurate": "nova-2 (better accuracy, slightly slower)",
+    "medical": "nova-2-medical (medical terminology)"
+  }
+}

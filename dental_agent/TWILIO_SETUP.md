@@ -1,8 +1,24 @@
 # Twilio Phone Number Setup Guide
 
-## Quick Reference: Webhook URLs
+## ⚡ TL;DR - It's Automated!
 
-When a new clinic number is purchased, it needs these webhooks:
+Just call the API endpoint - everything is configured automatically:
+
+```bash
+POST /api/admin/provision-number
+{
+    "clinic_id": 123,
+    "area_code": "512"
+}
+```
+
+Done! Voice + SMS webhooks are set up. No manual steps needed.
+
+---
+
+## Quick Reference: Webhook URLs (For Troubleshooting Only)
+
+If you ever need to check or fix webhooks manually:
 
 | Webhook Type | URL | Method |
 |--------------|-----|--------|
@@ -10,88 +26,31 @@ When a new clinic number is purchased, it needs these webhooks:
 | **SMS** | `{API_BASE_URL}/api/sms/inbound` | POST |
 | **Status Callback** | `{API_BASE_URL}/twilio/status` | POST |
 
-Replace `{API_BASE_URL}` with your actual domain (e.g., `https://api.dentsignal.com`)
-
 ---
 
-## Option A: Automated (Recommended)
+## API Endpoints for Phone Management
 
-Use the `provision_clinic_number()` function - it does everything automatically!
-
-```python
-from twilio_service import provision_clinic_number
-
-# Buy a number with area code
-result = provision_clinic_number(
-    clinic_id=123,
-    area_code="512",  # Austin, TX
-    friendly_name="Austin Dental Clinic"
-)
-
-print(result)
-# {
-#     'success': True,
-#     'phone_number': '+15125551234',
-#     'sid': 'PNxxxxx',
-#     'webhooks': {
-#         'voice': 'https://api.dentsignal.com/inbound/voice',
-#         'sms': 'https://api.dentsignal.com/api/sms/inbound'
-#     }
-# }
-```
-
-Or via API:
-```bash
-POST /api/admin/provision-number
-{
-    "clinic_id": 123,
-    "area_code": "512",
-    "friendly_name": "Austin Dental"
-}
-```
-
----
-
-## Option B: Manual (Twilio Console)
-
-If you need to set up manually:
-
-1. Go to: https://console.twilio.com/us1/develop/phone-numbers/manage/incoming
-2. Click on the phone number
-3. Scroll to **Voice Configuration**:
-   - Webhook URL: `https://your-api.com/inbound/voice`
-   - Method: POST
-4. Scroll to **Messaging Configuration**:
-   - Webhook URL: `https://your-api.com/api/sms/inbound`
-   - Method: POST
-5. Click **Save**
-
----
-
-## Useful Functions in twilio_service.py
-
-| Function | Purpose |
+| Endpoint | Purpose |
 |----------|---------|
-| `list_available_numbers(area_code)` | Find numbers to buy |
-| `provision_clinic_number(clinic_id, area_code)` | Buy + auto-configure |
-| `update_number_webhooks(phone_sid)` | Fix existing number |
-| `list_clinic_numbers()` | Audit all your numbers |
-| `release_number(phone_sid)` | Delete when clinic cancels |
+| `GET /api/admin/available-numbers?area_code=512` | Find numbers to buy |
+| `POST /api/admin/provision-number` | **Buy + auto-configure** ✨ |
+| `GET /api/admin/clinic-numbers` | List all your numbers |
+| `POST /api/admin/fix-webhooks/{sid}` | Fix broken webhooks |
+| `DELETE /api/admin/release-number/{sid}` | Release when clinic cancels |
 
 ---
 
 ## Checklist for New Clinic Onboarding
 
-- [ ] Buy Twilio number with `provision_clinic_number()`
-- [ ] Save phone number to `clients.twilio_number` in database
-- [ ] Save SID to clinic record (for future updates/release)
+- [ ] Call `POST /api/admin/provision-number` with clinic_id and area_code
+- [ ] Number is automatically saved to database
 - [ ] Test inbound call → should trigger AI agent
 - [ ] Test inbound SMS → should process patient replies
-- [ ] Update clinic's Google/website with new number
+- [ ] Give clinic their new number for website/Google
 
 ---
 
-## Common Issues
+## Troubleshooting
 
 ### "Webhook not receiving requests"
 - Check API_BASE_URL is publicly accessible (not localhost)
@@ -99,9 +58,9 @@ If you need to set up manually:
 - Check Twilio error logs in console
 
 ### "SMS not being processed"
-- Verify SMS webhook is `/api/sms/inbound` (not `/sms/inbound`)
-- Check phone has SMS capability enabled
+- Run `POST /api/admin/fix-webhooks/{phone_sid}` to reset webhooks
+- Verify phone has SMS capability
 
-### "Voice calls failing"
-- Verify voice webhook is `/inbound/voice`
-- Check TwiML is valid in response
+### "Voice calls failing"  
+- Run `POST /api/admin/fix-webhooks/{phone_sid}` to reset webhooks
+- Check TwiML response is valid
