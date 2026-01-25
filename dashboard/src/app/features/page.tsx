@@ -133,7 +133,7 @@ export default function FeaturesPage() {
         <section className="py-14 bg-white" id="how-it-works">
           <div className="container mx-auto px-4">
             <div className="text-center mb-10">
-              <h2 className="text-2xl lg:text-3xl font-bold text-slate-900">Live in 1 Week</h2>
+              <h2 className="text-2xl lg:text-3xl font-bold text-slate-900">Live in 48 Hours</h2>
               <p className="mt-2 text-slate-600">No IT team needed. No contracts.</p>
             </div>
 

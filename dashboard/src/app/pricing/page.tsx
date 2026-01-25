@@ -211,7 +211,7 @@ export default function PricingPage() {
             />
             <FAQItem 
               question="How long does setup take?"
-              answer="Live in 1 week. Day 1: We set up your AI. Days 2-3: You test scenarios and we optimize. Days 4-7: Final refinements and go live. No IT work required—we handle everything."
+              answer="Live in 48 hours. Day 1: We set up your AI and configure your practice details. Day 2: You test scenarios, we optimize, and you go live. No IT work required—we handle everything."
             />
           </div>
         </div>

@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "DentSignal - AI Dental Receptionist | 24/7 Call Answering",
-  description: "25 missed new-patient calls = $21,250/month lost. DentSignal AI receptionist answers 24/7, books appointments automatically. $199/month flat rate. Live in 1 week.",
+  description: "25 missed new-patient calls = $21,250/month lost. DentSignal AI receptionist answers 24/7, books appointments automatically. $199/month flat rate. Live in 48 hours.",
   keywords: ["dental AI", "dental receptionist", "AI phone answering", "dental practice software", "missed calls dental", "appointment booking AI", "HIPAA compliant AI"],
   authors: [{ name: "DentSignal" }],
   creator: "DentSignal",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "DentSignal - AI Dental Receptionist | Never Miss a Call",
-    description: "AI answers every call 24/7, books appointments automatically. Starting at $199/month. HIPAA-ready with BAA available. Live in 1 week.",
+    description: "AI answers every call 24/7, books appointments automatically. Starting at $199/month. HIPAA-ready with BAA available. Live in 48 hours.",
     url: "https://dentsignal.me",
     siteName: "DentSignal",
     locale: "en_US",

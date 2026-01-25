@@ -29,7 +29,7 @@ export default function HomePage() {
         <div className="container mx-auto flex flex-wrap items-center justify-center gap-4 sm:gap-8 px-4">
           <span className="flex items-center gap-1.5">🛡️ HIPAA Ready</span>
           <span className="hidden sm:inline text-white/30">|</span>
-          <span className="flex items-center gap-1.5">⚡ Live in 1 Week</span>
+          <span className="flex items-center gap-1.5">⚡ Live in 48 Hours</span>
           <span className="hidden sm:inline text-white/30">|</span>
           <span className="flex items-center gap-1.5">🕐 24/7 Coverage</span>
         </div>
@@ -74,7 +74,7 @@ export default function HomePage() {
                 </Button>
               </div>
               
-              <p className="text-xs text-white/50">No credit card required • Cancel anytime • Live in 1 week</p>
+              <p className="text-xs text-white/50">No credit card required • Cancel anytime • Live in 48 hours</p>
             </div>
 
             {/* Right: Calculator */}
@@ -149,7 +149,7 @@ export default function HomePage() {
             <div className="flex flex-wrap justify-center gap-6 text-sm text-[#2D3748]">
               <span className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-[#0099CC]" />
-                Live in 1 week
+                Live in 48 hours
               </span>
               <span className="flex items-center gap-2">
                 <Shield className="h-4 w-4 text-[#0099CC]" />
