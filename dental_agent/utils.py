@@ -561,3 +561,121 @@ def validate_audio_upload(filename: str, content_type: str, size: int) -> tuple[
 def validate_csv_upload(filename: str, content_type: str, size: int) -> tuple[bool, Optional[str]]:
     """Validate a CSV file upload."""
     return validate_file_upload(filename, content_type, size, ALLOWED_CSV_MIMES, MAX_CSV_SIZE)
+
+
+# -----------------------------------------------------------------------------
+# Slack Notifications (24/7 alerts - works without VS Code)
+# -----------------------------------------------------------------------------
+
+import httpx
+
+SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL")
+SLACK_BOT_TOKEN = os.getenv("SLACK_BOT_TOKEN")
+SLACK_CHANNEL = os.getenv("SLACK_CHANNEL", "#dentsignal-alerts")
+
+async def send_slack_notification(
+    message: str,
+    channel: str = None,
+    emoji: str = "🔔",
+    title: str = None
+) -> bool:
+    """
+    Send a Slack notification. Works 24/7 without VS Code.
+    
+    Args:
+        message: The notification message
+        channel: Slack channel (defaults to SLACK_CHANNEL env var)
+        emoji: Emoji prefix for the message
+        title: Optional bold title
+        
+    Returns:
+        True if sent successfully, False otherwise
+    """
+    if not SLACK_BOT_TOKEN:
+        logging.warning("SLACK_BOT_TOKEN not set, skipping notification")
+        return False
+    
+    channel = channel or SLACK_CHANNEL
+    
+    # Format message
+    text = f"{emoji} "
+    if title:
+        text += f"*{title}*\n"
+    text += message
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://slack.com/api/chat.postMessage",
+                headers={
+                    "Authorization": f"Bearer {SLACK_BOT_TOKEN}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "channel": channel,
+                    "text": text,
+                    "mrkdwn": True
+                }
+            )
+            result = response.json()
+            if not result.get("ok"):
+                logging.error(f"Slack API error: {result.get('error')}")
+                return False
+            return True
+    except Exception as e:
+        logging.error(f"Failed to send Slack notification: {e}")
+        return False
+
+
+def send_slack_notification_sync(
+    message: str,
+    channel: str = None,
+    emoji: str = "🔔",
+    title: str = None
+) -> bool:
+    """Synchronous version of send_slack_notification."""
+    import asyncio
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            # If already in async context, create task
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(
+                    asyncio.run,
+                    send_slack_notification(message, channel, emoji, title)
+                )
+                return future.result(timeout=10)
+        else:
+            return loop.run_until_complete(
+                send_slack_notification(message, channel, emoji, title)
+            )
+    except Exception as e:
+        logging.error(f"Sync Slack notification failed: {e}")
+        return False
+
+
+# Pre-built notification helpers
+async def notify_new_signup(email: str, clinic_name: str = None):
+    """Send notification when a new user signs up."""
+    msg = f"New user signed up!\n• Email: `{email}`"
+    if clinic_name:
+        msg += f"\n• Clinic: {clinic_name}"
+    msg += f"\n• Time: {time.strftime('%Y-%m-%d %H:%M:%S UTC')}"
+    await send_slack_notification(msg, emoji="🎉", title="New Signup!")
+
+
+async def notify_new_call(caller: str, duration: int, booked: bool):
+    """Send notification when a call completes."""
+    status = "✅ Appointment Booked" if booked else "📞 Call Completed"
+    msg = f"• Caller: `{mask_pii(caller)}`\n• Duration: {duration}s\n• Result: {status}"
+    await send_slack_notification(msg, emoji="📞", title="Call Completed")
+
+
+async def notify_error(error: str, context: str = None):
+    """Send notification when an error occurs."""
+    msg = f"Error: `{error}`"
+    if context:
+        msg += f"\n• Context: {context}"
+    await send_slack_notification(msg, emoji="🚨", title="Error Alert")
+

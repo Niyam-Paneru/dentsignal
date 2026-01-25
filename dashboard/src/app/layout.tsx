@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "@/components/ui/toaster";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "DentSignal - AI Dental Receptionist | 24/7 Call Answering",
-  description: "Stop losing $100K-$150K/year to missed calls. DentSignal AI receptionist answers 24/7, books appointments automatically. $199/month flat rate. Live in 48 hours.",
+  description: "25 missed new-patient calls = $21,250/month lost. DentSignal AI receptionist answers 24/7, books appointments automatically. $199/month flat rate. Live in 1 week.",
   keywords: ["dental AI", "dental receptionist", "AI phone answering", "dental practice software", "missed calls dental", "appointment booking AI", "HIPAA compliant AI"],
   authors: [{ name: "DentSignal" }],
   creator: "DentSignal",
@@ -33,7 +34,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "DentSignal - AI Dental Receptionist | Never Miss a Call",
-    description: "AI answers every call 24/7, books appointments automatically. 60% cheaper than Weave. HIPAA compliant. Live in 48 hours.",
+    description: "AI answers every call 24/7, books appointments automatically. Starting at $199/month. HIPAA-ready with BAA available. Live in 1 week.",
     url: "https://dentsignal.me",
     siteName: "DentSignal",
     locale: "en_US",
@@ -50,7 +51,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "DentSignal - AI Dental Receptionist",
-    description: "Stop losing $100K-$150K/year to missed calls. AI answers 24/7, books appointments. $199/month flat rate.",
+    description: "25 missed new-patient calls = $21,250/month lost. AI answers 24/7, books appointments. $199/month flat rate.",
     images: ["/og-image.png"],
   },
   robots: {
@@ -77,6 +78,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <meta name="theme-color" content="#1B3A7C" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
+        <link rel="preconnect" href="https://supabase.co" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="apple-touch-icon" href="/icon.svg" />
@@ -89,6 +95,7 @@ export default function RootLayout({
           Skip to main content
         </a>
         {children}
+        <Toaster />
       </body>
     </html>
   );

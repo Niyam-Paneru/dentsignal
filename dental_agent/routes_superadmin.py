@@ -774,7 +774,7 @@ async def get_analytics_overview(
             "costs": {
                 "total_estimated": total_calls * 0.15,
                 "per_call_avg": 0.15,
-                "revenue": total_clinics * 99,  # $99/clinic
+                "revenue": total_clinics * 199,  # $199/clinic
                 "margin": "85%",
             },
             "growth": {

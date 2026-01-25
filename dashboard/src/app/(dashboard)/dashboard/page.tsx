@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -13,6 +13,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { getDashboardStats, getRecentCalls, getCallTrends, getClinic, getClinicSettings, getActiveCalls } from '@/lib/api/dental'
 import type { DashboardStats, RecentCall, CallTrendData, Clinic } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
+import { useCelebration } from '@/hooks/use-celebration'
 
 interface ActiveCall {
   id: string
@@ -71,6 +72,10 @@ export default function DashboardPage() {
   const [dateRange, setDateRange] = useState(7)
   const [hasCustomGreeting, setHasCustomGreeting] = useState(false)
   const [hasForwarding, setHasForwarding] = useState(false)
+  
+  // Track seen call IDs to avoid duplicate celebrations
+  const seenCallIds = useRef<Set<string>>(new Set())
+  const { celebrateBooking, celebrateEmergency, celebrateRecovered } = useCelebration()
 
   // Fetch active calls
   const fetchActiveCalls = useCallback(async () => {
@@ -109,8 +114,29 @@ export default function DashboardPage() {
           table: 'dental_calls',
           filter: `clinic_id=eq.${clinic.id}`,
         },
-        () => {
+        (payload) => {
           fetchActiveCalls()
+          
+          // Celebrate on completed calls with appointments
+          if (payload.eventType === 'UPDATE' && payload.new) {
+            const call = payload.new as { id: string; status: string; appointment_booked?: boolean; is_emergency?: boolean }
+            
+            // Only celebrate once per call
+            if (seenCallIds.current.has(call.id)) return
+            
+            if (call.status === 'completed') {
+              seenCallIds.current.add(call.id)
+              
+              if (call.is_emergency) {
+                celebrateEmergency()
+              } else if (call.appointment_booked) {
+                celebrateBooking()
+              } else {
+                // After-hours or recovered call
+                celebrateRecovered()
+              }
+            }
+          }
         }
       )
       .subscribe()
@@ -125,7 +151,7 @@ export default function DashboardPage() {
       supabase.removeChannel(channel)
       clearInterval(interval)
     }
-  }, [clinic?.id, fetchActiveCalls])
+  }, [clinic?.id, fetchActiveCalls, celebrateBooking, celebrateEmergency, celebrateRecovered])
 
   useEffect(() => {
     async function loadData() {

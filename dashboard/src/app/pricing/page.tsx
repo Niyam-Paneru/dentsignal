@@ -91,12 +91,15 @@ export default function PricingPage() {
 
             {/* The Math */}
             <div className="mt-8 rounded-xl border border-[#E8EBF0] bg-[#F8F9FA] p-6">
-              <h4 className="font-bold text-[#1B3A7C] mb-3">The Math</h4>
+              <h4 className="font-bold text-[#1B3A7C] mb-3">The Math (Conservative)</h4>
               <p className="text-sm text-[#718096] mb-2">
-                Your practice likely misses <strong className="text-[#EF4444]">10+ calls per day</strong>. At $400 per appointment, that&apos;s <strong className="text-[#EF4444]">$8,000-12,000/month</strong> in lost revenue.
+                Your practice misses ~300 calls/month. About <strong className="text-[#EF4444]">25 are new patients</strong> worth $850 each in Year 1.
+              </p>
+              <p className="text-sm text-[#718096] mb-2">
+                That&apos;s <strong className="text-[#EF4444]">$21,250/month</strong> or <strong className="text-[#EF4444]">$255,000/year</strong> in lost revenue.
               </p>
               <p className="text-sm text-[#718096]">
-                DentSignal costs $199/month and captures 95%+ of those calls.
+                DentSignal costs $199/month ($2,388/year) and captures those calls 24/7.
               </p>
               <p className="text-sm font-bold text-[#22C55E] mt-3">
                 ROI: Pays for itself after recovering just 1 missed call.
@@ -148,8 +151,8 @@ export default function PricingPage() {
               <div className="flex items-start gap-3 rounded-lg bg-white p-4 border border-[#E8EBF0]">
                 <Check className="h-5 w-5 text-[#22C55E] mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="font-semibold text-[#2D3748]">48-hour setup</p>
-                  <p className="text-sm text-[#718096]">Not weeks or months</p>
+                  <p className="font-semibold text-[#2D3748]">1-week setup</p>
+                  <p className="text-sm text-[#718096]">Test, optimize, then go live</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 rounded-lg bg-white p-4 border border-[#E8EBF0]">
@@ -177,34 +180,38 @@ export default function PricingPage() {
           <div className="mb-10 text-center">
             <h2 className="mb-4 text-2xl font-bold text-[#1B3A7C]">Common Questions</h2>
             <p className="text-[#718096]">
-              What dentists ask before trying AI
+              What dentists actually ask before signing up
             </p>
           </div>
 
           <div className="mx-auto max-w-3xl space-y-4">
             <FAQItem 
-              question="Will patients know it's AI?"
-              answer="Most patients can't tell—the voice quality is that natural. But if someone asks, it politely says 'I'm the AI assistant—would you prefer I transfer you to the office?' Transparency builds trust, and 95% continue the call. Plus, they're getting 24/7 service they couldn't get otherwise."
+              question="What if the AI makes a booking mistake?"
+              answer="Every appointment is recorded and reviewed. If there's an error, we fix it and refund you for that day. Plus, your team can always verify appointments before they're locked in. You stay in control."
             />
             <FAQItem 
-              question="Is it HIPAA compliant?"
-              answer="Fully HIPAA-compliant with BAA coverage included—no extra fee. Every call is encrypted end-to-end. Unlike some competitors, we NEVER use your patient data to train AI for other practices. That's our legal guarantee."
+              question="Can I customize what the AI says?"
+              answer="Completely. We customize greetings, services offered, appointment types, hours, and tone to match your practice. Takes about 30 minutes during setup. Want it to mention your $99 cleaning special? Done."
             />
             <FAQItem 
-              question="What if it makes a mistake?"
-              answer="It's trained specifically on dental calls—emergency triage, insurance questions, appointment types. For 95% of calls, it handles perfectly. For complex clinical questions, it smoothly transfers to your team with full context. You stay in control."
+              question="What happens if the AI can't handle a call?"
+              answer="It transfers to your team with full context—the caller's name, what they called about, and any information collected. Smooth handoff, no repetition. Your staff gets a summary before picking up."
             />
             <FAQItem 
-              question="Will this replace my receptionist?"
-              answer="No—it makes her job easier. She's no longer interrupted 47 times per day during patient checkout or lunch. AI handles overflow during peak times and captures after-hours calls. Your team will thank you."
+              question="How many calls can it handle at once?"
+              answer="Unlimited. If you get 50 calls in an hour, all 50 are answered. If some need human review, they're queued for your team in priority order. No more busy signals."
             />
             <FAQItem 
-              question="My patients are older—will they hate this?"
-              answer="80% of patients can't tell it's AI—it sounds completely natural. For those who prefer a human, it transfers instantly. But here's what matters: older patients LOVE that someone answers at 7pm when they're in pain. That's better service than voicemail."
+              question="Can I cancel anytime?"
+              answer="Yes. Month-to-month, no lock-in. Cancel anytime with 30 days notice. But most practices see ROI in the first 2 weeks—you'll want to keep it."
+            />
+            <FAQItem 
+              question="Do you use my patient data?"
+              answer="Never. Your data stays yours. We offer BAAs (Business Associate Agreements) for HIPAA compliance. We never train our AI on your patient information, and we don't share your data with anyone."
             />
             <FAQItem 
               question="How long does setup take?"
-              answer="Live in 48 hours. Zero IT work required. Works with your current phone provider—we handle call forwarding. You test one call and you're done."
+              answer="Live in 1 week. Day 1: We set up your AI. Days 2-3: You test scenarios and we optimize. Days 4-7: Final refinements and go live. No IT work required—we handle everything."
             />
           </div>
         </div>
@@ -235,7 +242,7 @@ export default function PricingPage() {
 
 function FAQItem({ question, answer }: { question: string; answer: string }) {
   return (
-    <details className="group rounded-xl border border-[#E8EBF0] bg-white p-4 transition-all hover:border-[#0099CC]/30">
+    <details className="group rounded-xl border border-[#E8EBF0] bg-white p-4 transition-colors duration-150 hover:border-[#0099CC]/30">
       <summary className="flex cursor-pointer items-center justify-between font-medium text-[#1B3A7C]">
         {question}
         <ChevronDown className="h-4 w-4 text-[#0099CC] transition-transform group-open:rotate-180" />

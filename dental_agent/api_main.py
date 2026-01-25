@@ -12,6 +12,8 @@ TELEPHONY_MODE=SIMULATED
 TWILIO_SID=
 TWILIO_TOKEN=
 TWILIO_NUMBER=
+
+SENTRY_DSN=
 '''
 
 Run with: uvicorn api_main:app --reload
@@ -19,16 +21,41 @@ Run with: uvicorn api_main:app --reload
 
 from __future__ import annotations
 
+import os
+from dotenv import load_dotenv
+
+# Load environment variables FIRST
+load_dotenv()
+
+import sentry_sdk
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.starlette import StarletteIntegration
+
+# Initialize Sentry BEFORE app creation
+sentry_sdk.init(
+    dsn=os.getenv("SENTRY_DSN", "https://cec3389377af0692871ea20fa400a2ae@o4510760542470144.ingest.us.sentry.io/4510760593129472"),
+    integrations=[
+        FastApiIntegration(),
+        StarletteIntegration(),
+    ],
+    # Capture 10% of transactions for performance monitoring
+    traces_sample_rate=0.1,
+    # Send PII like request headers for debugging
+    send_default_pii=True,
+    # Set environment
+    environment=os.getenv("ENVIRONMENT", "development"),
+    # Release tracking
+    release=os.getenv("RELEASE_VERSION", "dentsignal-api@1.0.0"),
+)
+
 import csv
 import io
 import logging
-import os
 from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
 from typing import Optional, Any
 
 import jwt
-from dotenv import load_dotenv
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Query, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr, field_validator
@@ -64,8 +91,6 @@ from rate_limiter import RateLimitMiddleware
 # -----------------------------------------------------------------------------
 # Configuration
 # -----------------------------------------------------------------------------
-
-load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./dev.db")
 JWT_SECRET = os.getenv("JWT_SECRET", "changeme-insecure-secret")
@@ -119,6 +144,7 @@ try:
     from dental_agent.routes_usage import router as usage_router
     from dental_agent.routes_calendar import router as calendar_router
     from dental_agent.routes_transfer import router as transfer_router
+    from dental_agent.routes_recall import router as recall_router
 except ImportError:
     from routes_calls import router as calls_router
     from routes_twilio import router as twilio_router
@@ -130,6 +156,7 @@ except ImportError:
     from routes_usage import router as usage_router
     from routes_calendar import router as calendar_router
     from routes_transfer import router as transfer_router
+    from routes_recall import router as recall_router
 
 app.include_router(calls_router, tags=["Calls & Batches"])
 app.include_router(twilio_router)  # Twilio webhooks (outbound)
@@ -141,6 +168,7 @@ app.include_router(superadmin_router)  # Super admin dashboard
 app.include_router(usage_router)  # Usage tracking & billing
 app.include_router(calendar_router)  # Calendar & appointment scheduling
 app.include_router(transfer_router)  # Call takeover/transfer
+app.include_router(recall_router)  # Proactive recall outreach
 
 
 # -----------------------------------------------------------------------------
@@ -151,6 +179,7 @@ app.include_router(transfer_router)  # Call takeover/transfer
 def on_startup():
     """Initialize database on startup."""
     logger.info(f"Initializing database: {DATABASE_URL}")
+    logger.info("Sentry initialized for error monitoring")
     create_db(DATABASE_URL)
     
     # Create demo user and client if they don't exist
@@ -802,6 +831,12 @@ def twilio_webhook(request: TwilioWebhookRequest, session: Session = Depends(get
 def health_check():
     """Health check endpoint."""
     return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
+
+
+@app.get("/sentry-debug")
+async def trigger_sentry_error():
+    """Debug endpoint to test Sentry integration. Remove in production."""
+    division_by_zero = 1 / 0
 
 
 @app.get("/")

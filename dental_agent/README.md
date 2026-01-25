@@ -273,8 +273,8 @@ Per call (3 min average):
 
 Monthly estimate (100 calls × 3 min):
 - Total: ~$12/month per clinic
-- You charge: $99-199/month
-- **Profit margin: 85-94%**
+- You charge: $199/month
+- **Profit margin: ~94%**
 
 ## Optional: Start Celery (for outbound calls)
 

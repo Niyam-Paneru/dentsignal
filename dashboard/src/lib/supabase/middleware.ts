@@ -33,7 +33,7 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   // Protected routes - redirect to login if not authenticated
-  const protectedRoutes = ['/dashboard', '/live-calls', '/calls', '/calendar', '/settings', '/analytics', '/superadmin']
+  const protectedRoutes = ['/dashboard', '/live-calls', '/calls', '/calendar', '/settings', '/analytics', '/superadmin', '/recalls']
   const isProtectedRoute = protectedRoutes.some(route => 
     request.nextUrl.pathname.startsWith(route)
   )
@@ -45,7 +45,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Subscription check for protected routes (except superadmin)
-  const subscriptionRequiredRoutes = ['/dashboard', '/live-calls', '/calls', '/calendar', '/settings', '/analytics']
+  const subscriptionRequiredRoutes = ['/dashboard', '/live-calls', '/calls', '/calendar', '/settings', '/analytics', '/recalls']
   const needsSubscription = subscriptionRequiredRoutes.some(route => 
     request.nextUrl.pathname.startsWith(route)
   )

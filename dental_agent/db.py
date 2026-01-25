@@ -78,6 +78,14 @@ class Client(SQLModel, table=True):
     services: Optional[str] = None  # Comma-separated: "cleanings, fillings, crowns"
     insurance_accepted: Optional[str] = None  # Comma-separated insurance providers
     
+    # SMS Templates (JSON)
+    # Structure: {"confirmation": "...", "reminder_24h": "...", "reminder_2h": "...", "recall": "...", "recall_followup": "..."}
+    sms_templates: Optional[str] = None  # JSON string of custom templates
+    sms_confirmation_enabled: bool = Field(default=True)
+    sms_reminder_24h_enabled: bool = Field(default=True)
+    sms_reminder_2h_enabled: bool = Field(default=True)
+    sms_recall_enabled: bool = Field(default=True)
+    
     # Billing & Status
     owner_email: Optional[str] = None  # Clinic owner for billing
     monthly_price: float = Field(default=0.0)  # Monthly subscription
@@ -503,6 +511,140 @@ class CalendarIntegration(SQLModel, table=True):
     
     def __repr__(self) -> str:
         return f"<CalendarIntegration clinic_id={self.clinic_id} provider={self.provider}>"
+
+
+# -----------------------------------------------------------------------------
+# Proactive Recall System Models
+# -----------------------------------------------------------------------------
+
+class RecallStatus(str, enum.Enum):
+    """Status of a recall outreach."""
+    PENDING = "pending"           # Scheduled but not sent
+    SMS_SENT = "sms_sent"         # First SMS sent
+    CALL_SCHEDULED = "call_scheduled"  # AI call scheduled
+    CALL_COMPLETED = "call_completed"  # AI call made
+    BOOKED = "booked"             # Patient booked appointment
+    DECLINED = "declined"         # Patient declined
+    NO_RESPONSE = "no_response"   # No response after all attempts
+    CANCELLED = "cancelled"       # Recall cancelled (e.g., patient already visited)
+
+
+class RecallType(str, enum.Enum):
+    """Types of recall reminders."""
+    CLEANING = "cleaning"         # 6-month cleaning
+    CHECKUP = "checkup"           # Annual checkup
+    FOLLOWUP = "followup"         # Follow-up from previous treatment
+    PERIODONTAL = "periodontal"   # Periodontal maintenance (3-4 month)
+    CUSTOM = "custom"             # Custom recall set by clinic
+
+
+class PatientRecall(SQLModel, table=True):
+    """
+    Patient recall tracking for proactive outbound campaigns.
+    
+    Tracks which patients are due for recalls (cleanings, checkups, etc.)
+    and manages the outreach sequence: SMS → AI Call → Follow-up
+    """
+    __tablename__ = "patient_recalls"
+    
+    id: Optional[int] = Field(default=None, primary_key=True)
+    clinic_id: int = Field(foreign_key="clients.id", index=True)
+    patient_id: Optional[int] = Field(default=None, foreign_key="patients.id", index=True)
+    
+    # Patient info (cached for quick access)
+    patient_name: str
+    patient_phone: str = Field(index=True)
+    patient_email: Optional[str] = None
+    
+    # Recall details
+    recall_type: RecallType = Field(default=RecallType.CLEANING)
+    last_visit_date: Optional[datetime] = None
+    due_date: datetime = Field(index=True)  # When patient is due for recall
+    
+    # Outreach status
+    status: RecallStatus = Field(default=RecallStatus.PENDING)
+    priority: int = Field(default=5)  # 1=highest, 10=lowest
+    
+    # Outreach sequence tracking
+    sms_sent_at: Optional[datetime] = None
+    sms_message_sid: Optional[str] = None  # Twilio message SID
+    call_scheduled_at: Optional[datetime] = None
+    call_completed_at: Optional[datetime] = None
+    call_id: Optional[int] = Field(default=None, foreign_key="calls.id")
+    outbound_call_sid: Optional[str] = None  # Twilio call SID
+    
+    # Response tracking
+    patient_response: Optional[str] = None  # SMS response or call outcome
+    booked_appointment_id: Optional[int] = Field(default=None, foreign_key="appointments.id")
+    declined_reason: Optional[str] = None
+    
+    # Outreach attempts
+    sms_attempts: int = Field(default=0)
+    call_attempts: int = Field(default=0)
+    max_sms_attempts: int = Field(default=2)
+    max_call_attempts: int = Field(default=2)
+    
+    # Campaign tracking (for batch campaigns)
+    campaign_id: Optional[str] = None  # For batch recall campaigns
+    batch_id: Optional[str] = None
+    
+    # Timestamps
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    next_outreach_at: Optional[datetime] = None  # When to attempt next contact
+    completed_at: Optional[datetime] = None  # When recall was resolved
+    
+    # Notes
+    notes: Optional[str] = None
+    
+    def __repr__(self) -> str:
+        return f"<PatientRecall id={self.id} patient={self.patient_name} type={self.recall_type} status={self.status}>"
+
+
+class RecallCampaign(SQLModel, table=True):
+    """
+    Recall campaign for batch processing recalls.
+    
+    A clinic can create a campaign to reach all patients overdue
+    for cleanings, for example.
+    """
+    __tablename__ = "recall_campaigns"
+    
+    id: Optional[int] = Field(default=None, primary_key=True)
+    clinic_id: int = Field(foreign_key="clients.id", index=True)
+    
+    # Campaign details
+    name: str
+    recall_type: RecallType
+    description: Optional[str] = None
+    
+    # Targeting
+    target_overdue_days: int = Field(default=30)  # Patients overdue by X days
+    target_count: int = Field(default=0)  # Number of patients targeted
+    
+    # Progress
+    total_recalls: int = Field(default=0)
+    sms_sent: int = Field(default=0)
+    calls_made: int = Field(default=0)
+    appointments_booked: int = Field(default=0)
+    declined: int = Field(default=0)
+    no_response: int = Field(default=0)
+    
+    # Revenue tracking
+    estimated_revenue: float = Field(default=0.0)  # Projected if all book
+    actual_revenue: float = Field(default=0.0)  # From booked appointments
+    
+    # Status
+    is_active: bool = Field(default=True)
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    
+    # Timestamps
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    def __repr__(self) -> str:
+        return f"<RecallCampaign id={self.id} name={self.name} type={self.recall_type}>"
 
 
 # -----------------------------------------------------------------------------

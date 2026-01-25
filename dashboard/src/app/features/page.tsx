@@ -40,7 +40,7 @@ export default function FeaturesPage() {
           <div className="container relative mx-auto px-4 text-center">
             <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 mb-5">
               <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-sm font-medium text-white">35% of dental calls go unanswered</span>
+              <span className="text-sm font-medium text-white">Up to 35% of dental calls go unanswered*</span>
             </div>
             <h1 className="mx-auto max-w-3xl text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white mb-4">
               Features That Actually <span className="text-cyan-300">Make You Money</span>
@@ -84,14 +84,14 @@ export default function FeaturesPage() {
                 iconColor="text-emerald-500"
                 bgColor="bg-emerald-500/10"
                 title="Instant Booking"
-                points={["Books appointments live", "Dentrix/Eaglesoft sync", "No double-booking"]}
+                points={["Books appointments live", "Google Calendar sync", "No double-booking"]}
               />
               <FeatureCard
                 icon={AlertTriangle}
                 iconColor="text-red-500"
                 bgColor="bg-red-500/10"
-                title="Emergency Triage"
-                points={["Detects urgent cases", "Instant staff alerts", "Pain-level assessment"]}
+                title="Emergency Detection"
+                points={["Detects urgent cases", "Instant staff alerts", "Transfers with context"]}
               />
               <FeatureCard
                 icon={Bell}
@@ -104,8 +104,8 @@ export default function FeaturesPage() {
                 icon={Globe}
                 iconColor="text-purple-500"
                 bgColor="bg-purple-500/10"
-                title="30+ Languages"
-                points={["Spanish, Mandarin, etc.", "Auto-detect language", "Native fluency"]}
+                title="English + Spanish"
+                points={["Native English AI", "Spanish support", "More languages coming"]}
               />
               <FeatureCard
                 icon={BarChart3}
@@ -133,7 +133,7 @@ export default function FeaturesPage() {
         <section className="py-14 bg-white" id="how-it-works">
           <div className="container mx-auto px-4">
             <div className="text-center mb-10">
-              <h2 className="text-2xl lg:text-3xl font-bold text-slate-900">Live in 48 Hours</h2>
+              <h2 className="text-2xl lg:text-3xl font-bold text-slate-900">Live in 1 Week</h2>
               <p className="mt-2 text-slate-600">No IT team needed. No contracts.</p>
             </div>
 
@@ -169,9 +169,9 @@ export default function FeaturesPage() {
         <section className="py-10 bg-white border-t border-slate-100">
           <div className="container mx-auto px-4">
             <div className="flex flex-wrap items-center justify-center gap-6 lg:gap-10">
-              <SecurityBadge icon={Shield} title="HIPAA" label="Compliant" />
+              <SecurityBadge icon={Shield} title="HIPAA" label="Ready" />
               <SecurityBadge icon={Lock} title="256-Bit" label="Encrypted" />
-              <SecurityBadge icon={CheckCircle} title="SOC2" label="Certified" />
+              <SecurityBadge icon={CheckCircle} title="BAA" label="Available" />
             </div>
           </div>
         </section>
@@ -180,10 +180,10 @@ export default function FeaturesPage() {
         <section className="py-14 bg-gradient-to-r from-emerald-500 to-cyan-500">
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-2xl lg:text-3xl font-bold text-white mb-3">
-              Stop Losing $100K+/Year to Missed Calls
+              Stop Losing $21K/Month to Missed Calls
             </h2>
             <p className="text-white/90 mb-6 max-w-xl mx-auto">
-              Join dental practices recovering thousands monthly with DentSignal AI
+              25 missed new-patient calls × $850 each = $21,250/month. DentSignal captures them 24/7.
             </p>
             <Link href="/signup">
               <Button size="lg" className="h-12 gap-2 bg-white text-emerald-600 hover:bg-slate-100 font-bold px-8 shadow-lg">
@@ -218,7 +218,7 @@ function FeatureCard({
   points: string[]
 }) {
   return (
-    <div className="bg-white rounded-xl p-5 border border-slate-200 hover:border-cyan-300 hover:shadow-lg transition-all">
+    <div className="bg-white rounded-xl p-5 border border-slate-200 hover:border-cyan-300 hover:shadow-lg transition-[border,box-shadow] duration-150">
       <div className={`inline-flex h-10 w-10 items-center justify-center rounded-lg ${bgColor} mb-3`}>
         <Icon className={`h-5 w-5 ${iconColor}`} />
       </div>

@@ -318,6 +318,68 @@ Continue Setup: https://dentsignal.me/dashboard
 # Weekly Digest Email
 # -----------------------------------------------------------------------------
 
+# Celebration messages for email subject lines and closings
+WEEKLY_EMAIL_CELEBRATIONS = [
+    {
+        "subject": "Your team just saved ${revenue} this week 💰",
+        "closing": "Go check your dashboard. You've earned the victory lap. 🏆",
+    },
+    {
+        "subject": "Your AI handled {calls} calls. You handled zero stress. 🎯",
+        "closing": "See the full breakdown. Your practice is crushing it. 🚀",
+    },
+    {
+        "subject": "Week summary: More patients, more revenue, same schedule. ⚡",
+        "closing": "Check the dashboard. Your numbers are worth celebrating. 🎉",
+    },
+    {
+        "subject": "Your AI worked 168 hours. Never called in sick. 🤖",
+        "closing": "Review what your team accomplished. The data is beautiful. ✨",
+    },
+    {
+        "subject": "{calls} calls answered. {appointments} appointments booked. Zero burnout. 👑",
+        "closing": "See your weekly wins in the dashboard. You deserve this. 💎",
+    },
+    {
+        "subject": "Your practice just recovered ${revenue} in missed revenue. 📈",
+        "closing": "View the full report. Numbers don't lie. They celebrate. ✅",
+    },
+    {
+        "subject": "Your team's weekly performance: Legendary. (Your AI agrees.) 🌟",
+        "closing": "Check out what you built. Take a moment to breathe. 💙",
+    },
+    {
+        "subject": "Weekly reality check: Your AI is earning its keep. 💪",
+        "closing": "Dashboard has all the proof. Go take a look. 🔥",
+    },
+]
+
+
+def get_celebration_pair(
+    week_number: int,
+    total_calls: int = 0,
+    appointments_booked: int = 0,
+    revenue_recovered: float = 0
+) -> dict:
+    """Get a celebration subject/closing pair for the week."""
+    import random
+    
+    # Use week number to rotate through pairs (or randomize)
+    pair = WEEKLY_EMAIL_CELEBRATIONS[(week_number - 1) % len(WEEKLY_EMAIL_CELEBRATIONS)]
+    
+    # Format the subject with actual values
+    subject = pair["subject"].format(
+        revenue=f"{revenue_recovered:,.0f}",
+        calls=total_calls,
+        appointments=appointments_booked
+    )
+    
+    return {
+        "subject": subject,
+        "closing": pair["closing"]
+    }
+
+
 @dataclass
 class WeeklyDigestEmail(BaseEmail):
     """Weekly performance digest email."""
@@ -333,8 +395,23 @@ class WeeklyDigestEmail(BaseEmail):
     avg_call_duration: str
     top_hours: list  # e.g., ["10am", "2pm", "4pm"]
     missed_calls: int = 0
+    week_number: int = 1  # For celebration rotation
+    use_celebration_subject: bool = True
+    
+    def get_celebration_pair(self) -> dict:
+        """Get the celebration messages for this email."""
+        return get_celebration_pair(
+            self.week_number,
+            self.total_calls,
+            self.appointments_booked,
+            self.revenue_recovered
+        )
     
     def get_subject(self) -> str:
+        if self.use_celebration_subject:
+            return self.get_celebration_pair()["subject"]
+        
+        # Fallback to standard subject
         emoji = "🎉" if self.calls_change > 0 else "📊"
         return f"{emoji} Your Weekly AI Receptionist Report - {self.total_calls} calls handled"
     
@@ -392,6 +469,11 @@ class WeeklyDigestEmail(BaseEmail):
                         </td>
                     </tr>
                 </table>
+                
+                <!-- Celebration Closing -->
+                <p style="text-align: center; margin: 24px 0; font-size: 16px; color: {self.TEXT_COLOR}; font-weight: 500;">
+                    {self.get_celebration_pair()["closing"]}
+                </p>
                 
                 <div style="text-align: center; margin-top: 32px;">
                     <a href="https://dentsignal.me/analytics" style="display: inline-block; padding: 14px 32px; background-color: {self.PRIMARY_COLOR}; color: white; text-decoration: none; font-size: 16px; font-weight: 600; border-radius: 8px;">
@@ -517,14 +599,20 @@ def get_weekly_digest(
     revenue_recovered: float,
     avg_call_duration: str = "3:24",
     calls_change: int = 0,
-    top_hours: list = None
+    top_hours: list = None,
+    week_number: int = None,
+    use_celebration_subject: bool = True
 ) -> WeeklyDigestEmail:
-    """Create a weekly digest email."""
+    """Create a weekly digest email with celebration messages."""
     from datetime import timedelta
     
     today = datetime.now()
     week_start = (today - timedelta(days=7)).strftime("%b %d")
     week_end = today.strftime("%b %d, %Y")
+    
+    # Calculate week number if not provided (week of the year)
+    if week_number is None:
+        week_number = today.isocalendar()[1]
     
     return WeeklyDigestEmail(
         owner_name=owner_name,
@@ -536,7 +624,9 @@ def get_weekly_digest(
         appointments_booked=appointments_booked,
         revenue_recovered=revenue_recovered,
         avg_call_duration=avg_call_duration,
-        top_hours=top_hours or ["10am", "2pm"]
+        top_hours=top_hours or ["10am", "2pm"],
+        week_number=week_number,
+        use_celebration_subject=use_celebration_subject
     )
 
 

@@ -7,28 +7,24 @@ import {
   DollarSign, 
   Phone, 
   ArrowRight,
-  TrendingDown,
   TrendingUp,
+  Calculator,
+  Info,
 } from 'lucide-react'
 import Link from 'next/link'
 
 // =============================================================================
-// ROI CALCULATOR - Based on 2025-2026 Industry Research
+// ROI CALCULATOR - HONEST VERSION
 // =============================================================================
-// Miss rate: 35% of calls go unanswered (industry avg, up to 68% peak times)
-// New patient calls: ~20% of missed calls are new patients  
-// Conversion: 30-40% would convert → use 35%
-// First-year value: $850 per new patient
-// Annual loss: $100K-$150K (industry standard)
+// CONSERVATIVE assumptions (not inflated):
+//   - 20% of missed calls are new patients (realistic)
+//   - Only 40% of those would have converted (not 100%)
+//   - DentSignal captures ~50% of recoverable calls (not 95%)
+//   - Shows a RANGE, not a single inflated number
+//   - Includes clear disclaimer
 // =============================================================================
 
 const DENTSIGNAL_MONTHLY_PRICE = 199
-const NEW_PATIENT_RATE = 0.20
-const CONVERSION_RATE = 0.35
-
-function roundToHundred(value: number): number {
-  return Math.round(value / 100) * 100
-}
 
 export function ROICalculator() {
   const [monthlyCalls, setMonthlyCalls] = useState(1000)
@@ -36,31 +32,55 @@ export function ROICalculator() {
   const [patientValue, setPatientValue] = useState(850)
 
   const calc = useMemo(() => {
-    const missed = monthlyCalls * (missedPercent / 100)
-    const newPatientMissed = missed * NEW_PATIENT_RATE
-    const lostPatients = newPatientMissed * CONVERSION_RATE
-    const monthlyLoss = lostPatients * patientValue
-    const yearlyLoss = monthlyLoss * 12
-    const recovered = monthlyLoss * 0.5
-    const paybackDays = recovered > 0 ? Math.min(30, Math.max(1, Math.round(DENTSIGNAL_MONTHLY_PRICE / (recovered / 30)))) : 30
+    // Step 1: How many calls are missed?
+    const missedCalls = monthlyCalls * (missedPercent / 100)
+    
+    // Step 2: Only 20% of missed calls are new patients (rest are existing patients, spam, etc.)
+    const newPatientMissed = missedCalls * 0.20
+    
+    // Step 3: CONSERVATIVE - Only 40% would have actually converted (not 100%)
+    const wouldHaveConverted = newPatientMissed * 0.40
+    
+    // Step 4: DentSignal captures ~50% of those (realistic, not 95%)
+    const capturedLow = wouldHaveConverted * 0.40  // Conservative
+    const capturedHigh = wouldHaveConverted * 0.60 // Optimistic
+    
+    // Step 5: Calculate recovery range
+    const monthlyRecoveryLow = Math.round(capturedLow * patientValue)
+    const monthlyRecoveryHigh = Math.round(capturedHigh * patientValue)
+    
+    // Patients captured per month
+    const patientsCapturedLow = Math.round(capturedLow)
+    const patientsCapturedHigh = Math.round(capturedHigh)
 
     return {
-      monthlyLoss: roundToHundred(monthlyLoss),
-      yearlyLoss: roundToHundred(yearlyLoss),
-      recovered: roundToHundred(recovered),
-      lostPatients: Math.round(lostPatients),
-      paybackDays,
+      missedCalls: Math.round(missedCalls),
+      newPatientMissed: Math.round(newPatientMissed),
+      wouldHaveConverted: Math.round(wouldHaveConverted),
+      monthlyRecoveryLow,
+      monthlyRecoveryHigh,
+      patientsCapturedLow,
+      patientsCapturedHigh,
+      annualRecoveryLow: monthlyRecoveryLow * 12,
+      annualRecoveryHigh: monthlyRecoveryHigh * 12,
     }
   }, [monthlyCalls, missedPercent, patientValue])
 
-  const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
+  const fmt = (n: number) => new Intl.NumberFormat('en-US', { 
+    style: 'currency', 
+    currency: 'USD', 
+    maximumFractionDigits: 0 
+  }).format(n)
 
   return (
     <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 lg:p-8 shadow-2xl max-w-4xl mx-auto">
       {/* Header */}
       <div className="text-center mb-6">
-        <h3 className="text-2xl font-bold text-white mb-1">Calculate Your Loss</h3>
-        <p className="text-slate-400 text-sm">Based on 2025-2026 industry research • 35% avg miss rate</p>
+        <div className="inline-flex items-center gap-2 mb-2">
+          <Calculator className="h-5 w-5 text-emerald-400" />
+          <h3 className="text-2xl font-bold text-white">Estimate Your Recovery</h3>
+        </div>
+        <p className="text-slate-400 text-sm">Conservative estimates based on realistic assumptions</p>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
@@ -86,7 +106,7 @@ export function ROICalculator() {
           <div>
             <div className="flex justify-between text-sm mb-2">
               <span className="text-slate-300 flex items-center gap-1.5">
-                <TrendingDown className="h-4 w-4 text-red-400" /> Miss rate
+                <TrendingUp className="h-4 w-4 text-amber-400" /> Miss rate
               </span>
               <span className="font-bold text-white">{missedPercent}%</span>
             </div>
@@ -96,14 +116,14 @@ export function ROICalculator() {
               onValueChange={([v]) => setMissedPercent(v)}
               className="cursor-pointer"
             />
-            <p className="text-xs text-slate-500 mt-1">Industry avg: 35% (68% at peak)</p>
+            <p className="text-xs text-slate-500 mt-1">Industry avg: 35%</p>
           </div>
 
           {/* Patient Value */}
           <div>
             <div className="flex justify-between text-sm mb-2">
               <span className="text-slate-300 flex items-center gap-1.5">
-                <DollarSign className="h-4 w-4 text-emerald-400" /> First-year value
+                <DollarSign className="h-4 w-4 text-emerald-400" /> First-year patient value
               </span>
               <span className="font-bold text-white">{fmt(patientValue)}</span>
             </div>
@@ -113,35 +133,57 @@ export function ROICalculator() {
               onValueChange={([v]) => setPatientValue(v)}
               className="cursor-pointer"
             />
-            <p className="text-xs text-slate-500 mt-1">Lifetime value: $8K-$25K</p>
+            <p className="text-xs text-slate-500 mt-1">Industry avg: $850</p>
           </div>
 
-          {/* Math breakdown */}
+          {/* Math breakdown - TRANSPARENT */}
           <div className="bg-slate-800/50 rounded-lg p-3 text-xs text-slate-400 border border-slate-700">
-            <span className="text-slate-500">The math:</span> {Math.round(monthlyCalls * missedPercent / 100)} missed × 20% new patients × 35% convert = <span className="text-white font-semibold">{calc.lostPatients} patients lost/mo</span>
+            <p className="text-slate-500 mb-1 font-medium">How we calculate:</p>
+            <p>{calc.missedCalls} missed → {calc.newPatientMissed} new patients (20%)</p>
+            <p>→ {calc.wouldHaveConverted} would convert (40%)</p>
+            <p>→ <span className="text-emerald-400 font-semibold">{calc.patientsCapturedLow}-{calc.patientsCapturedHigh} captured by AI</span></p>
           </div>
         </div>
 
         {/* Right: Results */}
         <div className="flex flex-col justify-between">
-          {/* Loss Display */}
-          <div className="bg-gradient-to-br from-red-500/20 to-red-600/10 border border-red-500/30 rounded-xl p-5 text-center mb-4">
-            <p className="text-red-400 text-xs font-bold uppercase tracking-wider mb-1">You&apos;re Losing</p>
-            <p className="text-4xl lg:text-5xl font-black text-red-400">{fmt(calc.yearlyLoss)}</p>
-            <p className="text-red-300/80 text-sm mt-1">/year • {fmt(calc.monthlyLoss)}/month</p>
+          {/* Recovery Display - GREEN, not scary red */}
+          <div className="bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 border border-emerald-500/30 rounded-xl p-5 text-center mb-4">
+            <p className="text-emerald-400 text-xs font-bold uppercase tracking-wider mb-1">Estimated Recovery</p>
+            <p className="text-3xl lg:text-4xl font-black text-emerald-400">
+              {fmt(calc.monthlyRecoveryLow)} - {fmt(calc.monthlyRecoveryHigh)}
+            </p>
+            <p className="text-emerald-300/80 text-sm mt-1">/month</p>
+            <p className="text-slate-400 text-xs mt-2">
+              {fmt(calc.annualRecoveryLow)} - {fmt(calc.annualRecoveryHigh)}/year
+            </p>
           </div>
 
-          {/* Recovery Display */}
-          <div className="bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 border border-emerald-500/30 rounded-xl p-4 text-center mb-4">
-            <p className="text-emerald-400 text-xs font-bold uppercase tracking-wider mb-1">DentSignal Recovers</p>
-            <p className="text-2xl lg:text-3xl font-bold text-emerald-400">~{fmt(calc.recovered)}<span className="text-lg">/mo</span></p>
-            <p className="text-emerald-300/70 text-xs mt-1">Pays for itself in ~{calc.paybackDays} days</p>
+          {/* ROI Display */}
+          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 text-center mb-4">
+            <p className="text-slate-400 text-xs font-medium mb-1">DentSignal costs</p>
+            <p className="text-xl font-bold text-white">{fmt(DENTSIGNAL_MONTHLY_PRICE)}<span className="text-sm text-slate-400">/mo</span></p>
+            <p className="text-emerald-400 text-sm mt-2 font-medium">
+              {calc.monthlyRecoveryLow > DENTSIGNAL_MONTHLY_PRICE 
+                ? `${Math.round(calc.monthlyRecoveryLow / DENTSIGNAL_MONTHLY_PRICE)}x-${Math.round(calc.monthlyRecoveryHigh / DENTSIGNAL_MONTHLY_PRICE)}x return on investment`
+                : 'Adjust sliders to see ROI'
+              }
+            </p>
+          </div>
+
+          {/* Disclaimer */}
+          <div className="flex items-start gap-2 text-xs text-slate-500 mb-4 bg-slate-800/30 rounded-lg p-3">
+            <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
+            <p>
+              Estimates based on 40% conversion, 50% capture rate. 
+              <span className="font-medium text-slate-400"> Your results may vary</span> based on practice size, location, and call patterns.
+            </p>
           </div>
 
           {/* CTA */}
           <Link href="/signup" className="block">
             <Button className="w-full h-12 gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-base shadow-lg shadow-emerald-500/25">
-              Stop Losing {fmt(calc.monthlyLoss)}/mo
+              Start Free Trial
               <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>

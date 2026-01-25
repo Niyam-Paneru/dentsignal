@@ -679,3 +679,284 @@ export async function getAnalyticsSummary(): Promise<{
     bookingTrend: 8,
   }
 }
+
+// Service type revenue values (industry averages)
+const SERVICE_REVENUE_MAP: Record<string, number> = {
+  'cleaning': 150,
+  'checkup': 200,
+  'filling': 300,
+  'crown': 1200,
+  'root_canal': 1500,
+  'whitening': 500,
+  'extraction': 400,
+  'implant': 3500,
+  'emergency': 350,
+  'consultation': 150,
+  'default': 250,
+}
+
+export interface RevenueBreakdown {
+  serviceType: string
+  appointments: number
+  revenue: number
+  percentage: number
+}
+
+export interface RevenueAttribution {
+  totalRevenue: number
+  byService: RevenueBreakdown[]
+  byDayOfWeek: { day: string; revenue: number }[]
+  byHour: { hour: string; revenue: number }[]
+  newVsReturning: { type: string; revenue: number; percentage: number }[]
+  avgRevenuePerCall: number
+  conversionValue: number // Revenue per inbound call
+}
+
+export async function getRevenueAttribution(days: number = 30): Promise<RevenueAttribution> {
+  const supabase = createClient()
+  const clinicId = await getUserClinicId()
+  
+  const emptyResult: RevenueAttribution = {
+    totalRevenue: 0,
+    byService: [],
+    byDayOfWeek: [],
+    byHour: [],
+    newVsReturning: [],
+    avgRevenuePerCall: 0,
+    conversionValue: 0,
+  }
+  
+  if (!clinicId) {
+    return emptyResult
+  }
+
+  const startDate = new Date()
+  startDate.setDate(startDate.getDate() - days)
+
+  // Get appointments with their service types
+  const { data: appointments, error: apptError } = await supabase
+    .from('dental_appointments')
+    .select('id, service_type, scheduled_date, scheduled_time, patient_phone, created_at')
+    .eq('clinic_id', clinicId)
+    .gte('created_at', startDate.toISOString())
+    .in('status', ['scheduled', 'confirmed', 'completed'])
+
+  // Get all calls for conversion calculation
+  const { data: calls, error: callsError } = await supabase
+    .from('dental_calls')
+    .select('id, outcome, started_at')
+    .eq('clinic_id', clinicId)
+    .gte('started_at', startDate.toISOString())
+
+  if (apptError || callsError || !appointments) {
+    console.error('Error fetching revenue data:', apptError || callsError)
+    return emptyResult
+  }
+
+  // Calculate revenue by service type
+  const serviceRevenue: Record<string, { count: number; revenue: number }> = {}
+  let totalRevenue = 0
+
+  appointments.forEach(apt => {
+    const serviceType = apt.service_type?.toLowerCase() || 'default'
+    const revenue = SERVICE_REVENUE_MAP[serviceType] || SERVICE_REVENUE_MAP['default']
+    
+    if (!serviceRevenue[serviceType]) {
+      serviceRevenue[serviceType] = { count: 0, revenue: 0 }
+    }
+    serviceRevenue[serviceType].count++
+    serviceRevenue[serviceType].revenue += revenue
+    totalRevenue += revenue
+  })
+
+  const byService = Object.entries(serviceRevenue)
+    .map(([serviceType, data]) => ({
+      serviceType: serviceType.charAt(0).toUpperCase() + serviceType.slice(1).replace(/_/g, ' '),
+      appointments: data.count,
+      revenue: data.revenue,
+      percentage: totalRevenue > 0 ? Math.round((data.revenue / totalRevenue) * 100) : 0,
+    }))
+    .sort((a, b) => b.revenue - a.revenue)
+
+  // Calculate revenue by day of week
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+  const dayRevenue: Record<number, number> = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 }
+  
+  appointments.forEach(apt => {
+    const day = new Date(apt.scheduled_date).getDay()
+    const serviceType = apt.service_type?.toLowerCase() || 'default'
+    const revenue = SERVICE_REVENUE_MAP[serviceType] || SERVICE_REVENUE_MAP['default']
+    dayRevenue[day] += revenue
+  })
+
+  const byDayOfWeek = dayNames.map((day, idx) => ({
+    day: day.slice(0, 3),
+    revenue: dayRevenue[idx],
+  }))
+
+  // Calculate revenue by hour (appointment time)
+  const hourRevenue: Record<number, number> = {}
+  for (let i = 8; i <= 18; i++) {
+    hourRevenue[i] = 0
+  }
+  
+  appointments.forEach(apt => {
+    if (apt.scheduled_time) {
+      const hour = parseInt(apt.scheduled_time.split(':')[0])
+      if (hour >= 8 && hour <= 18) {
+        const serviceType = apt.service_type?.toLowerCase() || 'default'
+        const revenue = SERVICE_REVENUE_MAP[serviceType] || SERVICE_REVENUE_MAP['default']
+        hourRevenue[hour] += revenue
+      }
+    }
+  })
+
+  const byHour = Object.entries(hourRevenue).map(([h, revenue]) => ({
+    hour: `${parseInt(h) > 12 ? parseInt(h) - 12 : h}${parseInt(h) >= 12 ? 'pm' : 'am'}`,
+    revenue,
+  }))
+
+  // Calculate new vs returning (simple heuristic: if phone appears >1 time, returning)
+  const phoneCount: Record<string, number> = {}
+  appointments.forEach(apt => {
+    if (apt.patient_phone) {
+      phoneCount[apt.patient_phone] = (phoneCount[apt.patient_phone] || 0) + 1
+    }
+  })
+
+  let newRevenue = 0
+  let returningRevenue = 0
+  appointments.forEach(apt => {
+    const serviceType = apt.service_type?.toLowerCase() || 'default'
+    const revenue = SERVICE_REVENUE_MAP[serviceType] || SERVICE_REVENUE_MAP['default']
+    const isReturning = apt.patient_phone && phoneCount[apt.patient_phone] > 1
+    if (isReturning) {
+      returningRevenue += revenue
+    } else {
+      newRevenue += revenue
+    }
+  })
+
+  const newVsReturning = [
+    { type: 'New Patients', revenue: newRevenue, percentage: totalRevenue > 0 ? Math.round((newRevenue / totalRevenue) * 100) : 0 },
+    { type: 'Returning Patients', revenue: returningRevenue, percentage: totalRevenue > 0 ? Math.round((returningRevenue / totalRevenue) * 100) : 0 },
+  ]
+
+  // Calculate per-call metrics
+  const totalCalls = calls?.length || 0
+  const bookedCalls = calls?.filter(c => c.outcome === 'booked').length || 0
+  const avgRevenuePerCall = bookedCalls > 0 ? Math.round(totalRevenue / bookedCalls) : 0
+  const conversionValue = totalCalls > 0 ? Math.round(totalRevenue / totalCalls) : 0
+
+  return {
+    totalRevenue,
+    byService,
+    byDayOfWeek,
+    byHour,
+    newVsReturning,
+    avgRevenuePerCall,
+    conversionValue,
+  }
+}
+
+// =============================================================================
+// SMS Templates
+// =============================================================================
+
+export interface SmsTemplates {
+  confirmation?: string
+  reminder_24h?: string
+  reminder_2h?: string
+  recall?: string
+  recall_followup?: string
+}
+
+export interface SmsSettings {
+  sms_templates?: SmsTemplates
+  sms_confirmation_enabled?: boolean
+  sms_reminder_24h_enabled?: boolean
+  sms_reminder_2h_enabled?: boolean
+  sms_recall_enabled?: boolean
+}
+
+export async function getSmsSettings(): Promise<SmsSettings | null> {
+  const supabase = createClient()
+  const clinicId = await getUserClinicId()
+  
+  if (!clinicId) {
+    return null
+  }
+
+  const { data, error } = await supabase
+    .from('dental_clinics')
+    .select('sms_templates, sms_confirmation_enabled, sms_reminder_24h_enabled, sms_reminder_2h_enabled, sms_recall_enabled')
+    .eq('id', clinicId)
+    .single()
+
+  if (error) {
+    console.error('Error fetching SMS settings:', error)
+    return null
+  }
+
+  return {
+    sms_templates: data.sms_templates ? JSON.parse(data.sms_templates) : {},
+    sms_confirmation_enabled: data.sms_confirmation_enabled ?? true,
+    sms_reminder_24h_enabled: data.sms_reminder_24h_enabled ?? true,
+    sms_reminder_2h_enabled: data.sms_reminder_2h_enabled ?? true,
+    sms_recall_enabled: data.sms_recall_enabled ?? true,
+  }
+}
+
+export async function updateSmsSettings(settings: SmsSettings): Promise<boolean> {
+  const supabase = createClient()
+  const clinicId = await getUserClinicId()
+  
+  if (!clinicId) {
+    return false
+  }
+
+  const updateData: Record<string, unknown> = {}
+  
+  if (settings.sms_templates !== undefined) {
+    updateData.sms_templates = JSON.stringify(settings.sms_templates)
+  }
+  if (settings.sms_confirmation_enabled !== undefined) {
+    updateData.sms_confirmation_enabled = settings.sms_confirmation_enabled
+  }
+  if (settings.sms_reminder_24h_enabled !== undefined) {
+    updateData.sms_reminder_24h_enabled = settings.sms_reminder_24h_enabled
+  }
+  if (settings.sms_reminder_2h_enabled !== undefined) {
+    updateData.sms_reminder_2h_enabled = settings.sms_reminder_2h_enabled
+  }
+  if (settings.sms_recall_enabled !== undefined) {
+    updateData.sms_recall_enabled = settings.sms_recall_enabled
+  }
+
+  const { error } = await supabase
+    .from('dental_clinics')
+    .update(updateData)
+    .eq('id', clinicId)
+
+  if (error) {
+    console.error('Error updating SMS settings:', error)
+    return false
+  }
+
+  return true
+}
+
+export async function sendTestSms(phone: string, templateKey: string): Promise<{ success: boolean; error?: string }> {
+  const supabase = createClient()
+  const clinicId = await getUserClinicId()
+  
+  if (!clinicId) {
+    return { success: false, error: 'Not authenticated' }
+  }
+
+  // This would call the backend API to send a test SMS
+  // For now, return a placeholder
+  console.log(`Would send test SMS to ${phone} using template ${templateKey}`)
+  
+  return { success: true }
+}

@@ -15,6 +15,7 @@ import {
   Menu,
   Shield,
   CreditCard,
+  Sparkles,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useState, useEffect, useCallback } from 'react'
@@ -31,6 +32,7 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Live Calls', href: '/live-calls', icon: PhoneCall, showActiveCount: true },
   { name: 'Calls', href: '/calls', icon: Phone },
+  { name: 'Recalls', href: '/recalls', icon: Sparkles },
   { name: 'Calendar', href: '/calendar', icon: Calendar },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Settings', href: '/settings', icon: Settings },

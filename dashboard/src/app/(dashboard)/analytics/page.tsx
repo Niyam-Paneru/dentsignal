@@ -4,20 +4,20 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
-  BarChart,
+  DynamicBarChart,
+  DynamicLineChart,
+  DynamicPieChart,
+  DynamicResponsiveContainer,
   Bar,
-  LineChart,
   Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
-  PieChart,
   Pie,
   Cell,
   Legend,
-} from 'recharts'
+} from '@/components/charts/dynamic-charts'
 import { TrendingUp, DollarSign, Clock, Phone, Loader2, Building2 } from 'lucide-react'
 import { 
   getWeeklyCallStats, 
@@ -26,7 +26,9 @@ import {
   getOutcomeDistribution,
   getServiceTypeStats,
   getAnalyticsSummary,
-  getClinic
+  getClinic,
+  getRevenueAttribution,
+  type RevenueAttribution
 } from '@/lib/api/dental'
 
 const tooltipStyle = {
@@ -83,6 +85,7 @@ export default function AnalyticsPage() {
   const [outcomeData, setOutcomeData] = useState<{ name: string; value: number; color: string }[]>([])
   const [serviceData, setServiceData] = useState<{ name: string; count: number; percentage: number }[]>([])
   const [summary, setSummary] = useState({ totalCalls: 0, bookingRate: 0, avgDuration: '0:00', estimatedRevenue: 0, callsTrend: 0, bookingTrend: 0 })
+  const [revenueData, setRevenueData] = useState<RevenueAttribution | null>(null)
 
   useEffect(() => {
     async function loadData() {
@@ -95,13 +98,14 @@ export default function AnalyticsPage() {
           return
         }
 
-        const [weekly, monthly, peak, outcomes, services, stats] = await Promise.all([
+        const [weekly, monthly, peak, outcomes, services, stats, revenue] = await Promise.all([
           getWeeklyCallStats(),
           getMonthlyTrend(),
           getPeakHours(),
           getOutcomeDistribution(),
           getServiceTypeStats(),
           getAnalyticsSummary(),
+          getRevenueAttribution(30),
         ])
 
         setWeeklyData(weekly)
@@ -110,6 +114,7 @@ export default function AnalyticsPage() {
         setOutcomeData(outcomes)
         setServiceData(services)
         setSummary(stats)
+        setRevenueData(revenue)
       } catch (error) {
         console.error('Failed to load analytics:', error)
       } finally {
@@ -217,8 +222,8 @@ export default function AnalyticsPage() {
               </CardHeader>
               <CardContent>
                 <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={weeklyData}>
+                  <DynamicResponsiveContainer width="100%" height="100%">
+                    <DynamicBarChart data={weeklyData}>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                       <XAxis dataKey="day" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
                       <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
@@ -226,8 +231,8 @@ export default function AnalyticsPage() {
                       <Legend />
                       <Bar dataKey="calls" name="Total Calls" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                       <Bar dataKey="booked" name="Booked" fill="#22c55e" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                    </DynamicBarChart>
+                  </DynamicResponsiveContainer>
                 </div>
               </CardContent>
             </Card>
@@ -241,8 +246,8 @@ export default function AnalyticsPage() {
               <CardContent>
                 <div className="h-[300px]">
                   {outcomeData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
+                    <DynamicResponsiveContainer width="100%" height="100%">
+                      <DynamicPieChart>
                         <Pie
                           data={outcomeData}
                           cx="50%"
@@ -258,8 +263,8 @@ export default function AnalyticsPage() {
                           ))}
                         </Pie>
                         <Tooltip contentStyle={tooltipStyle.contentStyle} />
-                      </PieChart>
-                    </ResponsiveContainer>
+                      </DynamicPieChart>
+                    </DynamicResponsiveContainer>
                   ) : (
                     <div className="flex h-full items-center justify-center text-muted-foreground">
                       No outcome data available
@@ -281,15 +286,15 @@ export default function AnalyticsPage() {
               <CardContent>
                 <div className="h-[300px]">
                   {peakHoursData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={peakHoursData} layout="vertical">
+                    <DynamicResponsiveContainer width="100%" height="100%">
+                      <DynamicBarChart data={peakHoursData} layout="vertical">
                         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                         <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
                         <YAxis dataKey="hour" type="category" tick={{ fill: 'hsl(var(--muted-foreground))' }} width={50} />
                         <Tooltip {...tooltipStyle} />
                         <Bar dataKey="calls" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
+                      </DynamicBarChart>
+                    </DynamicResponsiveContainer>
                   ) : (
                     <div className="flex h-full items-center justify-center text-muted-foreground">
                       No hourly data available
@@ -308,8 +313,8 @@ export default function AnalyticsPage() {
               <CardContent>
                 <div className="h-[300px]">
                   {monthlyTrend.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={monthlyTrend}>
+                    <DynamicResponsiveContainer width="100%" height="100%">
+                      <DynamicLineChart data={monthlyTrend}>
                         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                         <XAxis dataKey="week" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
                         <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
@@ -331,8 +336,8 @@ export default function AnalyticsPage() {
                           strokeWidth={2}
                           dot={{ fill: 'hsl(var(--primary))' }}
                         />
-                      </LineChart>
-                    </ResponsiveContainer>
+                      </DynamicLineChart>
+                    </DynamicResponsiveContainer>
                   ) : (
                     <div className="flex h-full items-center justify-center text-muted-foreground">
                       No trend data available
@@ -401,6 +406,183 @@ export default function AnalyticsPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Revenue Attribution Dashboard */}
+          {revenueData && revenueData.totalRevenue > 0 && (
+            <>
+              {/* Revenue Attribution Header */}
+              <Card className="border-indigo-200 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950 dark:to-purple-950">
+                <CardHeader>
+                  <CardTitle className="text-indigo-800 dark:text-indigo-200 flex items-center gap-2">
+                    📊 Revenue Attribution
+                  </CardTitle>
+                  <CardDescription className="text-indigo-600 dark:text-indigo-300">
+                    Detailed breakdown of AI-generated revenue (last 30 days)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-6 md:grid-cols-4">
+                    <div className="text-center p-4 bg-white dark:bg-indigo-900/50 rounded-lg">
+                      <p className="text-3xl font-bold text-indigo-700 dark:text-indigo-300">
+                        ${revenueData.totalRevenue.toLocaleString()}
+                      </p>
+                      <p className="text-sm text-indigo-600 dark:text-indigo-400">Total Revenue</p>
+                    </div>
+                    <div className="text-center p-4 bg-white dark:bg-indigo-900/50 rounded-lg">
+                      <p className="text-3xl font-bold text-indigo-700 dark:text-indigo-300">
+                        ${revenueData.avgRevenuePerCall.toLocaleString()}
+                      </p>
+                      <p className="text-sm text-indigo-600 dark:text-indigo-400">Avg Revenue/Booking</p>
+                    </div>
+                    <div className="text-center p-4 bg-white dark:bg-indigo-900/50 rounded-lg">
+                      <p className="text-3xl font-bold text-indigo-700 dark:text-indigo-300">
+                        ${revenueData.conversionValue.toLocaleString()}
+                      </p>
+                      <p className="text-sm text-indigo-600 dark:text-indigo-400">Value per Call</p>
+                    </div>
+                    <div className="text-center p-4 bg-white dark:bg-indigo-900/50 rounded-lg">
+                      <p className="text-3xl font-bold text-indigo-700 dark:text-indigo-300">
+                        {revenueData.byService.reduce((sum, s) => sum + s.appointments, 0)}
+                      </p>
+                      <p className="text-sm text-indigo-600 dark:text-indigo-400">Total Bookings</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Revenue Charts Row */}
+              <div className="grid gap-6 lg:grid-cols-2">
+                {/* Revenue by Service Type */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Revenue by Service</CardTitle>
+                    <CardDescription>Which procedures generate the most revenue</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {revenueData.byService.slice(0, 6).map((service) => (
+                        <div key={service.serviceType} className="flex items-center gap-4">
+                          <div className="w-28 text-sm font-medium truncate">{service.serviceType}</div>
+                          <div className="flex-1">
+                            <div className="h-6 w-full rounded-full bg-muted overflow-hidden">
+                              <div 
+                                className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-end pr-2"
+                                style={{ width: `${Math.max(service.percentage, 10)}%` }}
+                              >
+                                <span className="text-xs text-white font-medium">{service.percentage}%</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="w-24 text-right">
+                            <span className="text-sm font-semibold">${service.revenue.toLocaleString()}</span>
+                            <span className="text-xs text-muted-foreground block">{service.appointments} appts</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Revenue by Day of Week */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Revenue by Day</CardTitle>
+                    <CardDescription>Best performing days of the week</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-[250px]">
+                      <DynamicResponsiveContainer width="100%" height="100%">
+                        <DynamicBarChart data={revenueData.byDayOfWeek}>
+                          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                          <XAxis dataKey="day" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                          <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(v) => `$${v}`} />
+                          <Tooltip 
+                            {...tooltipStyle}
+                            formatter={(value) => [`$${Number(value).toLocaleString()}`, 'Revenue']}
+                          />
+                          <Bar dataKey="revenue" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                        </DynamicBarChart>
+                      </DynamicResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* New vs Returning Patients */}
+              <div className="grid gap-6 lg:grid-cols-3">
+                <Card className="lg:col-span-1">
+                  <CardHeader>
+                    <CardTitle>Patient Mix</CardTitle>
+                    <CardDescription>New vs returning patient revenue</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-[200px]">
+                      <DynamicResponsiveContainer width="100%" height="100%">
+                        <DynamicPieChart>
+                          <Pie
+                            data={revenueData.newVsReturning}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={50}
+                            outerRadius={80}
+                            dataKey="revenue"
+                            nameKey="type"
+                            label={({ name, percent }) => `${name?.split(' ')[0]} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                          >
+                            <Cell fill="#22c55e" />
+                            <Cell fill="#3b82f6" />
+                          </Pie>
+                          <Tooltip 
+                            formatter={(value) => [`$${Number(value).toLocaleString()}`, '']}
+                          />
+                        </DynamicPieChart>
+                      </DynamicResponsiveContainer>
+                    </div>
+                    <div className="flex justify-center gap-6 mt-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-green-500" />
+                        <span className="text-sm">New</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-blue-500" />
+                        <span className="text-sm">Returning</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Revenue by Hour */}
+                <Card className="lg:col-span-2">
+                  <CardHeader>
+                    <CardTitle>Revenue by Appointment Time</CardTitle>
+                    <CardDescription>When high-value appointments are scheduled</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-[200px]">
+                      <DynamicResponsiveContainer width="100%" height="100%">
+                        <DynamicLineChart data={revenueData.byHour}>
+                          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                          <XAxis dataKey="hour" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                          <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(v) => `$${v}`} />
+                          <Tooltip 
+                            {...tooltipStyle}
+                            formatter={(value) => [`$${Number(value).toLocaleString()}`, 'Revenue']}
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="revenue" 
+                            stroke="#6366f1" 
+                            strokeWidth={2}
+                            dot={{ fill: '#6366f1' }}
+                          />
+                        </DynamicLineChart>
+                      </DynamicResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </>
+          )}
         </>
       )}
     </div>

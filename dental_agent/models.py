@@ -80,6 +80,12 @@ class ClinicUpdate(BaseModel):
     services: Optional[str] = None
     insurance_accepted: Optional[str] = None
     is_active: Optional[bool] = None
+    # SMS Templates
+    sms_templates: Optional[str] = None  # JSON string of custom templates
+    sms_confirmation_enabled: Optional[bool] = None
+    sms_reminder_24h_enabled: Optional[bool] = None
+    sms_reminder_2h_enabled: Optional[bool] = None
+    sms_recall_enabled: Optional[bool] = None
 
 
 class ClinicResponse(BaseModel):

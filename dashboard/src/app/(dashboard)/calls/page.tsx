@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Search, Filter, Play, FileText, Phone, Loader2 } from 'lucide-react'
+import { Search, Filter, Play, FileText, Phone, Loader2, Star, CheckCircle, AlertCircle } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { getAllCalls } from '@/lib/api/dental'
 import type { Call } from '@/types/database'
@@ -204,7 +204,107 @@ export default function CallsPage() {
                   <Badge variant="outline" className={sentiment.className}>
                     {sentiment.label}
                   </Badge>
+                  {selectedCall.quality_score !== undefined && selectedCall.quality_score !== null && (
+                    <Badge 
+                      variant="outline" 
+                      className={
+                        selectedCall.quality_score >= 80 ? 'text-green-600 border-green-300' :
+                        selectedCall.quality_score >= 60 ? 'text-amber-600 border-amber-300' :
+                        'text-red-600 border-red-300'
+                      }
+                    >
+                      <Star className="h-3 w-3 mr-1" />
+                      {selectedCall.quality_score}%
+                    </Badge>
+                  )}
                 </div>
+
+                {/* Quality Score Breakdown */}
+                {selectedCall.quality_score !== undefined && selectedCall.quality_score !== null && (
+                  <div className="rounded-lg border p-4 space-y-3">
+                    <h4 className="font-medium flex items-center gap-2">
+                      <Star className="h-4 w-4 text-amber-500" />
+                      Quality Score Breakdown
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Main Score */}
+                      <div className="col-span-2">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm text-muted-foreground">Overall Quality</span>
+                          <span className={`text-lg font-bold ${
+                            selectedCall.quality_score >= 80 ? 'text-green-600' :
+                            selectedCall.quality_score >= 60 ? 'text-amber-600' :
+                            'text-red-600'
+                          }`}>
+                            {selectedCall.quality_score}%
+                          </span>
+                        </div>
+                        <div className="h-2 bg-muted rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full rounded-full transition-[width] duration-300 ${
+                              selectedCall.quality_score >= 80 ? 'bg-green-500' :
+                              selectedCall.quality_score >= 60 ? 'bg-amber-500' :
+                              'bg-red-500'
+                            }`}
+                            style={{ width: `${selectedCall.quality_score}%` }}
+                          />
+                        </div>
+                      </div>
+                      
+                      {/* Breakdown Items */}
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm">
+                          <CheckCircle className={`h-4 w-4 ${selectedCall.quality_score >= 70 ? 'text-green-500' : 'text-muted-foreground'}`} />
+                          <span>Professional greeting</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <CheckCircle className={`h-4 w-4 ${selectedCall.outcome === 'booked' ? 'text-green-500' : 'text-muted-foreground'}`} />
+                          <span>Resolved inquiry</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <CheckCircle className={`h-4 w-4 ${(selectedCall.duration_seconds || 0) > 60 ? 'text-green-500' : 'text-muted-foreground'}`} />
+                          <span>Adequate call length</span>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm">
+                          {selectedCall.sentiment === 'positive' ? (
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                          ) : selectedCall.sentiment === 'negative' ? (
+                            <AlertCircle className="h-4 w-4 text-red-500" />
+                          ) : (
+                            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                          )}
+                          <span>Patient satisfaction</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <CheckCircle className={`h-4 w-4 ${selectedCall.summary ? 'text-green-500' : 'text-muted-foreground'}`} />
+                          <span>Call documented</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <CheckCircle className={`h-4 w-4 ${selectedCall.quality_score >= 80 ? 'text-green-500' : 'text-muted-foreground'}`} />
+                          <span>No escalation needed</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Quality Tips */}
+                    {selectedCall.quality_score < 70 && (
+                      <div className="mt-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                        <p className="text-sm text-amber-800 font-medium">💡 Improvement Tip</p>
+                        <p className="text-xs text-amber-700 mt-1">
+                          {selectedCall.sentiment === 'negative' 
+                            ? 'Consider reviewing the transcript for handling difficult conversations better.'
+                            : selectedCall.outcome === 'missed'
+                            ? 'Try to answer calls more quickly or improve voicemail options.'
+                            : 'Review the prompt settings to improve call handling quality.'
+                          }
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Summary */}
                 <div className="rounded-lg bg-muted p-4">

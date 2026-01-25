@@ -1,6 +1,15 @@
 'use client'
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import { 
+  DynamicBarChart, 
+  DynamicResponsiveContainer, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend 
+} from '@/components/charts/dynamic-charts'
 import { BarChart3 } from 'lucide-react'
 
 interface CallsChartProps {
@@ -28,8 +37,8 @@ export function CallsChart({ data }: CallsChartProps) {
 
   return (
     <div className="h-[300px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+      <DynamicResponsiveContainer width="100%" height="100%">
+        <DynamicBarChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
           <XAxis 
             dataKey="date" 
@@ -65,8 +74,8 @@ export function CallsChart({ data }: CallsChartProps) {
             fill="hsl(142, 76%, 36%)" 
             radius={[4, 4, 0, 0]}
           />
-        </BarChart>
-      </ResponsiveContainer>
+        </DynamicBarChart>
+      </DynamicResponsiveContainer>
     </div>
   )
 }

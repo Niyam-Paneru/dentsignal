@@ -323,6 +323,20 @@ export default function SignupPage() {
             greeting_template: `Thank you for calling ${clinicName}. This is Sarah, how may I help you today?`,
           })
       }
+      
+      // Send Slack notification (fire and forget - don't block signup)
+      fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'signup',
+          data: {
+            email,
+            name: `${firstName} ${lastName}`,
+            clinic: clinicName,
+          }
+        })
+      }).catch(() => {}) // Silently ignore errors
     }
     
     router.push('/dashboard')
@@ -703,7 +717,7 @@ export default function SignupPage() {
             </span>
             <span className="flex items-center gap-1">
               <Check className="h-3 w-3 text-[#22C55E]" />
-              HIPAA compliant
+              HIPAA ready
             </span>
           </div>
         </div>

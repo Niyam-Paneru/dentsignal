@@ -30,9 +30,12 @@ import {
   AlertCircle,
   PhoneForwarded,
   Info,
-  Clock
+  Clock,
+  MessageSquare,
+  Copy,
+  RotateCcw
 } from 'lucide-react'
-import { getClinicSettings, getClinic, updateClinicSettings, updateClinicInfo } from '@/lib/api/dental'
+import { getClinicSettings, getClinic, updateClinicSettings, updateClinicInfo, getSmsSettings, updateSmsSettings, SmsTemplates } from '@/lib/api/dental'
 import { CallForwardingGuide } from '@/components/dashboard/call-forwarding-guide'
 import { useSubscription, getPlanDisplayName, getPlanPrice } from '@/lib/hooks/use-subscription'
 
@@ -77,14 +80,28 @@ export default function SettingsPage() {
   const [transferTimeout, setTransferTimeout] = useState('20')
   const [transferFallback, setTransferFallback] = useState('voicemail')
   const { subscription } = useSubscription()
+  
+  // SMS Template state
+  const [smsTemplates, setSmsTemplates] = useState<SmsTemplates>({
+    confirmation: '',
+    reminder_24h: '',
+    reminder_2h: '',
+    recall: '',
+    recall_followup: '',
+  })
+  const [smsConfirmationEnabled, setSmsConfirmationEnabled] = useState(true)
+  const [smsReminder24hEnabled, setSmsReminder24hEnabled] = useState(true)
+  const [smsReminder2hEnabled, setSmsReminder2hEnabled] = useState(true)
+  const [smsRecallEnabled, setSmsRecallEnabled] = useState(true)
 
   useEffect(() => {
     async function loadData() {
       setLoading(true)
       try {
-        const [clinicData, settingsData] = await Promise.all([
+        const [clinicData, settingsData, smsData] = await Promise.all([
           getClinic(),
-          getClinicSettings()
+          getClinicSettings(),
+          getSmsSettings()
         ])
         if (clinicData) {
           setClinic(clinicData)
@@ -99,6 +116,13 @@ export default function SettingsPage() {
           setAgentName(settingsData.agent_name || '')
           setAgentVoice(settingsData.agent_voice || 'alloy')
           setGreeting(settingsData.greeting_template || '')
+        }
+        if (smsData) {
+          setSmsTemplates(smsData.sms_templates || {})
+          setSmsConfirmationEnabled(smsData.sms_confirmation_enabled ?? true)
+          setSmsReminder24hEnabled(smsData.sms_reminder_24h_enabled ?? true)
+          setSmsReminder2hEnabled(smsData.sms_reminder_2h_enabled ?? true)
+          setSmsRecallEnabled(smsData.sms_recall_enabled ?? true)
         }
       } catch (error) {
         console.error('Failed to load settings:', error)
@@ -126,6 +150,15 @@ export default function SettingsPage() {
         transfer_enabled: transferEnabled,
         transfer_timeout_seconds: parseInt(transferTimeout) || 20,
         transfer_fallback: transferFallback,
+      })
+      
+      // Save SMS templates and settings
+      await updateSmsSettings({
+        sms_templates: smsTemplates,
+        sms_confirmation_enabled: smsConfirmationEnabled,
+        sms_reminder_24h_enabled: smsReminder24hEnabled,
+        sms_reminder_2h_enabled: smsReminder2hEnabled,
+        sms_recall_enabled: smsRecallEnabled,
       })
     } catch (error) {
       console.error('Failed to save settings:', error)
@@ -157,7 +190,7 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue="clinic" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-8 lg:w-auto lg:grid-cols-none">
+        <TabsList className="grid w-full grid-cols-9 lg:w-auto lg:grid-cols-none">
           <TabsTrigger value="clinic" className="gap-2">
             <Building2 className="h-4 w-4" />
             <span className="hidden sm:inline">Clinic</span>
@@ -177,6 +210,10 @@ export default function SettingsPage() {
           <TabsTrigger value="calendar" className="gap-2">
             <Calendar className="h-4 w-4" />
             <span className="hidden sm:inline">Calendar</span>
+          </TabsTrigger>
+          <TabsTrigger value="sms" className="gap-2">
+            <MessageSquare className="h-4 w-4" />
+            <span className="hidden sm:inline">SMS</span>
           </TabsTrigger>
           <TabsTrigger value="notifications" className="gap-2">
             <Bell className="h-4 w-4" />
@@ -842,6 +879,20 @@ export default function SettingsPage() {
               <CardDescription>Choose how you want to be notified about calls and bookings</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Dashboard Celebrations */}
+              <div className="space-y-4">
+                <h4 className="font-medium">Dashboard Celebrations</h4>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">Celebration Messages</p>
+                      <p className="text-xs text-muted-foreground">Show celebratory messages when AI books appointments or handles calls</p>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+                </div>
+              </div>
+
               <div className="space-y-4">
                 <h4 className="font-medium">Email Notifications</h4>
                 <div className="space-y-3">
@@ -882,6 +933,282 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* SMS Templates */}
+        <TabsContent value="sms">
+          <div className="grid gap-6">
+            {/* Available Variables */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Template Variables</CardTitle>
+                <CardDescription>Use these variables in your templates - they&apos;ll be replaced with actual values</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { var: '{patient_name}', desc: 'Patient first name' },
+                    { var: '{clinic_name}', desc: 'Your clinic name' },
+                    { var: '{date}', desc: 'Appointment date' },
+                    { var: '{time}', desc: 'Appointment time' },
+                    { var: '{provider}', desc: 'Provider name' },
+                    { var: '{procedure}', desc: 'Procedure type' },
+                    { var: '{phone}', desc: 'Clinic phone' },
+                    { var: '{confirm_link}', desc: 'Confirmation link' },
+                  ].map((item) => (
+                    <button
+                      key={item.var}
+                      onClick={() => navigator.clipboard.writeText(item.var)}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm hover:bg-primary/20 transition-colors"
+                      title={item.desc}
+                    >
+                      <code>{item.var}</code>
+                      <Copy className="h-3 w-3" />
+                    </button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Appointment Confirmation */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  Appointment Confirmation
+                </CardTitle>
+                <CardDescription>Sent immediately after booking an appointment</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="sms-confirmation">Message Template</Label>
+                    <span className="text-xs text-muted-foreground">
+                      {(smsTemplates.confirmation || '').length}/160 characters
+                    </span>
+                  </div>
+                  <Textarea
+                    id="sms-confirmation"
+                    rows={3}
+                    value={smsTemplates.confirmation || ''}
+                    placeholder="Hi {patient_name}! Your appointment at {clinic_name} is confirmed for {date} at {time}. Reply YES to confirm or call {phone} to reschedule."
+                    onChange={(e) => setSmsTemplates({ ...smsTemplates, confirmation: e.target.value })}
+                    className="font-mono text-sm"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Switch 
+                      id="confirmation-enabled" 
+                      checked={smsConfirmationEnabled}
+                      onCheckedChange={setSmsConfirmationEnabled}
+                    />
+                    <Label htmlFor="confirmation-enabled">Auto-send on booking</Label>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setSmsTemplates({ ...smsTemplates, confirmation: '' })}
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Reset to Default
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 24-Hour Reminder */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-blue-600" />
+                  24-Hour Reminder
+                </CardTitle>
+                <CardDescription>Sent 24 hours before the appointment</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="sms-24h">Message Template</Label>
+                    <span className="text-xs text-muted-foreground">
+                      {(smsTemplates.reminder_24h || '').length}/160 characters
+                    </span>
+                  </div>
+                  <Textarea
+                    id="sms-24h"
+                    rows={3}
+                    value={smsTemplates.reminder_24h || ''}
+                    placeholder="Reminder: {patient_name}, you have an appointment tomorrow at {clinic_name} at {time}. Please reply C to confirm or R to reschedule."
+                    onChange={(e) => setSmsTemplates({ ...smsTemplates, reminder_24h: e.target.value })}
+                    className="font-mono text-sm"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Switch 
+                      id="reminder24-enabled" 
+                      checked={smsReminder24hEnabled}
+                      onCheckedChange={setSmsReminder24hEnabled}
+                    />
+                    <Label htmlFor="reminder24-enabled">Enable 24h reminder</Label>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setSmsTemplates({ ...smsTemplates, reminder_24h: '' })}
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Reset to Default
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 2-Hour Reminder */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5 text-orange-600" />
+                  2-Hour Reminder
+                </CardTitle>
+                <CardDescription>Sent 2 hours before the appointment</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="sms-2h">Message Template</Label>
+                    <span className="text-xs text-muted-foreground">
+                      {(smsTemplates.reminder_2h || '').length}/160 characters
+                    </span>
+                  </div>
+                  <Textarea
+                    id="sms-2h"
+                    rows={3}
+                    value={smsTemplates.reminder_2h || ''}
+                    placeholder="Hi {patient_name}! Just a quick reminder - your appointment at {clinic_name} is in 2 hours at {time}. See you soon!"
+                    onChange={(e) => setSmsTemplates({ ...smsTemplates, reminder_2h: e.target.value })}
+                    className="font-mono text-sm"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Switch 
+                      id="reminder2-enabled" 
+                      checked={smsReminder2hEnabled}
+                      onCheckedChange={setSmsReminder2hEnabled}
+                    />
+                    <Label htmlFor="reminder2-enabled">Enable 2h reminder</Label>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setSmsTemplates({ ...smsTemplates, reminder_2h: '' })}
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Reset to Default
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Recall Messages */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bell className="h-5 w-5 text-purple-600" />
+                  Recall / Reactivation
+                </CardTitle>
+                <CardDescription>Messages for patients who haven&apos;t visited in 6+ months</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="sms-recall">First Recall Message</Label>
+                    <span className="text-xs text-muted-foreground">
+                      {(smsTemplates.recall || '').length}/160 characters
+                    </span>
+                  </div>
+                  <Textarea
+                    id="sms-recall"
+                    rows={3}
+                    value={smsTemplates.recall || ''}
+                    placeholder="Hi {patient_name}! It's been a while since your last visit to {clinic_name}. We'd love to see you! Reply BOOK or call {phone} to schedule."
+                    onChange={(e) => setSmsTemplates({ ...smsTemplates, recall: e.target.value })}
+                    className="font-mono text-sm"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="sms-recall-followup">Follow-up Message (7 days later)</Label>
+                    <span className="text-xs text-muted-foreground">
+                      {(smsTemplates.recall_followup || '').length}/160 characters
+                    </span>
+                  </div>
+                  <Textarea
+                    id="sms-recall-followup"
+                    rows={3}
+                    value={smsTemplates.recall_followup || ''}
+                    placeholder="{patient_name}, your smile matters to us! {clinic_name} has convenient appointment times available. Call {phone} or reply BOOK to schedule your checkup."
+                    onChange={(e) => setSmsTemplates({ ...smsTemplates, recall_followup: e.target.value })}
+                    className="font-mono text-sm"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Switch 
+                      id="recall-enabled" 
+                      checked={smsRecallEnabled}
+                      onCheckedChange={setSmsRecallEnabled}
+                    />
+                    <Label htmlFor="recall-enabled">Enable recall automation</Label>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setSmsTemplates({ ...smsTemplates, recall: '', recall_followup: '' })}
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Reset to Default
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Preview */}
+            <Card className="border-dashed">
+              <CardHeader>
+                <CardTitle>Preview</CardTitle>
+                <CardDescription>See how your messages will look on a phone</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="mx-auto max-w-[320px] rounded-3xl border-8 border-gray-800 bg-gray-800 p-2">
+                  <div className="rounded-2xl bg-white p-4 min-h-[200px]">
+                    <div className="text-center text-xs text-muted-foreground mb-4">
+                      Message Preview
+                    </div>
+                    <div className="space-y-2">
+                      <div className="bg-green-100 rounded-2xl rounded-tl-sm px-4 py-2 text-sm max-w-[85%]">
+                        {(smsTemplates.confirmation || "Hi {patient_name}! Your appointment at {clinic_name} is confirmed for {date} at {time}. Reply YES to confirm or call {phone} to reschedule.")
+                          .replace('{patient_name}', 'Sarah')
+                          .replace('{clinic_name}', clinic?.name || 'Sunshine Dental')
+                          .replace('{date}', 'Dec 15')
+                          .replace('{time}', '2:00 PM')
+                          .replace('{phone}', clinic?.phone || '(555) 123-4567')}
+                      </div>
+                      <div className="bg-blue-600 text-white rounded-2xl rounded-tr-sm px-4 py-2 text-sm max-w-[85%] ml-auto text-right">
+                        YES
+                      </div>
+                      <div className="bg-green-100 rounded-2xl rounded-tl-sm px-4 py-2 text-sm max-w-[85%]">
+                        Thank you for confirming! We look forward to seeing you. 😊
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* Billing Settings */}

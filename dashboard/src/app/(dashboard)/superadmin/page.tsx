@@ -7,6 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createClient } from "@/lib/supabase/client";
 import {
   Activity,
@@ -22,6 +25,9 @@ import {
   Eye,
   Shield,
   Lock,
+  CreditCard,
+  Clock,
+  UserCheck,
 } from "lucide-react";
 
 // Super Admin emails - only platform owner(s)
@@ -197,6 +203,425 @@ const mockSystemHealth: SystemHealth = {
     "Add more phone numbers for scaling",
   ],
 };
+
+// =============================================================================
+// SUBSCRIPTION MANAGEMENT COMPONENT
+// =============================================================================
+
+interface ClinicSubscriptionData {
+  id: string;
+  name: string;
+  owner_email: string;
+  subscription_status: 'trial' | 'active' | 'expired' | 'cancelled';
+  subscription_expires_at: string | null;
+  plan_type: 'starter_149' | 'pro_199';
+  last_payment_date: string | null;
+  payment_notes: string | null;
+  activated_by: string | null;
+  created_at: string;
+}
+
+function SubscriptionManagement({ userEmail }: { userEmail: string | null }) {
+  const [clinics, setClinics] = useState<ClinicSubscriptionData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activating, setActivating] = useState<string | null>(null);
+  const [selectedClinic, setSelectedClinic] = useState<string | null>(null);
+  const [activationPlan, setActivationPlan] = useState<'starter_149' | 'pro_199'>('starter_149');
+  const [activationNotes, setActivationNotes] = useState('');
+  const [activationDays, setActivationDays] = useState('30');
+  const supabase = createClient();
+
+  const fetchClinics = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('dental_clinics')
+      .select(`
+        id,
+        name,
+        subscription_status,
+        subscription_expires_at,
+        plan_type,
+        last_payment_date,
+        payment_notes,
+        activated_by,
+        created_at,
+        profiles!dental_clinics_owner_id_fkey (email)
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching clinics:', error);
+    } else {
+      // Transform data to include owner_email
+      const transformedData = (data || []).map((clinic: Record<string, unknown>) => ({
+        id: clinic.id as string,
+        name: clinic.name as string,
+        owner_email: ((clinic.profiles as Record<string, unknown> | null)?.email as string) || 'Unknown',
+        subscription_status: (clinic.subscription_status || 'trial') as 'trial' | 'active' | 'expired' | 'cancelled',
+        subscription_expires_at: clinic.subscription_expires_at as string | null,
+        plan_type: (clinic.plan_type || 'starter_149') as 'starter_149' | 'pro_199',
+        last_payment_date: clinic.last_payment_date as string | null,
+        payment_notes: clinic.payment_notes as string | null,
+        activated_by: clinic.activated_by as string | null,
+        created_at: clinic.created_at as string,
+      }));
+      setClinics(transformedData);
+    }
+    setLoading(false);
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchClinics();
+  }, [fetchClinics]);
+
+  const handleActivateSubscription = async (clinicId: string) => {
+    if (!userEmail) return;
+    
+    setActivating(clinicId);
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + parseInt(activationDays));
+
+    const { error } = await supabase
+      .from('dental_clinics')
+      .update({
+        subscription_status: 'active',
+        subscription_expires_at: expiresAt.toISOString(),
+        plan_type: activationPlan,
+        last_payment_date: new Date().toISOString(),
+        payment_notes: activationNotes || `Activated via Payoneer payment`,
+        activated_by: userEmail,
+      })
+      .eq('id', clinicId);
+
+    if (error) {
+      console.error('Error activating subscription:', error);
+      alert('Failed to activate subscription: ' + error.message);
+    } else {
+      alert('Subscription activated successfully!');
+      setSelectedClinic(null);
+      setActivationNotes('');
+      fetchClinics();
+    }
+    setActivating(null);
+  };
+
+  const handleExtendSubscription = async (clinicId: string, days: number) => {
+    if (!userEmail) return;
+    
+    setActivating(clinicId);
+    const clinic = clinics.find(c => c.id === clinicId);
+    const currentExpiry = clinic?.subscription_expires_at ? new Date(clinic.subscription_expires_at) : new Date();
+    const newExpiry = new Date(Math.max(currentExpiry.getTime(), Date.now()));
+    newExpiry.setDate(newExpiry.getDate() + days);
+
+    const { error } = await supabase
+      .from('dental_clinics')
+      .update({
+        subscription_status: 'active',
+        subscription_expires_at: newExpiry.toISOString(),
+        last_payment_date: new Date().toISOString(),
+        payment_notes: `Extended ${days} days by ${userEmail}`,
+        activated_by: userEmail,
+      })
+      .eq('id', clinicId);
+
+    if (error) {
+      console.error('Error extending subscription:', error);
+      alert('Failed to extend subscription: ' + error.message);
+    } else {
+      alert(`Subscription extended by ${days} days!`);
+      fetchClinics();
+    }
+    setActivating(null);
+  };
+
+  const getStatusBadge = (status: string, expiresAt: string | null) => {
+    const isExpired = expiresAt && new Date(expiresAt) < new Date();
+    
+    if (isExpired) {
+      return <Badge variant="destructive">Expired</Badge>;
+    }
+    
+    switch (status) {
+      case 'active':
+        return <Badge className="bg-green-100 text-green-800">Active</Badge>;
+      case 'trial':
+        return <Badge className="bg-blue-100 text-blue-800">Trial</Badge>;
+      case 'cancelled':
+        return <Badge variant="secondary">Cancelled</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const getDaysRemaining = (expiresAt: string | null) => {
+    if (!expiresAt) return 0;
+    const days = Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    return Math.max(0, days);
+  };
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-8">
+          <RefreshCw className="h-6 w-6 animate-spin mr-2" />
+          Loading clinics...
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Quick Stats */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Building2 className="h-4 w-4" />
+              Total Clinics
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{clinics.length}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              Active Subscriptions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {clinics.filter(c => c.subscription_status === 'active' && getDaysRemaining(c.subscription_expires_at) > 0).length}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Clock className="h-4 w-4 text-blue-600" />
+              In Trial
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">
+              {clinics.filter(c => c.subscription_status === 'trial' && getDaysRemaining(c.subscription_expires_at) > 0).length}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-red-600" />
+              Expired
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">
+              {clinics.filter(c => getDaysRemaining(c.subscription_expires_at) <= 0).length}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Monthly Revenue Estimate */}
+      <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-green-800">
+            <DollarSign className="h-5 w-5" />
+            Monthly Recurring Revenue (MRR)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-4xl font-bold text-green-700">
+            ${clinics
+              .filter(c => c.subscription_status === 'active' && getDaysRemaining(c.subscription_expires_at) > 0)
+              .length * 199
+            }
+            <span className="text-lg font-normal text-green-600">/month</span>
+          </div>
+          <p className="text-sm text-green-600 mt-2">
+            {clinics.filter(c => c.subscription_status === 'active' && getDaysRemaining(c.subscription_expires_at) > 0).length} active clinics @ $199/mo
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Clinics Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5" />
+            Subscription Management
+          </CardTitle>
+          <CardDescription>
+            Activate subscriptions after receiving Payoneer payment
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Clinic</TableHead>
+                <TableHead>Owner</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Plan</TableHead>
+                <TableHead>Expires</TableHead>
+                <TableHead>Last Payment</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {clinics.map((clinic) => (
+                <TableRow key={clinic.id} className={getDaysRemaining(clinic.subscription_expires_at) <= 3 ? 'bg-red-50' : ''}>
+                  <TableCell>
+                    <div>
+                      <p className="font-medium">{clinic.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Since {new Date(clinic.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <p className="text-sm">{clinic.owner_email}</p>
+                  </TableCell>
+                  <TableCell>
+                    {getStatusBadge(clinic.subscription_status, clinic.subscription_expires_at)}
+                    {getDaysRemaining(clinic.subscription_expires_at) > 0 && getDaysRemaining(clinic.subscription_expires_at) <= 7 && (
+                      <p className="text-xs text-amber-600 mt-1">
+                        {getDaysRemaining(clinic.subscription_expires_at)} days left
+                      </p>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">
+                      $199/mo
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {clinic.subscription_expires_at 
+                      ? new Date(clinic.subscription_expires_at).toLocaleDateString()
+                      : 'N/A'
+                    }
+                  </TableCell>
+                  <TableCell>
+                    {clinic.last_payment_date 
+                      ? new Date(clinic.last_payment_date).toLocaleDateString()
+                      : <span className="text-muted-foreground">Never</span>
+                    }
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      {selectedClinic === clinic.id ? (
+                        <div className="flex flex-col gap-2 p-2 bg-gray-50 rounded-lg min-w-[200px]">
+                          <Label className="text-xs">Plan</Label>
+                          <Select 
+                            value="pro_199" 
+                            disabled
+                          >
+                            <SelectTrigger className="h-8">
+                              <SelectValue placeholder="$199/mo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pro_199">$199/mo</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Label className="text-xs">Duration (days)</Label>
+                          <Input 
+                            type="number" 
+                            value={activationDays}
+                            onChange={(e) => setActivationDays(e.target.value)}
+                            className="h-8"
+                            min="1"
+                            max="365"
+                          />
+                          <Label className="text-xs">Notes (optional)</Label>
+                          <Input 
+                            placeholder="Payoneer #..."
+                            value={activationNotes}
+                            onChange={(e) => setActivationNotes(e.target.value)}
+                            className="h-8"
+                          />
+                          <div className="flex gap-1 mt-1">
+                            <Button 
+                              size="sm" 
+                              onClick={() => handleActivateSubscription(clinic.id)}
+                              disabled={activating === clinic.id}
+                              className="flex-1"
+                            >
+                              {activating === clinic.id ? (
+                                <RefreshCw className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <UserCheck className="h-3 w-3 mr-1" />
+                              )}
+                              Activate
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => setSelectedClinic(null)}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => setSelectedClinic(clinic.id)}
+                          >
+                            <CreditCard className="h-3 w-3 mr-1" />
+                            Activate
+                          </Button>
+                          {clinic.subscription_status === 'active' && (
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => handleExtendSubscription(clinic.id, 30)}
+                              disabled={activating === clinic.id}
+                            >
+                              +30 days
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {/* Manual Activation Instructions */}
+      <Card className="border-blue-200 bg-blue-50">
+        <CardHeader>
+          <CardTitle className="text-blue-800 flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Manual Activation Process
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="text-blue-700 text-sm space-y-2">
+          <ol className="list-decimal list-inside space-y-1">
+            <li>Receive payment notification from Payoneer</li>
+            <li>Find the clinic in the table above</li>
+            <li>Click &quot;Activate&quot; button</li>
+            <li>Confirm plan ($199/mo flat rate)</li>
+            <li>Set duration (default 30 days)</li>
+            <li>Add payment reference in notes (e.g., &quot;Payoneer #12345&quot;)</li>
+            <li>Click &quot;Activate&quot; to confirm</li>
+            <li>Send confirmation email to customer</li>
+          </ol>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 export default function SuperAdminPage() {
   const router = useRouter();
@@ -392,7 +817,7 @@ export default function SuperAdminPage() {
           <CardContent>
             <div className="text-2xl font-bold">{clinics.length}</div>
             <p className="text-xs text-muted-foreground">
-              ${clinics.length * 99}/month revenue
+              ${clinics.length * 199}/month revenue
             </p>
           </CardContent>
         </Card>
@@ -440,8 +865,9 @@ export default function SuperAdminPage() {
 
       {/* Main Tabs */}
       <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
           <TabsTrigger value="api-usage">API Usage</TabsTrigger>
           <TabsTrigger value="clinics">Clinics</TabsTrigger>
           <TabsTrigger value="calls">Call Summaries</TabsTrigger>
@@ -461,7 +887,7 @@ export default function SuperAdminPage() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Revenue</span>
-                    <span className="text-xl font-bold text-green-600">${clinics.length * 99}</span>
+                    <span className="text-xl font-bold text-green-600">${clinics.length * 199}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">AI Costs</span>
@@ -529,6 +955,11 @@ export default function SuperAdminPage() {
               </p>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Subscriptions Tab - Manual Activation */}
+        <TabsContent value="subscriptions" className="space-y-4">
+          <SubscriptionManagement userEmail={userEmail} />
         </TabsContent>
 
         {/* API Usage Tab */}

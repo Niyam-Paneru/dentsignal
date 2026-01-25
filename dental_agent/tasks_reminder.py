@@ -10,6 +10,7 @@ tasks_reminder.py - No-Show Reduction SMS Sequence Tasks
 Target: Reduce no-shows from 28% to 15%
 """
 
+import json
 import logging
 import os
 from datetime import datetime, timedelta
@@ -31,55 +32,78 @@ logger = logging.getLogger(__name__)
 
 
 # =============================================================================
-# SMS Templates
+# Default SMS Templates (used if clinic hasn't customized)
 # =============================================================================
 
-SMS_TEMPLATES = {
-    "confirmation": """✅ Appointment Confirmed!
+DEFAULT_SMS_TEMPLATES = {
+    "confirmation": """Hi {patient_name}! Your appointment at {clinic_name} is confirmed for {date} at {time}. Reply YES to confirm or call {phone} to reschedule.""",
 
-Hi {patient_name}!
+    "reminder_24h": """Reminder: {patient_name}, you have an appointment tomorrow at {clinic_name} at {time}. Please reply C to confirm or R to reschedule.""",
 
-Your appointment at {clinic_name} is scheduled for:
-📅 {date} at {time}
+    "reminder_2h": """Hi {patient_name}! Just a quick reminder - your appointment at {clinic_name} is in 2 hours at {time}. See you soon!""",
 
-Reply YES to confirm or call {phone} to reschedule.
+    "escalation": """⚠️ {patient_name}, we haven't heard from you about your {date} at {time} appointment at {clinic_name}. Please reply YES to confirm or call {phone}.""",
 
-See you soon!""",
+    "recall": """Hi {patient_name}! It's been a while since your last visit to {clinic_name}. We'd love to see you! Reply BOOK or call {phone} to schedule.""",
 
-    "reminder_24h": """⏰ Reminder: Your appointment is tomorrow!
-
-Hi {patient_name},
-
-📅 {date} at {time}
-🏥 {clinic_name}
-
-Reply YES to confirm or R to reschedule.
-
-Please arrive 10 minutes early.""",
-
-    "reminder_2h": """⏰ Your appointment is in 2 hours!
-
-Hi {patient_name},
-
-📅 Today at {time}
-🏥 {clinic_name}
-
-If you can't make it, please call {phone} ASAP so we can help another patient.
-
-See you soon! 😊""",
-
-    "escalation": """⚠️ We haven't heard from you!
-
-Hi {patient_name},
-
-Your appointment at {clinic_name} is {date} at {time}.
-
-We need to confirm your attendance. Please:
-📞 Call us at {phone}
-💬 Or reply YES to confirm
-
-If we don't hear back, we may need to give your slot to another patient.""",
+    "recall_followup": """{patient_name}, your smile matters to us! {clinic_name} has convenient appointment times available. Call {phone} or reply BOOK to schedule your checkup.""",
 }
+
+
+def get_clinic_sms_template(clinic_id: int, template_key: str) -> str:
+    """
+    Get SMS template for a clinic with fallback to default.
+    
+    Args:
+        clinic_id: The clinic ID
+        template_key: One of 'confirmation', 'reminder_24h', 'reminder_2h', 'escalation', 'recall', 'recall_followup'
+    
+    Returns:
+        The template string
+    """
+    try:
+        with get_session() as session:
+            clinic = session.get(Client, clinic_id)
+            if clinic and clinic.sms_templates:
+                try:
+                    custom_templates = json.loads(clinic.sms_templates)
+                    if template_key in custom_templates and custom_templates[template_key]:
+                        return custom_templates[template_key]
+                except json.JSONDecodeError:
+                    logger.warning(f"Invalid JSON in sms_templates for clinic {clinic_id}")
+    except Exception as e:
+        logger.error(f"Error loading clinic SMS template: {e}")
+    
+    return DEFAULT_SMS_TEMPLATES.get(template_key, DEFAULT_SMS_TEMPLATES["confirmation"])
+
+
+def is_sms_enabled(clinic_id: int, sms_type: str) -> bool:
+    """
+    Check if a specific SMS type is enabled for a clinic.
+    
+    Args:
+        clinic_id: The clinic ID
+        sms_type: One of 'confirmation', 'reminder_24h', 'reminder_2h', 'recall'
+    
+    Returns:
+        True if enabled, False otherwise
+    """
+    try:
+        with get_session() as session:
+            clinic = session.get(Client, clinic_id)
+            if clinic:
+                if sms_type == "confirmation":
+                    return clinic.sms_confirmation_enabled
+                elif sms_type == "reminder_24h":
+                    return clinic.sms_reminder_24h_enabled
+                elif sms_type == "reminder_2h":
+                    return clinic.sms_reminder_2h_enabled
+                elif sms_type == "recall":
+                    return clinic.sms_recall_enabled
+    except Exception as e:
+        logger.error(f"Error checking SMS enabled status: {e}")
+    
+    return True  # Default to enabled
 
 
 def format_appointment_datetime(scheduled_time: datetime) -> tuple:
@@ -140,12 +164,17 @@ def send_booking_confirmation(self, appointment_id: int) -> dict:
             if not appointment.patient_phone:
                 return {"error": "No patient phone number", "appointment_id": appointment_id}
             
-            # Format message
+            # Check if confirmation SMS is enabled for this clinic
+            if not is_sms_enabled(appointment.clinic_id, "confirmation"):
+                return {"skipped": True, "reason": "Confirmation SMS disabled for this clinic"}
+            
+            # Format message using clinic's custom template or default
             date_str, time_str = format_appointment_datetime(appointment.scheduled_time)
             clinic_name = get_clinic_name(appointment.clinic_id)
             clinic_phone = get_clinic_phone(appointment.clinic_id)
             
-            message = SMS_TEMPLATES["confirmation"].format(
+            template = get_clinic_sms_template(appointment.clinic_id, "confirmation")
+            message = template.format(
                 patient_name=appointment.patient_name or "there",
                 clinic_name=clinic_name,
                 date=date_str,
@@ -211,16 +240,21 @@ def send_24h_reminder(self, appointment_id: int) -> dict:
             if not appointment.patient_phone:
                 return {"error": "No patient phone number"}
             
+            # Check if 24h reminder SMS is enabled for this clinic
+            if not is_sms_enabled(appointment.clinic_id, "reminder_24h"):
+                return {"skipped": True, "reason": "24h reminder SMS disabled for this clinic"}
+            
             # Check if appointment is still ~24h away
             hours_until = (appointment.scheduled_time - datetime.utcnow()).total_seconds() / 3600
             if hours_until < 2:
                 return {"skipped": True, "reason": "Appointment too soon for 24h reminder"}
             
-            # Format message
+            # Format message using clinic's custom template or default
             date_str, time_str = format_appointment_datetime(appointment.scheduled_time)
             clinic_name = get_clinic_name(appointment.clinic_id)
             
-            message = SMS_TEMPLATES["reminder_24h"].format(
+            template = get_clinic_sms_template(appointment.clinic_id, "reminder_24h")
+            message = template.format(
                 patient_name=appointment.patient_name or "there",
                 clinic_name=clinic_name,
                 date=date_str,
@@ -282,12 +316,17 @@ def send_2h_reminder(self, appointment_id: int) -> dict:
             if not appointment.patient_phone:
                 return {"error": "No patient phone number"}
             
-            # Format message
+            # Check if 2h reminder SMS is enabled for this clinic
+            if not is_sms_enabled(appointment.clinic_id, "reminder_2h"):
+                return {"skipped": True, "reason": "2h reminder SMS disabled for this clinic"}
+            
+            # Format message using clinic's custom template or default
             _, time_str = format_appointment_datetime(appointment.scheduled_time)
             clinic_name = get_clinic_name(appointment.clinic_id)
             clinic_phone = get_clinic_phone(appointment.clinic_id)
             
-            message = SMS_TEMPLATES["reminder_2h"].format(
+            template = get_clinic_sms_template(appointment.clinic_id, "reminder_2h")
+            message = template.format(
                 patient_name=appointment.patient_name or "there",
                 clinic_name=clinic_name,
                 time=time_str,
@@ -354,12 +393,13 @@ def escalation_check(self, appointment_id: int) -> dict:
             if not appointment.patient_phone:
                 return {"error": "No patient phone number"}
             
-            # Format escalation message
+            # Format escalation message using clinic's custom template or default
             date_str, time_str = format_appointment_datetime(appointment.scheduled_time)
             clinic_name = get_clinic_name(appointment.clinic_id)
             clinic_phone = get_clinic_phone(appointment.clinic_id)
             
-            message = SMS_TEMPLATES["escalation"].format(
+            template = get_clinic_sms_template(appointment.clinic_id, "escalation")
+            message = template.format(
                 patient_name=appointment.patient_name or "there",
                 clinic_name=clinic_name,
                 date=date_str,

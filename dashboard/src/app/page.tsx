@@ -15,6 +15,7 @@ import {
 import { MarketingHeader } from '@/components/landing/marketing-header'
 import { MarketingFooter } from '@/components/landing/marketing-footer'
 import { HeroCalculator } from '@/components/landing/hero-calculator'
+import { WhyChooseSection } from '@/components/landing/why-choose-section'
 
 export default function HomePage() {
   return (
@@ -26,9 +27,9 @@ export default function HomePage() {
       {/* Trust Badge Bar */}
       <div className="bg-[#1f2937] py-2.5 text-center text-sm text-white">
         <div className="container mx-auto flex flex-wrap items-center justify-center gap-4 sm:gap-8 px-4">
-          <span className="flex items-center gap-1.5">🛡️ HIPAA Compliant</span>
+          <span className="flex items-center gap-1.5">🛡️ HIPAA Ready</span>
           <span className="hidden sm:inline text-white/30">|</span>
-          <span className="flex items-center gap-1.5">⚡ Live in 48 Hours</span>
+          <span className="flex items-center gap-1.5">⚡ Live in 1 Week</span>
           <span className="hidden sm:inline text-white/30">|</span>
           <span className="flex items-center gap-1.5">🕐 24/7 Coverage</span>
         </div>
@@ -49,7 +50,7 @@ export default function HomePage() {
               {/* Urgency Badge */}
               <div className="inline-flex items-center gap-2 bg-[#EF4444]/20 border border-[#EF4444]/30 rounded-full px-4 py-1.5 mb-6">
                 <span className="flex h-2 w-2 rounded-full bg-[#EF4444] animate-pulse" />
-                <span className="text-sm font-semibold text-white">Practices lose $100K–$150K/year to missed calls</span>
+                <span className="text-sm font-semibold text-white">25 missed new-patient calls = $21,250/month lost</span>
               </div>
 
               <h1 className="mb-4 text-3xl sm:text-4xl lg:text-5xl font-black text-white leading-tight">
@@ -62,7 +63,7 @@ export default function HomePage() {
               
               <div className="flex flex-col sm:flex-row items-center lg:items-start gap-3 mb-4">
                 <Link href="/signup">
-                  <Button size="lg" className="h-12 gap-2 bg-[#22C55E] hover:bg-[#16a34a] text-base font-bold shadow-lg shadow-[#22C55E]/25 transition-all hover:shadow-[#22C55E]/40 hover:-translate-y-0.5 rounded-lg px-6">
+                  <Button size="lg" className="h-12 gap-2 bg-[#22C55E] hover:bg-[#16a34a] text-base font-bold shadow-lg shadow-[#22C55E]/25 transition-[transform,box-shadow] duration-150 hover:shadow-[#22C55E]/40 hover:-translate-y-0.5 rounded-lg px-6">
                     Start 7-Day Free Trial
                     <ArrowRight className="h-4 w-4" />
                   </Button>
@@ -73,7 +74,7 @@ export default function HomePage() {
                 </Button>
               </div>
               
-              <p className="text-xs text-white/50">No credit card required • Cancel anytime • Live in 48 hours</p>
+              <p className="text-xs text-white/50">No credit card required • Cancel anytime • Live in 1 week</p>
             </div>
 
             {/* Right: Calculator */}
@@ -90,21 +91,24 @@ export default function HomePage() {
           <div className="flex flex-wrap items-center justify-center gap-6 text-sm">
             <span className="flex items-center gap-2 text-gray-600">
               <CheckCircle2 className="h-4 w-4 text-[#22C55E]" />
-              Trusted by 50+ dental practices
+              Now Accepting 5 Founding Practices
             </span>
             <span className="hidden sm:inline text-gray-300">|</span>
             <span className="flex items-center gap-2 text-gray-600">
               <CheckCircle2 className="h-4 w-4 text-[#22C55E]" />
-              HIPAA Compliant
+              HIPAA Ready
             </span>
             <span className="hidden sm:inline text-gray-300">|</span>
             <span className="flex items-center gap-2 text-gray-600">
               <CheckCircle2 className="h-4 w-4 text-[#22C55E]" />
-              Integrates with Dentrix, Eaglesoft, Open Dental
+              Google Calendar + Calendly Integration
             </span>
           </div>
         </div>
       </section>
+
+      {/* Why Choose DentSignal - Comparison Section */}
+      <WhyChooseSection />
 
       {/* Quick Features Overview - Compact */}
       <section className="bg-[#F8F9FA] py-12">
@@ -117,10 +121,10 @@ export default function HomePage() {
           <div className="mx-auto grid max-w-5xl gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
             <QuickFeature icon={Phone} title="24/7 Calls" desc="Never miss a patient" />
             <QuickFeature icon={Calendar} title="Instant Booking" desc="Books appointments live" />
-            <QuickFeature icon={Bell} title="SMS Reminders" desc="Reduce no-shows 60%" />
-            <QuickFeature icon={Shield} title="Emergency Triage" desc="Routes urgent calls" />
+            <QuickFeature icon={Bell} title="SMS Reminders" desc="Reduce no-shows" />
+            <QuickFeature icon={Shield} title="Emergency Detection" desc="Routes urgent calls" />
             <QuickFeature icon={BarChart3} title="Dashboard" desc="Real-time analytics" />
-            <QuickFeature icon={Globe} title="30+ Languages" desc="Serve all patients" />
+            <QuickFeature icon={Globe} title="English + Spanish" desc="More languages soon" />
           </div>
 
           <div className="mt-6 text-center">
@@ -145,11 +149,11 @@ export default function HomePage() {
             <div className="flex flex-wrap justify-center gap-6 text-sm text-[#2D3748]">
               <span className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-[#0099CC]" />
-                Live in 48 hours
+                Live in 1 week
               </span>
               <span className="flex items-center gap-2">
                 <Shield className="h-4 w-4 text-[#0099CC]" />
-                HIPAA compliant
+                HIPAA ready
               </span>
               <span className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-[#0099CC]" />
@@ -192,7 +196,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4 text-center">
           <h2 className="mb-4 text-3xl font-bold text-white">Ready to Stop Losing Patients?</h2>
           <p className="mb-8 text-white/80 max-w-xl mx-auto">
-            Join 50+ dental practices already using DentSignal to answer every call and book more appointments.
+            Be one of 5 founding practices to get AI that answers every call and books appointments 24/7.
           </p>
           <Link href="/signup">
             <Button size="lg" className="gap-2 bg-[#22C55E] hover:bg-[#16a34a] text-white font-bold px-8 shadow-lg">
@@ -221,7 +225,7 @@ function QuickFeature({
   desc: string
 }) {
   return (
-    <div className="flex flex-col items-center text-center p-3 bg-white rounded-lg border border-gray-100 hover:shadow-sm hover:border-[#0099CC]/30 transition-all">
+    <div className="flex flex-col items-center text-center p-3 bg-white rounded-lg border border-gray-100 hover:shadow-sm hover:border-[#0099CC]/30 transition-[border,box-shadow] duration-150">
       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0099CC]/10 mb-2">
         <Icon className="h-5 w-5 text-[#0099CC]" />
       </div>
