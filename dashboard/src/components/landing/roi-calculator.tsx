@@ -7,64 +7,52 @@ import {
   DollarSign, 
   Phone, 
   ArrowRight,
-  TrendingUp,
   Calculator,
   Info,
 } from 'lucide-react'
 import Link from 'next/link'
 
 // =============================================================================
-// ROI CALCULATOR - HONEST VERSION
+// ROI CALCULATOR - UNIFIED WITH HERO CALCULATOR
 // =============================================================================
-// CONSERVATIVE assumptions (not inflated):
-//   - 20% of missed calls are new patients (realistic)
-//   - Only 40% of those would have converted (not 100%)
-//   - DentSignal captures ~50% of recoverable calls (not 95%)
-//   - Shows a RANGE, not a single inflated number
-//   - Includes clear disclaimer
+// Uses same formula as hero-calculator.tsx for consistency:
+//   - Input: Missed new patient calls (already filtered)
+//   - 40% would have converted (conservative)
+//   - DentSignal captures ~50% of those
+//   - Shows a RANGE (low/high) for credibility
 // =============================================================================
 
 const DENTSIGNAL_MONTHLY_PRICE = 199
 
 export function ROICalculator() {
-  const [monthlyCalls, setMonthlyCalls] = useState(1000)
-  const [missedPercent, setMissedPercent] = useState(35)
+  // Same defaults as hero calculator
+  const [missedNewPatientCalls, setMissedNewPatientCalls] = useState(60)
   const [patientValue, setPatientValue] = useState(850)
 
   const calc = useMemo(() => {
-    // Step 1: How many calls are missed?
-    const missedCalls = monthlyCalls * (missedPercent / 100)
+    // Step 1: Only 40% would have actually converted (not 100%)
+    const conversionRate = 0.40
+    const wouldHaveConverted = missedNewPatientCalls * conversionRate
     
-    // Step 2: Only 20% of missed calls are new patients (rest are existing patients, spam, etc.)
-    const newPatientMissed = missedCalls * 0.20
+    // Step 2: DentSignal captures ~50% of those (realistic)
+    const captureRate = 0.50
+    const patientsCaptured = wouldHaveConverted * captureRate
     
-    // Step 3: CONSERVATIVE - Only 40% would have actually converted (not 100%)
-    const wouldHaveConverted = newPatientMissed * 0.40
+    // Step 3: Calculate recovery range (±20% for low/high)
+    const monthlyRecoveryMid = patientsCaptured * patientValue
+    const monthlyRecoveryLow = Math.round(monthlyRecoveryMid * 0.8)
+    const monthlyRecoveryHigh = Math.round(monthlyRecoveryMid * 1.2)
     
-    // Step 4: DentSignal captures ~50% of those (realistic, not 95%)
-    const capturedLow = wouldHaveConverted * 0.40  // Conservative
-    const capturedHigh = wouldHaveConverted * 0.60 // Optimistic
-    
-    // Step 5: Calculate recovery range
-    const monthlyRecoveryLow = Math.round(capturedLow * patientValue)
-    const monthlyRecoveryHigh = Math.round(capturedHigh * patientValue)
-    
-    // Patients captured per month
-    const patientsCapturedLow = Math.round(capturedLow)
-    const patientsCapturedHigh = Math.round(capturedHigh)
-
     return {
-      missedCalls: Math.round(missedCalls),
-      newPatientMissed: Math.round(newPatientMissed),
+      missedCalls: missedNewPatientCalls,
       wouldHaveConverted: Math.round(wouldHaveConverted),
+      patientsCaptured: Math.round(patientsCaptured),
       monthlyRecoveryLow,
       monthlyRecoveryHigh,
-      patientsCapturedLow,
-      patientsCapturedHigh,
       annualRecoveryLow: monthlyRecoveryLow * 12,
       annualRecoveryHigh: monthlyRecoveryHigh * 12,
     }
-  }, [monthlyCalls, missedPercent, patientValue])
+  }, [missedNewPatientCalls, patientValue])
 
   const fmt = (n: number) => new Intl.NumberFormat('en-US', { 
     style: 'currency', 
@@ -90,33 +78,17 @@ export function ROICalculator() {
           <div>
             <div className="flex justify-between text-sm mb-2">
               <span className="text-slate-300 flex items-center gap-1.5">
-                <Phone className="h-4 w-4 text-cyan-400" /> Monthly calls
+                <Phone className="h-4 w-4 text-cyan-400" /> Missed new patient calls/mo
               </span>
-              <span className="font-bold text-white">{monthlyCalls.toLocaleString()}</span>
+              <span className="font-bold text-white">{missedNewPatientCalls}</span>
             </div>
             <Slider
-              min={500} max={3000} step={100}
-              value={[monthlyCalls]}
-              onValueChange={([v]) => setMonthlyCalls(v)}
+              min={10} max={100} step={5}
+              value={[missedNewPatientCalls]}
+              onValueChange={([v]) => setMissedNewPatientCalls(v)}
               className="cursor-pointer"
             />
-          </div>
-
-          {/* Miss Rate */}
-          <div>
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-slate-300 flex items-center gap-1.5">
-                <TrendingUp className="h-4 w-4 text-amber-400" /> Miss rate
-              </span>
-              <span className="font-bold text-white">{missedPercent}%</span>
-            </div>
-            <Slider
-              min={20} max={50} step={1}
-              value={[missedPercent]}
-              onValueChange={([v]) => setMissedPercent(v)}
-              className="cursor-pointer"
-            />
-            <p className="text-xs text-slate-500 mt-1">Industry avg: 35%</p>
+            <p className="text-xs text-slate-500 mt-1">Industry avg: 50-100/month</p>
           </div>
 
           {/* Patient Value */}
@@ -139,9 +111,9 @@ export function ROICalculator() {
           {/* Math breakdown - TRANSPARENT */}
           <div className="bg-slate-800/50 rounded-lg p-3 text-xs text-slate-400 border border-slate-700">
             <p className="text-slate-500 mb-1 font-medium">How we calculate:</p>
-            <p>{calc.missedCalls} missed → {calc.newPatientMissed} new patients (20%)</p>
+            <p>{calc.missedCalls} missed new patient calls</p>
             <p>→ {calc.wouldHaveConverted} would convert (40%)</p>
-            <p>→ <span className="text-emerald-400 font-semibold">{calc.patientsCapturedLow}-{calc.patientsCapturedHigh} captured by AI</span></p>
+            <p>→ <span className="text-emerald-400 font-semibold">{calc.patientsCaptured} captured by AI (50%)</span></p>
           </div>
         </div>
 
