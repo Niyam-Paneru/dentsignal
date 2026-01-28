@@ -30,7 +30,7 @@ try:
         PatientRecall, RecallCampaign, RecallStatus, RecallType,
         AppointmentType, AppointmentStatus
     )
-    from dental_agent.twilio_service import send_sms, make_outbound_call
+    from dental_agent.twilio_service import send_sms, make_call
 except ImportError:
     from celery_config import celery_app
     from db import (
@@ -38,7 +38,7 @@ except ImportError:
         PatientRecall, RecallCampaign, RecallStatus, RecallType,
         AppointmentType, AppointmentStatus
     )
-    from twilio_service import send_sms, make_outbound_call
+    from twilio_service import send_sms, make_call
 
 logger = logging.getLogger(__name__)
 
@@ -310,7 +310,7 @@ def schedule_recall_call(self, recall_id: int) -> Dict[str, Any]:
                 "days_overdue": calculate_days_overdue(recall.due_date),
             }
             
-            result = make_outbound_call(
+            result = make_call(
                 to_number=recall.patient_phone,
                 from_number=clinic.twilio_number,
                 call_type="recall",
