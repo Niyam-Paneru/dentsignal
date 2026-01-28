@@ -23,7 +23,45 @@ This allows the user to:
 
 ---
 
-## 🔧 MCP Server Usage (MANDATORY)
+## � OpenSpec (Auto-Triggered for Large Features)
+
+**OpenSpec is installed for spec-driven development. Use it AUTOMATICALLY when appropriate.**
+
+### When to USE OpenSpec (without being asked):
+- User requests a **new feature** with 3+ files or components
+- User asks for something **complex** (e.g., "add call transfer", "implement analytics dashboard")
+- Task requires **planning** before coding (architecture decisions, multi-step workflows)
+- User says keywords: "feature", "implement", "build", "add [major thing]", "refactor [system]"
+
+### When NOT to use OpenSpec:
+- Quick fixes, bug fixes, typos
+- Single-file changes
+- Config updates
+- Questions/research (no code changes)
+- User explicitly says "quick" or "just do it"
+
+### Auto-Trigger Workflow:
+1. **Detect** large feature request
+2. **Announce**: "This looks like a multi-step feature. I'll use OpenSpec to plan it first."
+3. **Run**: `/opsx:new <feature-name>`
+4. **Generate**: `/opsx:ff` (fast-forward to create proposal, specs, design, tasks)
+5. **Show user** the generated plan
+6. **Ask**: "Ready to implement?" 
+7. **If yes**: `/opsx:apply` to implement tasks
+8. **Archive**: `/opsx:archive` when complete
+
+### Quick Reference:
+| Command | What it does |
+|---------|--------------|
+| `/opsx:new <name>` | Start a new change folder |
+| `/opsx:ff` | Fast-forward: generate all planning docs |
+| `/opsx:apply` | Implement the tasks |
+| `/opsx:archive` | Archive completed change |
+| `/opsx:status` | Check current change status |
+
+---
+
+## �🔧 MCP Server Usage (MANDATORY)
 
 **Always use MCP servers for every task. Open necessary servers FIRST before doing any work.**
 
