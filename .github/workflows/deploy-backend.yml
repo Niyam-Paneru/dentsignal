@@ -1,0 +1,29 @@
+name: Deploy to DigitalOcean
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'dental_agent/**'  # Only deploy when backend changes
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Deploy to DigitalOcean
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: ${{ secrets.DO_USERNAME }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          script: |
+            cd /root/dentsignal
+            git pull origin main
+            source dental_agent/venv/bin/activate
+            pip install -r dental_agent/requirements.txt --quiet
+            systemctl restart dentsignal
+            sleep 3
+            curl -s http://localhost:8000/health || echo "Health check failed"
+            echo "✅ Deployed successfully!"
