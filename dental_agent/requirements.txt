@@ -45,6 +45,7 @@ python-multipart>=0.0.6
 
 # Validation & Security
 phonenumbers>=8.13.0
+cryptography>=42.0.0  # For Fernet encryption
 
 # Testing
 pytest>=7.4.0

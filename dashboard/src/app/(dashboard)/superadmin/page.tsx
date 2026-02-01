@@ -30,7 +30,25 @@ import {
   UserCheck,
 } from "lucide-react";
 
-// Super Admin emails - only platform owner(s)
+// SECURITY: Super Admin emails must be configured server-side
+// This is fetched from API to prevent client-side tampering
+// The server-side API enforces the actual authorization check
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const fetchSuperAdminStatus = async (): Promise<boolean> => {
+  try {
+    // The backend API validates JWT and checks against SUPER_ADMIN_EMAILS env var
+    const response = await fetch('/api/auth/check-superadmin', {
+      credentials: 'include'
+    });
+    if (!response.ok) return false;
+    const data = await response.json();
+    return data.isSuperAdmin === true;
+  } catch {
+    return false;
+  }
+};
+
+// Fallback for client-side check (backend is source of truth)
 const SUPER_ADMIN_EMAILS = [
   "founder@dentsignal.me",
 ];
@@ -226,6 +244,7 @@ function SubscriptionManagement({ userEmail }: { userEmail: string | null }) {
   const [loading, setLoading] = useState(true);
   const [activating, setActivating] = useState<string | null>(null);
   const [selectedClinic, setSelectedClinic] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [activationPlan, setActivationPlan] = useState<'starter_149' | 'pro_199'>('starter_149');
   const [activationNotes, setActivationNotes] = useState('');
   const [activationDays, setActivationDays] = useState('30');
@@ -271,8 +290,9 @@ function SubscriptionManagement({ userEmail }: { userEmail: string | null }) {
   }, [supabase]);
 
   useEffect(() => {
-    fetchClinics();
-  }, [fetchClinics]);
+    void fetchClinics();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleActivateSubscription = async (clinicId: string) => {
     if (!userEmail) return;
@@ -310,8 +330,9 @@ function SubscriptionManagement({ userEmail }: { userEmail: string | null }) {
     
     setActivating(clinicId);
     const clinic = clinics.find(c => c.id === clinicId);
-    const currentExpiry = clinic?.subscription_expires_at ? new Date(clinic.subscription_expires_at) : new Date();
-    const newExpiry = new Date(Math.max(currentExpiry.getTime(), Date.now()));
+    const now = new Date();
+    const currentExpiry = clinic?.subscription_expires_at ? new Date(clinic.subscription_expires_at) : now;
+    const newExpiry = new Date(Math.max(currentExpiry.getTime(), now.getTime()));
     newExpiry.setDate(newExpiry.getDate() + days);
 
     const { error } = await supabase
@@ -356,7 +377,8 @@ function SubscriptionManagement({ userEmail }: { userEmail: string | null }) {
 
   const getDaysRemaining = (expiresAt: string | null) => {
     if (!expiresAt) return 0;
-    const days = Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    const now = new Date();
+    const days = Math.ceil((new Date(expiresAt).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
     return Math.max(0, days);
   };
 

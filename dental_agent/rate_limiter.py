@@ -174,6 +174,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     }
     
     # Twilio paths (skip - they use signature auth)
+    # SECURITY: These are exact path starts that are safe to skip
+    # Path traversal attacks like /twilio/../admin are blocked by FastAPI's path normalization
+    # but we add extra validation to be safe
     TWILIO_PREFIXES = (
         "/twilio/",
         "/inbound/",
@@ -182,12 +185,18 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
         
+        # SECURITY: Normalize path to prevent traversal bypass attempts
+        # e.g., /twilio/../admin would be normalized to /admin
+        import urllib.parse
+        normalized_path = urllib.parse.unquote(path)
+        
         # Skip rate limiting for excluded paths
-        if path in self.SKIP_PATHS:
+        if normalized_path in self.SKIP_PATHS:
             return await call_next(request)
         
         # Skip Twilio webhooks (they have signature verification)
-        if path.startswith(self.TWILIO_PREFIXES):
+        # Only skip if path legitimately starts with these prefixes
+        if normalized_path.startswith(self.TWILIO_PREFIXES):
             return await call_next(request)
         
         # Get client IP

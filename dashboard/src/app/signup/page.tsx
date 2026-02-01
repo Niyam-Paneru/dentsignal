@@ -113,6 +113,7 @@ export default function SignupPage() {
   const [step, setStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [success, setSuccess] = useState<string | null>(null)
   
   // Step 1 fields
@@ -141,10 +142,11 @@ export default function SignupPage() {
   const router = useRouter()
   const supabase = createClient()
   
-  // Handle CAPTCHA errors - don't block signup
+  // Handle CAPTCHA errors - SECURITY: block signup to prevent automated attacks
   const handleCaptchaError = () => {
     setCaptchaError(true)
-    console.warn('[Signup] CAPTCHA failed to load, proceeding without it')
+    console.error('[Signup] CAPTCHA failed to load')
+    setError('Security verification failed. Please refresh the page and try again.')
   }
 
   // Check rate limiting
@@ -239,6 +241,13 @@ export default function SignupPage() {
     
     // Rate limiting check
     if (isRateLimited()) {
+      setIsLoading(false)
+      return
+    }
+    
+    // SECURITY: Enforce CAPTCHA verification
+    if (!captchaToken && !captchaError) {
+      setError('Please complete the security verification.')
       setIsLoading(false)
       return
     }

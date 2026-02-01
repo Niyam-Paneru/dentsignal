@@ -8,6 +8,7 @@ Route modules can import auth functions from here instead of from api_main.
 from __future__ import annotations
 
 import os
+import re
 import logging
 from typing import Optional
 
@@ -18,11 +19,68 @@ logger = logging.getLogger(__name__)
 
 # JWT Configuration
 JWT_SECRET = os.getenv("JWT_SECRET")
-if not JWT_SECRET or JWT_SECRET == "changeme" or JWT_SECRET == "changeme-insecure-secret":
-    raise ValueError(
-        "JWT_SECRET environment variable is required and must be a secure random string. "
-        "Generate one with: python -c 'import secrets; print(secrets.token_urlsafe(32))'"
-    )
+
+
+def _validate_jwt_secret(secret: Optional[str]) -> None:
+    """
+    Validate JWT secret meets security requirements.
+    
+    Requirements:
+    - Minimum 32 characters
+    - At least one uppercase letter
+    - At least one lowercase letter
+    - At least one digit
+    - At least one special character
+    - Not a commonly used weak secret
+    """
+    if not secret:
+        raise ValueError(
+            "JWT_SECRET environment variable is required. "
+            "Generate one with: python -c 'import secrets; print(secrets.token_urlsafe(32))'"
+        )
+    
+    # Check minimum length
+    if len(secret) < 32:
+        raise ValueError(
+            f"JWT_SECRET must be at least 32 characters (current: {len(secret)}). "
+            "Generate one with: python -c 'import secrets; print(secrets.token_urlsafe(32))'"
+        )
+    
+    # Check for common weak secrets
+    weak_secrets = [
+        "changeme", "changeme-insecure-secret", "password", "secret",
+        "admin", "123456", "qwerty", "letmein", "welcome"
+    ]
+    if secret.lower() in weak_secrets or any(ws in secret.lower() for ws in weak_secrets):
+        raise ValueError(
+            "JWT_SECRET appears to be a commonly used weak secret. "
+            "Generate a secure one with: python -c 'import secrets; print(secrets.token_urlsafe(32))'"
+        )
+    
+    # Check complexity requirements
+    has_upper = bool(re.search(r'[A-Z]', secret))
+    has_lower = bool(re.search(r'[a-z]', secret))
+    has_digit = bool(re.search(r'\d', secret))
+    has_special = bool(re.search(r'[!@#$%^&*()\-_=+{}\[\]:;|\'",.<>/?`~\\]', secret))
+    
+    if not (has_upper and has_lower and has_digit and has_special):
+        missing = []
+        if not has_upper:
+            missing.append("uppercase letter")
+        if not has_lower:
+            missing.append("lowercase letter")
+        if not has_digit:
+            missing.append("digit")
+        if not has_special:
+            missing.append("special character")
+        raise ValueError(
+            f"JWT_SECRET must contain at least one: {', '.join(missing)}. "
+            "Generate a secure one with: python -c 'import secrets; print(secrets.token_urlsafe(32))'"
+        )
+
+
+# Validate JWT secret on module load
+_validate_jwt_secret(JWT_SECRET)
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRY_HOURS = 1
 

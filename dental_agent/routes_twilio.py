@@ -8,15 +8,24 @@ Handles:
 - /twilio/recording/{call_id} - Recording callbacks
 
 These webhooks are called by Twilio during the call lifecycle.
+All endpoints validate Twilio request signatures to prevent spoofing.
 """
 
+import os
 import logging
 from typing import Optional
 from datetime import datetime, timedelta
+from functools import wraps
 
-from fastapi import APIRouter, Form, Query, Request, Response
+from fastapi import APIRouter, Form, Query, Request, Response, HTTPException, status, Depends
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
+
+# Import Twilio request validator
+try:
+    from twilio.request_validator import RequestValidator
+except ImportError:
+    RequestValidator = None
 
 try:
     from dental_agent.twilio_service import (
@@ -48,6 +57,79 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/twilio", tags=["Twilio Webhooks"])
+
+# =============================================================================
+# Twilio Request Validation
+# =============================================================================
+
+_twilio_validator = None  # Type: Optional[RequestValidator]
+
+
+def get_twilio_validator():
+    """Get or create Twilio request validator."""
+    global _twilio_validator
+    if _twilio_validator is None and RequestValidator is not None:
+        auth_token = os.getenv("TWILIO_TOKEN")
+        if auth_token:
+            _twilio_validator = RequestValidator(auth_token)
+    return _twilio_validator
+
+
+async def validate_twilio_request(request: Request) -> bool:
+    """
+    Validate that a request comes from Twilio.
+    
+    Checks the X-Twilio-Signature header against the request URL and parameters.
+    In development mode (TELEPHONY_MODE=SIMULATED), validation is skipped.
+    
+    Returns:
+        True if valid or in dev mode, False otherwise
+    """
+    # Skip validation in simulated mode
+    if os.getenv("TELEPHONY_MODE", "SIMULATED").upper() == "SIMULATED":
+        return True
+    
+    validator = get_twilio_validator()
+    if not validator:
+        logger.error("Twilio validator not configured - cannot validate webhook")
+        return False
+    
+    # Get the signature from headers
+    signature = request.headers.get("X-Twilio-Signature", "")
+    if not signature:
+        logger.warning("Missing X-Twilio-Signature header")
+        return False
+    
+    # Build the full URL
+    url = str(request.url)
+    
+    # Get form parameters
+    try:
+        params = await request.form()
+        params_dict = dict(params)
+    except Exception:
+        params_dict = {}
+    
+    # Validate the signature
+    is_valid = validator.validate(url, params_dict, signature)
+    
+    if not is_valid:
+        logger.warning(f"Invalid Twilio signature for {url}")
+    
+    return is_valid
+
+
+async def require_twilio_auth(request: Request):
+    """
+    Dependency to require valid Twilio webhook authentication.
+    
+    Raises HTTPException 403 if validation fails.
+    """
+    if not await validate_twilio_request(request):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid webhook signature"
+        )
 
 # Store conversation state (in production, use Redis)
 # Format: {call_id: {"state": "greeting", "patient_type": None, "booked_slot": None}}
@@ -92,9 +174,11 @@ def get_lead_for_call(call_id: int) -> Optional[dict]:
 
 @router.post("/voice/{call_id}", response_class=PlainTextResponse)
 async def voice_webhook(
+    request: Request,
     call_id: int,
     state: Optional[str] = Query(None),
     AnsweredBy: Optional[str] = Form(None),
+    _: None = Depends(require_twilio_auth),
 ):
     """
     Initial voice webhook - returns TwiML for the call.
@@ -143,10 +227,12 @@ async def voice_webhook(
 
 @router.post("/gather/{call_id}", response_class=PlainTextResponse)
 async def gather_webhook(
+    request: Request,
     call_id: int,
     state: Optional[str] = Query(None),
     SpeechResult: Optional[str] = Form(None),
     Confidence: Optional[float] = Form(None),
+    _: None = Depends(require_twilio_auth),
 ):
     """
     Process gathered speech input from the caller.

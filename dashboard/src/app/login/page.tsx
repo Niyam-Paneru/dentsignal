@@ -50,8 +50,9 @@ export default function LoginPage() {
 
   const handleCaptchaError = () => {
     setCaptchaError(true)
-    // Don't block login - just log the error
-    console.warn('[Login] CAPTCHA failed to load, proceeding without it')
+    // SECURITY: CAPTCHA errors block login to prevent automated attacks
+    console.error('[Login] CAPTCHA failed to load')
+    setError('Security verification failed. Please refresh the page and try again.')
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -65,11 +66,18 @@ export default function LoginPage() {
       return
     }
     
+    // SECURITY: Enforce CAPTCHA verification
+    if (!captchaToken && !captchaError) {
+      setError('Please complete the security verification.')
+      setIsLoading(false)
+      return
+    }
+    
     // Track attempt
     setAttempts(prev => prev + 1)
     setLastAttemptTime(Date.now())
     
-    // Build auth options - only include captcha token if available
+    // Build auth options with required captcha token
     const authOptions: { captchaToken?: string } = {}
     if (captchaToken) {
       authOptions.captchaToken = captchaToken

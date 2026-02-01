@@ -60,16 +60,18 @@ def verify_super_admin(authorization: Optional[str] = Header(None, alias="Author
     
     Requires valid Bearer token in Authorization header.
     Token must contain email matching SUPER_ADMIN_EMAILS.
+    
+    SECURITY: This function MUST have SUPER_ADMIN_EMAILS configured.
+    There is no dev bypass - if not configured, access is denied.
     """
     if not SUPER_ADMIN_EMAILS:
-        # If no admin emails configured, block access in production
-        if os.getenv("ENVIRONMENT") == "production":
-            raise HTTPException(
-                status_code=403,
-                detail="Super admin access not configured"
-            )
-        logger.warning("SUPER_ADMIN_EMAILS not configured - allowing in development")
-        return {"email": "dev@localhost", "is_admin": True}
+        # SECURITY: Always block if no admin emails configured
+        # No dev bypass allowed - this is a critical security control
+        logger.error("SUPER_ADMIN_EMAILS not configured - blocking super admin access")
+        raise HTTPException(
+            status_code=403,
+            detail="Super admin access not configured. Contact system administrator."
+        )
     
     if not authorization:
         raise HTTPException(
@@ -169,6 +171,36 @@ class SystemHealthResponse(BaseModel):
     services: Dict[str, str]
     recent_errors: List[Dict[str, Any]]
     recommendations: List[str]
+
+
+# =============================================================================
+# SuperAdmin Status Check (For Frontend)
+# =============================================================================
+
+class SuperAdminCheckResponse(BaseModel):
+    """Response for SuperAdmin status check."""
+    isSuperAdmin: bool
+    email: Optional[str] = None
+    message: str
+
+
+@router.get("/check", response_model=SuperAdminCheckResponse)
+async def check_super_admin_status(user: dict = Depends(verify_super_admin)):
+    """
+    Check if the current user is a SuperAdmin.
+    
+    This endpoint is used by the frontend to determine if the SuperAdmin
+    dashboard should be accessible. The actual authorization is enforced
+    server-side via the verify_super_admin dependency.
+    
+    Returns:
+        SuperAdminCheckResponse with isSuperAdmin=True if authorized
+    """
+    return SuperAdminCheckResponse(
+        isSuperAdmin=True,
+        email=user.get("email"),
+        message="Access granted"
+    )
 
 
 # =============================================================================

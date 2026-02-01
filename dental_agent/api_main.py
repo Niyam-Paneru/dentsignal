@@ -27,26 +27,30 @@ from dotenv import load_dotenv
 # Load environment variables FIRST
 load_dotenv()
 
-import sentry_sdk
-from sentry_sdk.integrations.fastapi import FastApiIntegration
-from sentry_sdk.integrations.starlette import StarletteIntegration
+# Sentry error tracking (optional)
+try:
+    import sentry_sdk
+    from sentry_sdk.integrations.fastapi import FastApiIntegration
+    from sentry_sdk.integrations.starlette import StarletteIntegration
+    SENTRY_AVAILABLE = True
+except ImportError:
+    SENTRY_AVAILABLE = False
 
-# Initialize Sentry BEFORE app creation
-sentry_sdk.init(
-    dsn=os.getenv("SENTRY_DSN", "https://cec3389377af0692871ea20fa400a2ae@o4510760542470144.ingest.us.sentry.io/4510760593129472"),
-    integrations=[
-        FastApiIntegration(),
-        StarletteIntegration(),
-    ],
-    # Capture 10% of transactions for performance monitoring
-    traces_sample_rate=0.1,
-    # Send PII like request headers for debugging
-    send_default_pii=True,
-    # Set environment
-    environment=os.getenv("ENVIRONMENT", "development"),
-    # Release tracking
-    release=os.getenv("RELEASE_VERSION", "dentsignal-api@1.0.0"),
-)
+# Initialize Sentry BEFORE app creation (if available)
+_sentry_dsn = os.getenv("SENTRY_DSN")
+if SENTRY_AVAILABLE and _sentry_dsn:
+    sentry_sdk.init(
+        dsn=_sentry_dsn,
+        integrations=[
+            FastApiIntegration(),
+            StarletteIntegration(),
+        ],
+        traces_sample_rate=0.1,
+        send_default_pii=False,
+        environment=os.getenv("ENVIRONMENT", "development"),
+        release=os.getenv("RELEASE_VERSION", "dentsignal-api@1.0.0"),
+    )
+# Note: Sentry warning logged after logger is initialized below
 
 import csv
 import io
@@ -124,13 +128,35 @@ app = FastAPI(
 )
 
 # CORS middleware - restrict to known origins
-# In production, set ALLOWED_ORIGINS env variable
+# In production, set ALLOWED_ORIGINS env variable to exact domains
+# SECURITY: Never use allow_credentials=True with wildcard or dynamic origins
 import os
-cors_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173").split(",")
+
+_default_origins = "http://localhost:3000,http://localhost:5173"
+cors_origins_env = os.getenv("ALLOWED_ORIGINS", _default_origins)
+cors_origins = [origin.strip() for origin in cors_origins_env.split(",") if origin.strip()]
+
+# SECURITY: Validate origins - block dangerous configurations
+if "*" in cors_origins:
+    logger.error("SECURITY: ALLOWED_ORIGINS contains wildcard '*'. This is dangerous with credentials.")
+    # Remove wildcard to prevent security vulnerability
+    cors_origins = [o for o in cors_origins if o != "*"]
+    if not cors_origins:
+        cors_origins = _default_origins.split(",")
+
+# Only allow credentials with explicitly configured origins (not defaults in production)
+is_production = os.getenv("ENVIRONMENT") == "production"
+allow_creds = os.getenv("ALLOW_CREDENTIALS", "true").lower() == "true"
+
+if is_production and cors_origins_env == _default_origins:
+    logger.warning("Using default CORS origins in production. Set ALLOWED_ORIGINS env var.")
+    # Disable credentials if using default origins in production
+    allow_creds = False
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
-    allow_credentials=True,
+    allow_credentials=allow_creds,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     allow_headers=["Authorization", "Content-Type", "X-User-Email"],
     max_age=600,
@@ -178,6 +204,76 @@ app.include_router(transfer_router)  # Call takeover/transfer
 app.include_router(recall_router)  # Proactive recall outreach
 
 
+# =============================================================================
+# Security Headers Middleware
+# =============================================================================
+
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """
+    Add security headers to all responses.
+    
+    Headers added:
+    - X-Content-Type-Options: nosniff
+    - X-Frame-Options: DENY
+    - X-XSS-Protection: 1; mode=block
+    - Strict-Transport-Security (HSTS)
+    - Content-Security-Policy
+    - Referrer-Policy
+    """
+    
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        
+        # Prevent MIME type sniffing
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        
+        # Prevent clickjacking
+        response.headers["X-Frame-Options"] = "DENY"
+        
+        # XSS protection (legacy browsers)
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        
+        # HSTS - force HTTPS (only in production)
+        if os.getenv("ENVIRONMENT") == "production":
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
+        
+        # CSP - restrict resource loading
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' challenges.cloudflare.com; "
+            "style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data: https:; "
+            "font-src 'self'; "
+            "connect-src 'self' *.supabase.co *.deepgram.com *.twilio.com; "
+            "frame-ancestors 'none'; "
+            "base-uri 'self'; "
+            "form-action 'self';"
+        )
+        
+        # Referrer policy
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        
+        # Permissions policy
+        response.headers["Permissions-Policy"] = (
+            "accelerometer=(), "
+            "camera=(), "
+            "geolocation=(), "
+            "gyroscope=(), "
+            "magnetometer=(), "
+            "microphone=(), "
+            "payment=(), "
+            "usb=()"
+        )
+        
+        return response
+
+# Add security headers middleware
+app.add_middleware(SecurityHeadersMiddleware)
+
+
 # -----------------------------------------------------------------------------
 # Startup Event
 # -----------------------------------------------------------------------------
@@ -189,9 +285,9 @@ def on_startup():
     logger.info("Sentry initialized for error monitoring")
     create_db(DATABASE_URL)
     
-    # Create demo user and client if they don't exist (DEVELOPMENT ONLY)
-    # In production, set DISABLE_DEMO_USER=1 to skip this
-    if os.getenv("DISABLE_DEMO_USER", "0") != "1":
+    # SECURITY: Demo user creation is OPT-IN only via ENABLE_DEMO_USER
+    # This prevents accidental creation of admin accounts in production
+    if os.getenv("ENABLE_DEMO_USER", "0") == "1":
         with get_session() as session:
             # Check for existing admin user
             existing = session.exec(select(User).where(User.email == "admin@dental.local")).first()
@@ -202,7 +298,7 @@ def on_startup():
                 user.set_password(random_pass)
                 session.add(user)
                 logger.warning(f"DEVELOPMENT MODE: Created demo admin user: admin@dental.local / {random_pass}")
-                logger.warning("Set DISABLE_DEMO_USER=1 in production to disable this behavior")
+                logger.warning("Demo user creation is enabled via ENABLE_DEMO_USER=1 - NEVER use in production")
         
         # Check for existing client/clinic
         existing_client = session.exec(select(Client).where(Client.email == "info@sunshine-dental.local")).first()

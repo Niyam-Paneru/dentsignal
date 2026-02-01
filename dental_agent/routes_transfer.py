@@ -10,8 +10,14 @@ import os
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel
+
+# Import auth dependency
+try:
+    from dental_agent.auth import require_auth
+except ImportError:
+    from auth import require_auth
 
 try:
     from twilio.rest import Client as TwilioClient
@@ -73,9 +79,14 @@ class TransferStatusResponse(BaseModel):
 # =============================================================================
 
 @router.post("/initiate", response_model=TransferResponse)
-async def initiate_transfer(request: TransferRequest):
+async def initiate_transfer(
+    request: TransferRequest,
+    user: dict = Depends(require_auth)
+):
     """
     Transfer an active call to the clinic owner.
+    
+    Requires authentication via JWT Bearer token.
     
     Flow:
     1. Interrupt the current AI conversation (send signal to Deepgram)
