@@ -92,6 +92,8 @@ This allows the user to:
 4. Use Serena for code navigation instead of multiple `read_file` calls
 5. Use Supabase/Postgres for database queries instead of suggesting SQL
 6. Use Fetch for API testing instead of suggesting curl commands
+7. **Use Memory MCP** to store key project facts (server IPs, API URLs, architecture decisions) - read memory at start of complex tasks
+8. **Use Filesystem MCP** for bulk file operations when available
 
 ---
 
@@ -205,7 +207,22 @@ Frontend (`dashboard/.env.local`): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPA
 - **dental-voice-deployment** - Setup guide for new clinic instances. See `.github/skills/dental-voice-deployment/SKILL.md`
 - **fastapi-celery-automation** - Background task automation patterns. See `.github/skills/fastapi-celery-automation/SKILL.md`
 - **postgres-best-practices** - Supabase Postgres optimization rules for queries, indexes, RLS, and schema design. See `.github/skills/postgres-best-practices/SKILL.md`
+- **twilio-voice-best-practices** - TwiML, webhooks, Media Streams, and error handling for Twilio Voice. See `.github/skills/twilio-voice-best-practices/SKILL.md`
 
-### Frontend Optimization Skills (Vercel)
-- **react-best-practices** - 40+ React/Next.js performance optimization rules from Vercel Engineering. Auto-applied when writing components, data fetching, or optimizing bundle size. See `~/.agents/skills/vercel-react-best-practices/SKILL.md`
-- **web-design-guidelines** - 100+ accessibility, UX, and performance rules. Auto-applied when reviewing UI code or implementing forms/animations. See `~/.agents/skills/web-design-guidelines/SKILL.md`
+### Frontend Optimization Skills
+- **react-best-practices** - 40+ React/Next.js performance optimization rules from Vercel Engineering. See `~/.copilot/skills/vercel-react-best-practices/SKILL.md`
+- **web-design-guidelines** - 100+ accessibility, UX, and performance rules. See `~/.copilot/skills/web-design-guidelines/SKILL.md`
+- **nextjs-performance** - Bundle size, data fetching, caching, and rendering strategies. See `.github/skills/nextjs-performance/SKILL.md`
+
+### Developer Workflow Skills
+- **modern-python** - uv, ruff, mypy, and pytest for Python development. See `.github/skills/modern-python/SKILL.md`
+- **git-workflow** - Commit conventions, PR templates, and code review practices. See `.github/skills/git-workflow/SKILL.md`
+- **agent-browser** - Browser automation for testing, screenshots, and form filling. See `.github/skills/agent-browser/SKILL.md`
+
+### OpenSpec Skills (Spec-Driven Development)
+- **openspec-new-change** - Start a new change with `/opsx:new`
+- **openspec-ff-change** - Fast-forward through artifact creation with `/opsx:ff`
+- **openspec-apply-change** - Implement tasks with `/opsx:apply`
+- **openspec-archive-change** - Archive completed changes with `/opsx:archive`
+- **openspec-explore** - Think through ideas before committing with `/opsx:explore`
+

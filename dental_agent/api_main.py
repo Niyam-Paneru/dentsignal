@@ -93,7 +93,12 @@ from rate_limiter import RateLimitMiddleware
 # -----------------------------------------------------------------------------
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./dev.db")
-JWT_SECRET = os.getenv("JWT_SECRET", "changeme-insecure-secret")
+JWT_SECRET = os.getenv("JWT_SECRET")
+if not JWT_SECRET or JWT_SECRET == "changeme" or JWT_SECRET == "changeme-insecure-secret":
+    raise ValueError(
+        "JWT_SECRET environment variable is required and must be a secure random string. "
+        "Generate one with: python -c 'import secrets; print(secrets.token_urlsafe(32))'"
+    )
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRY_HOURS = 1
 
@@ -187,7 +192,8 @@ def on_startup():
         # Check for existing admin user
         existing = session.exec(select(User).where(User.email == "admin@dental.local")).first()
         if not existing:
-            user = User(email="admin@dental.local", password_hash="admin123", is_admin=True)
+            user = User(email="admin@dental.local", is_admin=True)
+            user.set_password("admin123")
             session.add(user)
             logger.info("Created demo admin user: admin@dental.local / admin123")
         
@@ -390,7 +396,7 @@ def login(request: LoginRequest, session: Session = Depends(get_db)):
     """
     user = session.exec(select(User).where(User.email == request.email)).first()
     
-    if not user or user.password_hash != request.password:
+    if not user or not user.check_password(request.password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     
     # Create JWT

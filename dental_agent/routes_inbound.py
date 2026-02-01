@@ -27,7 +27,10 @@ from fastapi.responses import HTMLResponse, PlainTextResponse
 from sqlmodel import select
 from twilio.twiml.voice_response import VoiceResponse, Connect, Stream
 
-from db import get_session, Client, InboundCall, InboundCallStatus, InboundCallOutcome, record_usage, UsageType
+from db import (
+    get_session, Client, InboundCall, InboundCallStatus, InboundCallOutcome, 
+    record_usage, UsageType, get_clinic_by_twilio_number, is_using_postgres
+)
 from websocket_bridge import handle_voice_websocket
 
 logger = logging.getLogger(__name__)
@@ -44,19 +47,19 @@ WS_BASE_URL = API_BASE_URL.replace("https://", "wss://").replace("http://", "ws:
 # Helper Functions
 # -----------------------------------------------------------------------------
 
-def get_clinic_by_phone(to_number: str) -> Optional[Client]:
+def get_clinic_by_phone(to_number: str):
     """
     Look up clinic by Twilio phone number.
+    Works with both SQLite (Client) and Supabase (dental_clinics).
     
     Args:
         to_number: The Twilio number that was called (E.164 format)
         
     Returns:
-        Client model if found, None otherwise
+        Clinic record if found, None otherwise
     """
     with get_session() as session:
-        statement = select(Client).where(Client.twilio_number == to_number)
-        return session.exec(statement).first()
+        return get_clinic_by_twilio_number(session, to_number)
 
 
 def create_inbound_call(
@@ -122,10 +125,11 @@ def get_inbound_call(call_id: int) -> Optional[InboundCall]:
         return session.get(InboundCall, call_id)
 
 
-def get_clinic(clinic_id: int) -> Optional[Client]:
-    """Get a Client/Clinic by ID."""
+def get_clinic(clinic_id):
+    """Get a Client/Clinic by ID. Works with both SQLite and Supabase."""
+    from db import get_clinic_by_id
     with get_session() as session:
-        return session.get(Client, clinic_id)
+        return get_clinic_by_id(session, clinic_id)
 
 
 # -----------------------------------------------------------------------------

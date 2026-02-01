@@ -1,19 +1,71 @@
 """
-db.py - SQLite Database Layer using SQLModel
+db.py - Database Layer using SQLModel
 
-A synchronous SQLite database module with models for the AI Voice Agent system.
+A database module with models for the AI Voice Agent system.
 Uses SQLModel (Pydantic + SQLAlchemy) for ORM.
+Supports SQLite (development) and PostgreSQL/Supabase (production).
 
-Models: User, Client, UploadBatch, Lead, Call, CallResult
+Models: User, Client, UploadBatch, Lead, Call, CallResult, etc.
 """
 
 import enum
+import os
+import uuid
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Optional, Generator
+from typing import Optional, Generator, Union
 
 from sqlmodel import Field, SQLModel, Session, create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import Column, String
+
+# Password hashing with bcrypt
+try:
+    from passlib.context import CryptContext
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+    
+    def hash_password(password: str) -> str:
+        """Hash a password using bcrypt."""
+        return pwd_context.hash(password)
+    
+    def verify_password(plain_password: str, hashed_password: str) -> bool:
+        """Verify a password against its hash."""
+        return pwd_context.verify(plain_password, hashed_password)
+        
+except ImportError:
+    # Fallback if passlib not installed - but this should not happen in production
+    import hashlib
+    import secrets
+    
+    def hash_password(password: str) -> str:
+        """Fallback: Hash password with PBKDF2."""
+        salt = secrets.token_hex(16)
+        pwdhash = hashlib.pbkdf2_hmac('sha256', password.encode(), salt.encode(), 100000)
+        return f"pbkdf2_sha256${salt}${pwdhash.hex()}"
+    
+    def verify_password(plain_password: str, hashed_password: str) -> bool:
+        """Fallback: Verify password against PBKDF2 hash."""
+        if not hashed_password.startswith("pbkdf2_sha256$"):
+            # Legacy plain text comparison for migration
+            return plain_password == hashed_password
+        parts = hashed_password.split("$")
+        if len(parts) != 3:
+            return False
+        salt = parts[1]
+        pwdhash = hashlib.pbkdf2_hmac('sha256', plain_password.encode(), salt.encode(), 100000)
+        return pwdhash.hex() == parts[2]
+
+
+# -----------------------------------------------------------------------------
+# Helper for UUID/String clinic IDs (Supabase compatibility)
+# -----------------------------------------------------------------------------
+def generate_uuid() -> str:
+    """Generate a UUID string for Supabase compatibility."""
+    return str(uuid.uuid4())
+
+
+# Type alias for clinic ID (can be int for SQLite or str/UUID for Supabase)
+ClinicIdType = Union[int, str]
 
 
 # -----------------------------------------------------------------------------
@@ -42,13 +94,21 @@ class CallResultType(str, enum.Enum):
 # -----------------------------------------------------------------------------
 
 class User(SQLModel, table=True):
-    """User model for authentication. Demo uses plain password matching."""
-    __tablename__ = "users"
+    """User model for authentication with bcrypt password hashing."""
+    __tablename__ = "backend_users"  # Use backend_users for Supabase compatibility
     
     id: Optional[int] = Field(default=None, primary_key=True)
     email: str = Field(unique=True, index=True)
-    password_hash: str  # For demo: plain text; production: use bcrypt
+    password_hash: str  # bcrypt hashed password
     is_admin: bool = Field(default=False)
+    
+    def set_password(self, password: str) -> None:
+        """Hash and set the user password."""
+        self.password_hash = hash_password(password)
+    
+    def check_password(self, password: str) -> bool:
+        """Verify a password against the stored hash."""
+        return verify_password(password, self.password_hash)
 
     def __repr__(self) -> str:
         return f"<User id={self.id} email={self.email} is_admin={self.is_admin}>"
@@ -656,23 +716,55 @@ _engine = None
 _SessionLocal = None
 
 
-def create_db(engine_url: str = "sqlite:///./dev.db") -> None:
+def create_db(engine_url: str = None) -> None:
     """
     Create database engine and all tables.
     
     Args:
-        engine_url: SQLAlchemy database URL. Default is SQLite file.
+        engine_url: SQLAlchemy database URL. If None, reads from DATABASE_URL env var.
+                   Supports SQLite (sqlite:///...) and PostgreSQL (postgresql://...)
     """
+    import os
     global _engine, _SessionLocal
     
-    # SQLite specific: check_same_thread=False for multi-threaded access
-    connect_args = {"check_same_thread": False} if "sqlite" in engine_url else {}
+    # Default to env var or SQLite
+    if engine_url is None:
+        engine_url = os.getenv("DATABASE_URL", "sqlite:///./dev.db")
     
-    _engine = create_engine(engine_url, echo=False, connect_args=connect_args)
+    # Handle Supabase connection pooler URL format
+    # Supabase uses postgresql:// but SQLAlchemy needs postgresql+psycopg2://
+    if engine_url.startswith("postgres://"):
+        engine_url = engine_url.replace("postgres://", "postgresql+psycopg2://", 1)
+    elif engine_url.startswith("postgresql://") and "+psycopg2" not in engine_url:
+        engine_url = engine_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+    
+    # Connection args differ by database type
+    if "sqlite" in engine_url:
+        connect_args = {"check_same_thread": False}
+    else:
+        # PostgreSQL - use connection pooling settings
+        connect_args = {}
+    
+    # Create engine with appropriate settings
+    if "sqlite" in engine_url:
+        _engine = create_engine(engine_url, echo=False, connect_args=connect_args)
+    else:
+        # PostgreSQL with connection pool settings for Supabase
+        _engine = create_engine(
+            engine_url, 
+            echo=False, 
+            connect_args=connect_args,
+            pool_size=5,
+            max_overflow=10,
+            pool_pre_ping=True,  # Verify connections before use
+            pool_recycle=300,    # Recycle connections every 5 min
+        )
+    
     _SessionLocal = sessionmaker(bind=_engine, class_=Session, expire_on_commit=False)
     
-    # Create all tables
-    SQLModel.metadata.create_all(_engine)
+    # Create all tables (only for SQLite - Supabase tables created via migrations)
+    if "sqlite" in engine_url:
+        SQLModel.metadata.create_all(_engine)
 
 
 def get_engine():
@@ -703,6 +795,58 @@ def get_session() -> Generator[Session, None, None]:
         raise
     finally:
         session.close()
+
+
+# -----------------------------------------------------------------------------
+# Database Type Detection & Supabase Compatibility
+# -----------------------------------------------------------------------------
+
+def is_using_postgres() -> bool:
+    """Check if we're using PostgreSQL (Supabase) vs SQLite."""
+    db_url = os.getenv("DATABASE_URL", "")
+    return "postgresql" in db_url or "postgres" in db_url
+
+
+def get_clinic_by_id(session: Session, clinic_id: ClinicIdType):
+    """
+    Get a clinic/client by ID. Works with both SQLite (int) and Supabase (UUID).
+    
+    For SQLite: Uses the local 'clients' table
+    For Supabase: Uses 'dental_clinics' table (accessed via raw SQL if needed)
+    """
+    if is_using_postgres():
+        # For Supabase, query dental_clinics table
+        from sqlalchemy import text
+        result = session.execute(
+            text("SELECT * FROM dental_clinics WHERE id = :id"),
+            {"id": str(clinic_id)}
+        ).fetchone()
+        if result:
+            # Convert to dict-like object
+            return result._mapping
+        return None
+    else:
+        # SQLite - use local Client model
+        return session.get(Client, int(clinic_id))
+
+
+def get_clinic_by_twilio_number(session: Session, twilio_number: str):
+    """
+    Get clinic by Twilio number. Works with both databases.
+    """
+    if is_using_postgres():
+        from sqlalchemy import text
+        result = session.execute(
+            text("SELECT * FROM dental_clinics WHERE twilio_number = :num"),
+            {"num": twilio_number}
+        ).fetchone()
+        if result:
+            return result._mapping
+        return None
+    else:
+        from sqlmodel import select
+        statement = select(Client).where(Client.twilio_number == twilio_number)
+        return session.exec(statement).first()
 
 
 # -----------------------------------------------------------------------------
@@ -766,12 +910,12 @@ def get_queued_calls(session: Session, limit: int = 10) -> list:
 
 
 def create_demo_user(session: Session) -> User:
-    """Create a demo admin user for testing."""
+    """Create a demo admin user for testing with hashed password."""
     user = User(
         email="admin@dental.local",
-        password_hash="admin123",  # Plain text for demo only!
         is_admin=True,
     )
+    user.set_password("admin123")  # Hashed securely
     session.add(user)
     session.commit()
     session.refresh(user)
