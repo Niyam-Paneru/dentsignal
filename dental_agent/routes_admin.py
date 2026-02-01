@@ -31,17 +31,11 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["Admin"])
 
-# Import auth dependency
+# Import auth dependency from auth module (avoids circular import)
 try:
-    from dental_agent.api_main import require_auth
+    from dental_agent.auth import require_auth, JWT_SECRET, JWT_ALGORITHM
 except ImportError:
-    from api_main import require_auth
-
-# Import JWT verification for super admin
-try:
-    from dental_agent.api_main import JWT_SECRET, JWT_ALGORITHM
-except ImportError:
-    from api_main import JWT_SECRET, JWT_ALGORITHM
+    from auth import require_auth, JWT_SECRET, JWT_ALGORITHM
 
 import jwt
 

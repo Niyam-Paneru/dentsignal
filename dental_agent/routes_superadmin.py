@@ -46,11 +46,11 @@ SUPER_ADMIN_EMAILS = [
     if email.strip()
 ]
 
-# Import JWT validation from main API
+# Import JWT validation from auth module (avoids circular import)
 try:
-    from dental_agent.api_main import require_auth, JWT_SECRET, JWT_ALGORITHM
+    from dental_agent.auth import require_auth, JWT_SECRET, JWT_ALGORITHM
 except ImportError:
-    from api_main import require_auth, JWT_SECRET, JWT_ALGORITHM
+    from auth import require_auth, JWT_SECRET, JWT_ALGORITHM
 
 import jwt
 
