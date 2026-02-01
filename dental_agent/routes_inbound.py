@@ -32,7 +32,7 @@ from db import (
     record_usage, UsageType, get_clinic_by_twilio_number, is_using_postgres
 )
 from websocket_bridge import handle_voice_websocket
-from utils import notify_new_call
+from utils import notify_new_call, send_slack_notification_sync
 
 logger = logging.getLogger(__name__)
 
@@ -494,14 +494,12 @@ async def call_status_webhook(
             except Exception as e:
                 logger.error(f"Failed to record usage: {e}")
         
-        # Send Slack notification for completed calls
+        # Send Slack notification for completed calls (sync version for non-async endpoint)
         try:
-            import asyncio
-            asyncio.create_task(notify_new_call(
-                caller=inbound_call.from_number or "Unknown",
-                duration=CallDuration or 0,
-                booked=bool(inbound_call.booked_appointment)
-            ))
+            status = "✅ Appointment Booked" if inbound_call.booked_appointment else "📞 Call Completed"
+            msg = f"• Caller: `{inbound_call.from_number or 'Unknown'}`\n• Duration: {CallDuration or 0}s\n• Result: {status}"
+            send_slack_notification_sync(msg, emoji="📞", title="Inbound Call")
+            logger.info("Slack notification sent for call completion")
         except Exception as e:
             logger.error(f"Failed to send Slack notification: {e}")
     
