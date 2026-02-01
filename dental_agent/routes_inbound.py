@@ -32,7 +32,7 @@ from db import (
     record_usage, UsageType, get_clinic_by_twilio_number, is_using_postgres
 )
 from websocket_bridge import handle_voice_websocket
-from utils import notify_new_call, send_slack_notification_sync
+from utils import notify_new_call, send_slack_notification_sync, send_slack_notification
 
 logger = logging.getLogger(__name__)
 
@@ -309,6 +309,16 @@ async def voice_websocket(
         )
         
         logger.info(f"Call {call_id} completed. Duration: {summary.get('duration_seconds')}s")
+        
+        # Send Slack notification for completed call
+        try:
+            booked = summary.get("booked_appointment") is not None
+            status = "✅ Appointment Booked" if booked else "📞 Call Completed"
+            msg = f"• Clinic: {clinic.name}\n• Caller: `{inbound_call.from_number or 'Unknown'}`\n• Duration: {summary.get('duration_seconds', 0)}s\n• Result: {status}"
+            await send_slack_notification(msg, emoji="📞", title="Inbound Call")
+            logger.info("Slack notification sent for call completion")
+        except Exception as e:
+            logger.error(f"Failed to send Slack notification: {e}")
         
     except WebSocketDisconnect:
         logger.info(f"WebSocket disconnected for call {call_id}")
