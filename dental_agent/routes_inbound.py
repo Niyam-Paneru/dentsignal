@@ -32,6 +32,7 @@ from db import (
     record_usage, UsageType, get_clinic_by_twilio_number, is_using_postgres
 )
 from websocket_bridge import handle_voice_websocket
+from utils import notify_new_call
 
 logger = logging.getLogger(__name__)
 
@@ -492,6 +493,17 @@ async def call_status_webhook(
                 logger.info(f"Recorded {CallDuration}s usage for clinic {inbound_call.clinic_id}")
             except Exception as e:
                 logger.error(f"Failed to record usage: {e}")
+        
+        # Send Slack notification for completed calls
+        try:
+            import asyncio
+            asyncio.create_task(notify_new_call(
+                caller=inbound_call.from_number or "Unknown",
+                duration=CallDuration or 0,
+                booked=bool(inbound_call.booked_appointment)
+            ))
+        except Exception as e:
+            logger.error(f"Failed to send Slack notification: {e}")
     
     update_inbound_call(call_id, **updates)
     

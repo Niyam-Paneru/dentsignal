@@ -580,22 +580,21 @@ async def send_slack_notification(
     title: str = None
 ) -> bool:
     """
-    Send a Slack notification. Works 24/7 without VS Code.
+    Send a Slack notification via webhook. Works 24/7 without VS Code.
     
     Args:
         message: The notification message
-        channel: Slack channel (defaults to SLACK_CHANNEL env var)
+        channel: Slack channel (ignored for webhooks, uses webhook's configured channel)
         emoji: Emoji prefix for the message
         title: Optional bold title
         
     Returns:
         True if sent successfully, False otherwise
     """
-    if not SLACK_BOT_TOKEN:
-        logging.warning("SLACK_BOT_TOKEN not set, skipping notification")
+    # Try webhook first, then bot token
+    if not SLACK_WEBHOOK_URL and not SLACK_BOT_TOKEN:
+        logging.warning("No Slack credentials set (SLACK_WEBHOOK_URL or SLACK_BOT_TOKEN), skipping notification")
         return False
-    
-    channel = channel or SLACK_CHANNEL
     
     # Format message
     text = f"{emoji} "
@@ -605,6 +604,20 @@ async def send_slack_notification(
     
     try:
         async with httpx.AsyncClient() as client:
+            # Use webhook URL if available (simpler, more reliable)
+            if SLACK_WEBHOOK_URL:
+                response = await client.post(
+                    SLACK_WEBHOOK_URL,
+                    json={"text": text},
+                    headers={"Content-Type": "application/json"}
+                )
+                if response.text == "ok":
+                    return True
+                logging.error(f"Slack webhook error: {response.text}")
+                return False
+            
+            # Fallback to Bot Token API
+            channel = channel or SLACK_CHANNEL
             response = await client.post(
                 "https://slack.com/api/chat.postMessage",
                 headers={
