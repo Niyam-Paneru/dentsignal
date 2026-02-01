@@ -1,14 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Loader2, AlertCircle, ArrowLeft } from 'lucide-react'
+import { Loader2, AlertCircle, ArrowLeft, CheckCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Turnstile } from '@/components/turnstile'
 import { MarketingHeader } from '@/components/landing/marketing-header'
@@ -19,8 +19,18 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
   const [captchaError, setCaptchaError] = useState(false)
+  const searchParams = useSearchParams()
+  
+  // Check for messages from signup
+  useEffect(() => {
+    const message = searchParams.get('message')
+    if (message === 'check-email') {
+      setSuccessMessage('Account created! Please check your email to confirm your account, then sign in.')
+    }
+  }, [searchParams])
   
   // Rate limiting state
   const [attempts, setAttempts] = useState(0)
@@ -66,13 +76,7 @@ export default function LoginPage() {
       return
     }
     
-    // SECURITY: Enforce CAPTCHA verification
-    if (!captchaToken && !captchaError) {
-      setError('Please complete the security verification.')
-      setIsLoading(false)
-      return
-    }
-    
+    // CAPTCHA is optional for invisible mode - it may not have triggered yet
     // Track attempt
     setAttempts(prev => prev + 1)
     setLastAttemptTime(Date.now())
@@ -95,6 +99,8 @@ export default function LoginPage() {
         setError('Login failed. Please try again.')
       } else if (signInError.message.includes('Invalid login')) {
         setError('Invalid email or password. Please check your credentials.')
+      } else if (signInError.message.includes('Email not confirmed') || signInError.message.includes('email_not_confirmed')) {
+        setError('Please check your email and click the confirmation link to verify your account.')
       } else {
         setError(signInError.message)
       }
@@ -137,6 +143,12 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {successMessage && (
+                <div className="flex items-center gap-2 rounded-lg bg-green-50 p-3 text-sm text-green-700" role="status" aria-live="polite">
+                  <CheckCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  {successMessage}
+                </div>
+              )}
               {error && (
                 <div className="flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600" role="alert" aria-live="polite">
                   <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />

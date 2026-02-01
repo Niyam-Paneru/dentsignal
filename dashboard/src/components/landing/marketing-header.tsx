@@ -3,20 +3,39 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowRight, Menu, X } from "lucide-react";
+import { ArrowRight, Menu, X, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
 
-const navLinks = [
+const guestNavLinks = [
   { href: "/features", label: "Features" },
   { href: "/pricing", label: "Pricing" },
   { href: "/login", label: "Sign in" },
 ];
 
+const authNavLinks = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/pricing", label: "Pricing" },
+  { href: "/logout", label: "Sign out" },
+];
+
 export function MarketingHeader({ className }: { className?: string }) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const supabase = createClient();
+
+  useEffect(() => {
+    async function checkAuth() {
+      const { data: { user } } = await supabase.auth.getUser()
+      setIsLoggedIn(!!user)
+    }
+    checkAuth()
+  }, [supabase])
+
+  const navLinks = isLoggedIn ? authNavLinks : guestNavLinks;
 
   return (
     <header
@@ -64,9 +83,18 @@ export function MarketingHeader({ className }: { className?: string }) {
             asChild
             className="ml-2 gap-2 bg-[#0099CC] px-4 text-sm font-semibold text-white shadow-md shadow-[#0099CC]/25 hover:bg-[#0077A3]"
           >
-            <Link href="/signup">
-              Start free trial
-              <ArrowRight className="h-4 w-4" />
+            <Link href={isLoggedIn ? "/dashboard" : "/signup"}>
+              {isLoggedIn ? (
+                <>
+                  <LayoutDashboard className="h-4 w-4" />
+                  Dashboard
+                </>
+              ) : (
+                <>
+                  Start free trial
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
             </Link>
           </Button>
         </nav>
@@ -78,7 +106,9 @@ export function MarketingHeader({ className }: { className?: string }) {
             size="sm"
             className="gap-1 bg-[#0099CC] px-3 text-xs font-semibold text-white hover:bg-[#0077A3]"
           >
-            <Link href="/signup">Start trial</Link>
+            <Link href={isLoggedIn ? "/dashboard" : "/signup"}>
+              {isLoggedIn ? "Dashboard" : "Start trial"}
+            </Link>
           </Button>
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

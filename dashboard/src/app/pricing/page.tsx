@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { 
@@ -10,8 +11,20 @@ import {
 } from 'lucide-react'
 import { MarketingHeader } from '@/components/landing/marketing-header'
 import { MarketingFooter } from '@/components/landing/marketing-footer'
+import { createClient } from '@/lib/supabase/client'
 
 export default function PricingPage() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const supabase = createClient()
+
+  useEffect(() => {
+    async function checkAuth() {
+      const { data: { user } } = await supabase.auth.getUser()
+      setIsLoggedIn(!!user)
+    }
+    checkAuth()
+  }, [supabase])
+
   return (
     <div className="flex min-h-screen flex-col bg-[#F8F9FA]">
       <MarketingHeader />
@@ -19,9 +32,9 @@ export default function PricingPage() {
       <main className="flex-1">
         {/* Back Link */}
         <div className="container mx-auto px-4 pt-6">
-          <Link href="/" className="inline-flex items-center gap-1 text-sm text-[#718096] hover:text-[#1B3A7C] transition-colors">
+          <Link href={isLoggedIn ? "/dashboard" : "/"} className="inline-flex items-center gap-1 text-sm text-[#718096] hover:text-[#1B3A7C] transition-colors">
             <ArrowLeft className="h-4 w-4" />
-            Back to Home
+            {isLoggedIn ? "Back to Dashboard" : "Back to Home"}
           </Link>
         </div>
 

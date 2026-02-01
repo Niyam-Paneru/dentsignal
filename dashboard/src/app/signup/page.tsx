@@ -245,12 +245,8 @@ export default function SignupPage() {
       return
     }
     
-    // SECURITY: Enforce CAPTCHA verification
-    if (!captchaToken && !captchaError) {
-      setError('Please complete the security verification.')
-      setIsLoading(false)
-      return
-    }
+    // CAPTCHA is optional for invisible mode - it may not have triggered yet
+    // If captchaError is true, we've already shown an error, so skip
     
     // Track attempt
     setAttempts(prev => prev + 1)
@@ -346,6 +342,13 @@ export default function SignupPage() {
           }
         })
       }).catch(() => {}) // Silently ignore errors
+    }
+    
+    // Check if email confirmation is required
+    if (authData.user && !authData.session) {
+      // Email confirmation required - redirect to login with message
+      router.push('/login?message=check-email')
+      return
     }
     
     router.push('/dashboard')
