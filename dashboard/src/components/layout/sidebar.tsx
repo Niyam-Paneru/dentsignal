@@ -25,7 +25,7 @@ import { Badge } from '@/components/ui/badge'
 
 // Super Admin emails - only platform owner(s)
 const SUPER_ADMIN_EMAILS = [
-  'founder@dentsignal.me',
+  'niyampaneru79@gmail.com',
 ]
 
 const navigation = [
