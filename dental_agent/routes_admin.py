@@ -20,7 +20,7 @@ import os
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status, Header
 from sqlmodel import select
 
 from db import get_session, Client, InboundCall
@@ -31,13 +31,53 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["Admin"])
 
+# Import auth dependency
+try:
+    from dental_agent.api_main import require_auth
+except ImportError:
+    from api_main import require_auth
+
+# Import JWT verification for super admin
+try:
+    from dental_agent.api_main import JWT_SECRET, JWT_ALGORITHM
+except ImportError:
+    from api_main import JWT_SECRET, JWT_ALGORITHM
+
+import jwt
+
+async def verify_admin_token(authorization: str = Header(None, alias="Authorization")):
+    """Verify JWT token for admin access."""
+    if not authorization:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    try:
+        scheme, token = authorization.split()
+        if scheme.lower() != "bearer":
+            raise HTTPException(status_code=401, detail="Invalid auth scheme")
+        
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    except ValueError:
+        raise HTTPException(status_code=401, detail="Invalid authorization header")
+
 
 # -----------------------------------------------------------------------------
 # Clinic CRUD Operations
 # -----------------------------------------------------------------------------
 
 @router.post("/clinics", response_model=APIResponse)
-async def create_clinic(clinic_data: ClinicCreate):
+async def create_clinic(
+    clinic_data: ClinicCreate,
+    user: dict = Depends(verify_admin_token)
+):
     """
     Create a new clinic.
     
@@ -97,6 +137,7 @@ async def list_clinics(
     active_only: bool = Query(True, description="Only return active clinics"),
     limit: int = Query(50, le=100),
     offset: int = Query(0),
+    user: dict = Depends(verify_admin_token),
 ):
     """List all clinics with pagination."""
     with get_session() as session:
@@ -134,7 +175,10 @@ async def list_clinics(
 
 
 @router.get("/clinics/{clinic_id}")
-async def get_clinic(clinic_id: int):
+async def get_clinic(
+    clinic_id: int,
+    user: dict = Depends(verify_admin_token),
+):
     """Get detailed information about a specific clinic."""
     with get_session() as session:
         clinic = session.get(Client, clinic_id)
@@ -178,7 +222,11 @@ async def get_clinic(clinic_id: int):
 
 
 @router.patch("/clinics/{clinic_id}", response_model=APIResponse)
-async def update_clinic(clinic_id: int, updates: ClinicUpdate):
+async def update_clinic(
+    clinic_id: int,
+    updates: ClinicUpdate,
+    user: dict = Depends(verify_admin_token),
+):
     """Update a clinic's configuration."""
     with get_session() as session:
         clinic = session.get(Client, clinic_id)
@@ -207,7 +255,11 @@ async def update_clinic(clinic_id: int, updates: ClinicUpdate):
 
 
 @router.delete("/clinics/{clinic_id}", response_model=APIResponse)
-async def delete_clinic(clinic_id: int, hard_delete: bool = Query(False)):
+async def delete_clinic(
+    clinic_id: int,
+    hard_delete: bool = Query(False),
+    user: dict = Depends(verify_admin_token),
+):
     """
     Delete a clinic.
     
@@ -249,6 +301,7 @@ async def get_clinic_calls(
     status: Optional[str] = Query(None),
     limit: int = Query(50, le=100),
     offset: int = Query(0),
+    user: dict = Depends(verify_admin_token),
 ):
     """Get all calls for a specific clinic."""
     with get_session() as session:
@@ -294,7 +347,8 @@ async def get_clinic_calls(
 @router.post("/clinics/{clinic_id}/assign-number", response_model=APIResponse)
 async def assign_twilio_number(
     clinic_id: int,
-    twilio_number: str = Query(..., description="Twilio number in E.164 format (e.g., +19048679643)")
+    twilio_number: str = Query(..., description="Twilio number in E.164 format (e.g., +19048679643)"),
+    user: dict = Depends(verify_admin_token),
 ):
     """
     Assign a Twilio phone number to a clinic.
@@ -344,7 +398,7 @@ async def assign_twilio_number(
 # -----------------------------------------------------------------------------
 
 @router.get("/voices")
-async def list_available_voices():
+async def list_available_voices(user: dict = Depends(verify_admin_token)):
     """Get list of available Deepgram voices for agent configuration."""
     voices = get_available_voices()
     
@@ -362,7 +416,10 @@ async def list_available_voices():
 
 
 @router.post("/clinics/{clinic_id}/test-prompt")
-async def preview_clinic_prompt(clinic_id: int):
+async def preview_clinic_prompt(
+    clinic_id: int,
+    user: dict = Depends(verify_admin_token),
+):
     """
     Preview the system prompt that would be used for this clinic.
     
@@ -392,7 +449,7 @@ async def preview_clinic_prompt(clinic_id: int):
 # -----------------------------------------------------------------------------
 
 @router.get("/dashboard/stats")
-async def get_dashboard_stats():
+async def get_dashboard_stats(user: dict = Depends(verify_admin_token)):
     """Get overall dashboard statistics."""
     with get_session() as session:
         # Count clinics
@@ -447,6 +504,7 @@ class ProvisionNumberRequest(BaseModel):
 async def list_available_numbers(
     area_code: Optional[str] = Query(None, description="Area code to search (e.g., 512)"),
     limit: int = Query(10, ge=1, le=50),
+    user: dict = Depends(verify_admin_token),
 ):
     """
     List available Twilio phone numbers to purchase.
@@ -467,7 +525,10 @@ async def list_available_numbers(
 
 
 @router.post("/admin/provision-number")
-async def provision_phone_number(request: ProvisionNumberRequest):
+async def provision_phone_number(
+    request: ProvisionNumberRequest,
+    user: dict = Depends(verify_admin_token),
+):
     """
     Purchase a Twilio phone number and auto-configure webhooks for a clinic.
     

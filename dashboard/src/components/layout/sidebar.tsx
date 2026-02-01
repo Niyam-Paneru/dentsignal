@@ -57,19 +57,23 @@ function NavLinks({ onItemClick, isSuperAdmin, activeCallCount = 0 }: { onItemCl
             key={item.name}
             href={item.href}
             onClick={onItemClick}
+            aria-current={isActive ? 'page' : undefined}
             className={cn(
-              'flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+              'flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
               isActive
                 ? 'bg-primary text-primary-foreground'
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground'
             )}
           >
             <span className="flex items-center gap-3">
-              <item.icon className="h-5 w-5" />
+              <item.icon className="h-5 w-5" aria-hidden="true" />
               {item.name}
             </span>
             {showBadge && (
-              <Badge className="bg-red-500 text-white text-xs px-1.5 py-0 min-w-[20px] h-5 flex items-center justify-center animate-pulse">
+              <Badge
+                className="bg-destructive text-destructive-foreground text-xs px-1.5 py-0 min-w-[20px] h-5 flex items-center justify-center animate-pulse"
+                aria-label={`${activeCallCount} active calls`}
+              >
                 {activeCallCount}
               </Badge>
             )}
@@ -87,19 +91,20 @@ function NavLinks({ onItemClick, isSuperAdmin, activeCallCount = 0 }: { onItemCl
             const isActive = pathname.startsWith(item.href)
             return (
               <Link
-                key={item.name}
-                href={item.href}
-                onClick={onItemClick}
-                className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                  isActive
-                    ? 'bg-[#1B3A7C] text-white'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                )}
-              >
-                <item.icon className="h-5 w-5" />
-                {item.name}
-            </Link>
+                  key={item.name}
+                  href={item.href}
+                  onClick={onItemClick}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={cn(
+                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                    isActive
+                      ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  )}
+                >
+                  <item.icon className="h-5 w-5" aria-hidden="true" />
+                  {item.name}
+              </Link>
           )
         })}
         </div>
@@ -221,8 +226,8 @@ export function Sidebar() {
       <div className="fixed left-4 top-4 z-50 lg:hidden">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <Button variant="outline" size="icon">
-              <Menu className="h-5 w-5" />
+            <Button variant="outline" size="icon" aria-label="Open navigation menu">
+              <Menu className="h-5 w-5" aria-hidden="true" />
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-64 p-0">
@@ -237,7 +242,7 @@ export function Sidebar() {
               <div className="border-t p-4">
                 <Button variant="ghost" className="w-full justify-start gap-3" asChild>
                   <Link href="/logout">
-                    <LogOut className="h-5 w-5" />
+                    <LogOut className="h-5 w-5" aria-hidden="true" />
                     Sign Out
                   </Link>
                 </Button>
@@ -271,20 +276,20 @@ export function Sidebar() {
               {/* Subscription Status */}
               {userInfo.subscriptionStatus && (
                 <div className="mt-2 pt-2 border-t border-border/50">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">Plan</span>
-                    <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${
-                      userInfo.subscriptionStatus === 'active' 
-                        ? 'bg-green-100 text-green-700' 
-                        : userInfo.subscriptionStatus === 'trial'
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'bg-red-100 text-red-700'
-                    }`}>
-                      {userInfo.subscriptionStatus === 'trial' ? 'Trial' :
-                       userInfo.subscriptionStatus === 'active' ? 'Active' :
-                       'Expired'}
-                    </span>
-                  </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Plan</span>
+                      <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                        userInfo.subscriptionStatus === 'active'
+                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                          : userInfo.subscriptionStatus === 'trial'
+                          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                          : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                      }`}>
+                        {userInfo.subscriptionStatus === 'trial' ? 'Trial' :
+                         userInfo.subscriptionStatus === 'active' ? 'Active' :
+                         'Expired'}
+                      </span>
+                    </div>
                   {userInfo.subscriptionExpiresAt && (
                     <p className="text-xs text-muted-foreground mt-1">
                       {userInfo.subscriptionStatus === 'active' || userInfo.subscriptionStatus === 'trial' 
@@ -295,16 +300,16 @@ export function Sidebar() {
                 </div>
               )}
             </div>
-            <Link 
-              href="/settings?tab=billing" 
+            <Link
+              href="/settings?tab=billing"
               className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground mb-3 px-1"
             >
-              <CreditCard className="h-3.5 w-3.5" />
+              <CreditCard className="h-3.5 w-3.5" aria-hidden="true" />
               Manage Billing
             </Link>
             <Button variant="ghost" className="w-full justify-start gap-3" asChild>
               <Link href="/logout">
-                <LogOut className="h-5 w-5" />
+                <LogOut className="h-5 w-5" aria-hidden="true" />
                 Sign Out
               </Link>
             </Button>

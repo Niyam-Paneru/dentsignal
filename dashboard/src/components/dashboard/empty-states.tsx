@@ -22,60 +22,54 @@ export function EmptyCallsState({ clinicName, aiName = 'Sarah', phoneNumber }: E
   }
   
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-      <div className="relative">
-        <div className="w-24 h-24 rounded-full bg-blue-50 flex items-center justify-center mb-6">
-          <Phone className="w-12 h-12 text-[#0099CC]" />
+    <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+      <div className="relative mb-4">
+        <div className="w-16 h-16 rounded-full bg-[#0099CC]/10 flex items-center justify-center">
+          <Phone className="w-8 h-8 text-[#0099CC]" />
         </div>
-        <div className="absolute -top-1 -right-1 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-          <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+        <div className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-green-100 rounded-full flex items-center justify-center border-2 border-white">
+          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
         </div>
       </div>
       
-      <h3 className="text-xl font-semibold text-[#1B3A7C] mb-2">
+      <h3 className="text-lg font-semibold text-[#1B3A7C] mb-1">
         {aiName} is live and ready
       </h3>
       
-      <p className="text-gray-600 max-w-md mb-6">
-        Your AI receptionist is standing by. Share your number or forward your existing line to start receiving calls.
+      <p className="text-sm text-gray-600 max-w-sm mb-4">
+        Forward your number to start receiving calls
       </p>
       
       {phoneNumber && (
-        <div className="flex flex-col sm:flex-row gap-3 mb-8">
-          <div className="px-4 py-2 bg-gray-100 rounded-lg font-mono text-lg">
+        <div className="flex flex-col sm:flex-row gap-2 mb-4">
+          <div className="px-3 py-1.5 bg-gray-100 rounded-lg font-mono text-base">
             {phoneNumber}
           </div>
-          <Button onClick={handleCopy} variant="outline" className="gap-2">
+          <Button onClick={handleCopy} variant="outline" size="sm" className="gap-1">
             {copied ? (
               <>
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                Copied!
+                <CheckCircle className="w-3 h-3 text-green-500" />
+                Copied
               </>
             ) : (
               <>
-                <Copy className="w-4 h-4" />
-                Copy number
+                <Copy className="w-3 h-3" />
+                Copy
               </>
             )}
           </Button>
         </div>
       )}
       
-      <div className="flex items-center gap-6 text-sm text-gray-500">
+      <div className="flex items-center gap-4 text-xs text-gray-500">
         <span className="flex items-center gap-1">
-          <CheckCircle className="w-4 h-4 text-green-500" />
-          AI trained on {clinicName || 'your clinic'}
+          <CheckCircle className="w-3 h-3 text-green-500" />
+          AI trained
         </span>
         <span className="flex items-center gap-1">
-          <CheckCircle className="w-4 h-4 text-green-500" />
-          Calendar connected
+          <CheckCircle className="w-3 h-3 text-green-500" />
+          Calendar ready
         </span>
-      </div>
-      
-      <div className="mt-8 p-4 bg-amber-50 border border-amber-200 rounded-lg max-w-md">
-        <p className="text-sm text-amber-800">
-          <strong>Pro tip:</strong> Forward your existing clinic number to {phoneNumber || 'your AI number'} and {aiName} will start answering immediately.
-        </p>
       </div>
     </div>
   )

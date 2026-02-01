@@ -41,37 +41,69 @@ router = APIRouter(prefix="/api/superadmin", tags=["Super Admin"])
 
 # Load admin emails from environment
 SUPER_ADMIN_EMAILS = [
-    email.strip().lower() 
-    for email in os.getenv("SUPER_ADMIN_EMAILS", "").split(",") 
+    email.strip().lower()
+    for email in os.getenv("SUPER_ADMIN_EMAILS", "").split(",")
     if email.strip()
 ]
 
-def verify_super_admin(x_user_email: Optional[str] = Header(None)):
+# Import JWT validation from main API
+try:
+    from dental_agent.api_main import require_auth, JWT_SECRET, JWT_ALGORITHM
+except ImportError:
+    from api_main import require_auth, JWT_SECRET, JWT_ALGORITHM
+
+import jwt
+
+def verify_super_admin(authorization: Optional[str] = Header(None, alias="Authorization")):
     """
-    Verify that the request is from a super admin.
+    Verify that the request is from a super admin using JWT.
     
-    The frontend should send the logged-in user's email in the X-User-Email header.
+    Requires valid Bearer token in Authorization header.
+    Token must contain email matching SUPER_ADMIN_EMAILS.
     """
     if not SUPER_ADMIN_EMAILS:
-        # If no admin emails configured, allow access (development mode)
-        logger.warning("SUPER_ADMIN_EMAILS not configured - allowing all access")
-        return True
+        # If no admin emails configured, block access in production
+        if os.getenv("ENVIRONMENT") == "production":
+            raise HTTPException(
+                status_code=403,
+                detail="Super admin access not configured"
+            )
+        logger.warning("SUPER_ADMIN_EMAILS not configured - allowing in development")
+        return {"email": "dev@localhost", "is_admin": True}
     
-    if not x_user_email:
+    if not authorization:
         raise HTTPException(
             status_code=401,
-            detail="Authentication required. Please log in."
+            detail="Authentication required. Please log in.",
+            headers={"WWW-Authenticate": "Bearer"},
         )
     
-    if x_user_email.lower() not in SUPER_ADMIN_EMAILS:
-        logger.warning(f"Unauthorized admin access attempt from: {x_user_email}")
-        raise HTTPException(
-            status_code=403,
-            detail="Access denied. You are not authorized to access the Super Admin dashboard."
-        )
-    
-    logger.info(f"Super Admin access granted to: {x_user_email}")
-    return True
+    try:
+        # Parse Bearer token
+        scheme, token = authorization.split()
+        if scheme.lower() != "bearer":
+            raise HTTPException(status_code=401, detail="Invalid auth scheme")
+        
+        # Verify JWT
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        user_email = payload.get("email", "").lower()
+        
+        if user_email not in SUPER_ADMIN_EMAILS:
+            logger.warning(f"Unauthorized admin access attempt from: {user_email}")
+            raise HTTPException(
+                status_code=403,
+                detail="Access denied. You are not authorized to access the Super Admin dashboard."
+            )
+        
+        logger.info(f"Super Admin access granted to: {user_email}")
+        return payload
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    except ValueError:
+        raise HTTPException(status_code=401, detail="Invalid authorization header")
 
 
 # =============================================================================

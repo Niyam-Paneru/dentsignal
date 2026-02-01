@@ -125,13 +125,17 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# CORS middleware (allow all origins for demo)
+# CORS middleware - restrict to known origins
+# In production, set ALLOWED_ORIGINS env variable
+import os
+cors_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allow_headers=["Authorization", "Content-Type", "X-User-Email"],
+    max_age=600,
 )
 
 # Rate limiting middleware (skips Twilio webhooks and health checks)
@@ -187,15 +191,20 @@ def on_startup():
     logger.info("Sentry initialized for error monitoring")
     create_db(DATABASE_URL)
     
-    # Create demo user and client if they don't exist
-    with get_session() as session:
-        # Check for existing admin user
-        existing = session.exec(select(User).where(User.email == "admin@dental.local")).first()
-        if not existing:
-            user = User(email="admin@dental.local", is_admin=True)
-            user.set_password("admin123")
-            session.add(user)
-            logger.info("Created demo admin user: admin@dental.local / admin123")
+    # Create demo user and client if they don't exist (DEVELOPMENT ONLY)
+    # In production, set DISABLE_DEMO_USER=1 to skip this
+    if os.getenv("DISABLE_DEMO_USER", "0") != "1":
+        with get_session() as session:
+            # Check for existing admin user
+            existing = session.exec(select(User).where(User.email == "admin@dental.local")).first()
+            if not existing:
+                import secrets
+                random_pass = secrets.token_urlsafe(12)
+                user = User(email="admin@dental.local", is_admin=True)
+                user.set_password(random_pass)
+                session.add(user)
+                logger.warning(f"DEVELOPMENT MODE: Created demo admin user: admin@dental.local / {random_pass}")
+                logger.warning("Set DISABLE_DEMO_USER=1 in production to disable this behavior")
         
         # Check for existing client/clinic
         existing_client = session.exec(select(Client).where(Client.email == "info@sunshine-dental.local")).first()
@@ -231,6 +240,21 @@ def get_db():
     """Dependency to get database session."""
     with get_session() as session:
         yield session
+
+
+def require_auth(authorization: str = None) -> dict:
+    """
+    Dependency to require valid JWT authentication.
+    Raises 401 if no valid token provided.
+    """
+    user = get_current_user(authorization)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return user
 
 
 def get_current_user(authorization: str = None) -> Optional[dict]:
@@ -399,12 +423,15 @@ def login(request: LoginRequest, session: Session = Depends(get_db)):
     if not user or not user.check_password(request.password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     
-    # Create JWT
+    # Create JWT using timezone-aware datetime (Python 3.12+ compatible)
+    from datetime import timezone
     payload = {
         "sub": str(user.id),
         "email": user.email,
         "is_admin": user.is_admin,
-        "exp": datetime.utcnow() + timedelta(hours=JWT_EXPIRY_HOURS),
+        "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRY_HOURS),
+        "iat": datetime.now(timezone.utc),  # Issued at time
+        "type": "access",  # Token type for validation
     }
     token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
     
