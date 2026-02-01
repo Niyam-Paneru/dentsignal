@@ -310,13 +310,13 @@ async def voice_websocket(
         
         logger.info(f"Call {call_id} completed. Duration: {summary.get('duration_seconds')}s")
         
-        # Send Slack notification for completed call
+        # Smart Slack alerts - only for booked appointments (not every call)
         try:
             booked = summary.get("booked_appointment") is not None
-            status = "✅ Appointment Booked" if booked else "📞 Call Completed"
-            msg = f"• Clinic: {clinic.name}\n• Caller: `{inbound_call.from_number or 'Unknown'}`\n• Duration: {summary.get('duration_seconds', 0)}s\n• Result: {status}"
-            await send_slack_notification(msg, emoji="📞", title="Inbound Call")
-            logger.info("Slack notification sent for call completion")
+            if booked:
+                msg = f"🎉 *Appointment Booked!*\n• Clinic: {clinic.name}\n• Duration: {summary.get('duration_seconds', 0)}s\n• New Patient: {'Yes' if summary.get('is_new_patient') else 'No'}"
+                await send_slack_notification(msg, emoji="📅", title="New Booking")
+                logger.info("Slack notification sent for booked appointment")
         except Exception as e:
             logger.error(f"Failed to send Slack notification: {e}")
         
@@ -503,15 +503,6 @@ async def call_status_webhook(
                 logger.info(f"Recorded {CallDuration}s usage for clinic {inbound_call.clinic_id}")
             except Exception as e:
                 logger.error(f"Failed to record usage: {e}")
-        
-        # Send Slack notification for completed calls (sync version for non-async endpoint)
-        try:
-            status = "✅ Appointment Booked" if inbound_call.booked_appointment else "📞 Call Completed"
-            msg = f"• Caller: `{inbound_call.from_number or 'Unknown'}`\n• Duration: {CallDuration or 0}s\n• Result: {status}"
-            send_slack_notification_sync(msg, emoji="📞", title="Inbound Call")
-            logger.info("Slack notification sent for call completion")
-        except Exception as e:
-            logger.error(f"Failed to send Slack notification: {e}")
     
     update_inbound_call(call_id, **updates)
     
