@@ -2,6 +2,7 @@ import { Sidebar } from '@/components/layout/sidebar'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { SubscriptionBannerWrapper } from '@/components/dashboard/subscription-banner-wrapper'
+import { DashboardClientWrapper } from '@/components/dashboard/dashboard-client-wrapper'
 
 export default async function DashboardLayout({
   children,
@@ -20,10 +21,12 @@ export default async function DashboardLayout({
     <div className="min-h-screen bg-background">
       <Sidebar />
       <main className="lg:pl-64">
-        <div className="container mx-auto p-6 lg:p-8">
-          <SubscriptionBannerWrapper />
-          {children}
-        </div>
+        <DashboardClientWrapper>
+          <div className="container mx-auto p-6 lg:p-8">
+            <SubscriptionBannerWrapper />
+            {children}
+          </div>
+        </DashboardClientWrapper>
       </main>
     </div>
   )
