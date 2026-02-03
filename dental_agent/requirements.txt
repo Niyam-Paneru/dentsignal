@@ -21,9 +21,11 @@ passlib[bcrypt]>=1.7.4  # Password hashing
 # HTTP Client
 requests>=2.31.0
 httpx>=0.25.0
+urllib3>=2.6.3  # Security fix
 
 # WebSocket Client (for Deepgram Voice Agent)
 websockets>=12.0
+aiohttp>=3.13.3  # Security fix
 
 # AI/Voice (Deepgram)
 deepgram-sdk>=3.0.0
@@ -41,7 +43,7 @@ google-auth-oauthlib>=1.1.0
 
 # Data Processing
 pandas>=2.0.0
-python-multipart>=0.0.6
+python-multipart>=0.0.22  # Security fix
 
 # Validation & Security
 phonenumbers>=8.13.0
