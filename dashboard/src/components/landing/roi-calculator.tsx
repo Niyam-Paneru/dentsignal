@@ -159,7 +159,7 @@ export function ROICalculator() {
               <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>
-          <p className="text-center text-xs text-slate-500 mt-2">7-day free trial • No credit card • $199/mo</p>
+          <p className="text-center text-xs text-slate-500 mt-2">9-day free trial • No credit card • $199/mo</p>
         </div>
       </div>
     </div>

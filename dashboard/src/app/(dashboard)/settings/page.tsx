@@ -38,6 +38,7 @@ import {
 import { getClinicSettings, getClinic, updateClinicSettings, updateClinicInfo, getSmsSettings, updateSmsSettings, SmsTemplates } from '@/lib/api/dental'
 import { CallForwardingGuide } from '@/components/dashboard/call-forwarding-guide'
 import { useSubscription, getPlanDisplayName, getPlanPrice } from '@/lib/hooks/use-subscription'
+import { useToast } from '@/hooks/use-toast'
 
 interface ClinicData {
   name: string
@@ -71,6 +72,15 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [clinic, setClinic] = useState<ClinicData | null>(null)
   const [settings, setSettings] = useState<SettingsData | null>(null)
+  const { toast } = useToast()
+  
+  // Clinic info state (FIX-02: controlled inputs)
+  const [clinicName, setClinicName] = useState('')
+  const [clinicPhone, setClinicPhone] = useState('')
+  const [clinicAddress, setClinicAddress] = useState('')
+  const [clinicTimezone, setClinicTimezone] = useState('america_new_york')
+  
+  // Agent settings state
   const [agentName, setAgentName] = useState('')
   const [agentVoice, setAgentVoice] = useState('alloy')
   const [greeting, setGreeting] = useState('')
@@ -93,6 +103,26 @@ export default function SettingsPage() {
   const [smsReminder24hEnabled, setSmsReminder24hEnabled] = useState(true)
   const [smsReminder2hEnabled, setSmsReminder2hEnabled] = useState(true)
   const [smsRecallEnabled, setSmsRecallEnabled] = useState(true)
+  
+  // FIX-03: Business hours state
+  type DayHours = { isOpen: boolean; open: string; close: string }
+  const defaultBusinessHours: Record<string, DayHours> = {
+    Monday: { isOpen: true, open: '8:00 AM', close: '5:00 PM' },
+    Tuesday: { isOpen: true, open: '8:00 AM', close: '5:00 PM' },
+    Wednesday: { isOpen: true, open: '8:00 AM', close: '5:00 PM' },
+    Thursday: { isOpen: true, open: '8:00 AM', close: '5:00 PM' },
+    Friday: { isOpen: true, open: '8:00 AM', close: '5:00 PM' },
+    Saturday: { isOpen: true, open: '8:00 AM', close: '2:00 PM' },
+    Sunday: { isOpen: false, open: '9:00 AM', close: '1:00 PM' },
+  }
+  const [businessHours, setBusinessHours] = useState<Record<string, DayHours>>(defaultBusinessHours)
+  
+  const updateBusinessHour = (day: string, field: keyof DayHours, value: string | boolean) => {
+    setBusinessHours(prev => ({
+      ...prev,
+      [day]: { ...prev[day], [field]: value }
+    }))
+  }
 
   useEffect(() => {
     async function loadData() {
@@ -105,6 +135,11 @@ export default function SettingsPage() {
         ])
         if (clinicData) {
           setClinic(clinicData)
+          // FIX-02: Initialize clinic info state
+          setClinicName(clinicData.name || '')
+          setClinicPhone(clinicData.phone || '')
+          setClinicAddress(clinicData.address || '')
+          // Transfer settings
           setTransferPhone(clinicData.owner_phone || '')
           setEmergencyPhone(clinicData.emergency_phone || '')
           setTransferEnabled(clinicData.transfer_enabled !== false)
@@ -143,8 +178,11 @@ export default function SettingsPage() {
         greeting_template: greeting,
       })
       
-      // Save clinic info including transfer settings
+      // FIX-02: Save clinic info including name, phone, address + transfer settings
       await updateClinicInfo({
+        name: clinicName || undefined,
+        phone: clinicPhone || undefined,
+        address: clinicAddress || undefined,
         owner_phone: transferPhone || undefined,
         emergency_phone: emergencyPhone || undefined,
         transfer_enabled: transferEnabled,
@@ -160,8 +198,20 @@ export default function SettingsPage() {
         sms_reminder_2h_enabled: smsReminder2hEnabled,
         sms_recall_enabled: smsRecallEnabled,
       })
+      
+      // FIX-04: Show success toast
+      toast({
+        title: "Settings saved",
+        description: "Your changes have been saved successfully.",
+      })
     } catch (error) {
       console.error('Failed to save settings:', error)
+      // FIX-04: Show error toast
+      toast({
+        title: "Failed to save",
+        description: "There was an error saving your settings. Please try again.",
+        variant: "destructive",
+      })
     } finally {
       setIsSaving(false)
     }
@@ -190,40 +240,56 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue="clinic" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-9 lg:w-auto lg:grid-cols-none">
-          <TabsTrigger value="clinic" className="gap-2">
+        <TabsList className="flex flex-wrap gap-1 h-auto p-2 bg-muted/50 rounded-xl">
+          {/* Practice Group */}
+          <TabsTrigger value="clinic" className="gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
             <Building2 className="h-4 w-4" />
             <span className="hidden sm:inline">Clinic</span>
           </TabsTrigger>
-          <TabsTrigger value="forwarding" className="gap-2">
+          
+          {/* Phone System Group */}
+          <div className="hidden sm:flex items-center px-1">
+            <span className="h-5 w-px bg-gray-300" />
+          </div>
+          <TabsTrigger value="forwarding" className="gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
             <Phone className="h-4 w-4" />
             <span className="hidden sm:inline">Forwarding</span>
           </TabsTrigger>
-          <TabsTrigger value="takeover" className="gap-2">
+          <TabsTrigger value="takeover" className="gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
             <PhoneForwarded className="h-4 w-4" />
             <span className="hidden sm:inline">Takeover</span>
           </TabsTrigger>
-          <TabsTrigger value="agent" className="gap-2">
-            <Bot className="h-4 w-4" />
-            <span className="hidden sm:inline">AI Agent</span>
-          </TabsTrigger>
-          <TabsTrigger value="calendar" className="gap-2">
-            <Calendar className="h-4 w-4" />
-            <span className="hidden sm:inline">Calendar</span>
-          </TabsTrigger>
-          <TabsTrigger value="sms" className="gap-2">
+          <TabsTrigger value="sms" className="gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
             <MessageSquare className="h-4 w-4" />
             <span className="hidden sm:inline">SMS</span>
           </TabsTrigger>
-          <TabsTrigger value="notifications" className="gap-2">
-            <Bell className="h-4 w-4" />
-            <span className="hidden sm:inline">Notifications</span>
+          
+          {/* AI & Scheduling Group */}
+          <div className="hidden sm:flex items-center px-1">
+            <span className="h-5 w-px bg-gray-300" />
+          </div>
+          <TabsTrigger value="agent" className="gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <Bot className="h-4 w-4" />
+            <span className="hidden sm:inline">AI Agent</span>
           </TabsTrigger>
-          <TabsTrigger value="billing" className="gap-2">
+          <TabsTrigger value="calendar" className="gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <Calendar className="h-4 w-4" />
+            <span className="hidden sm:inline">Calendar</span>
+          </TabsTrigger>
+          
+          {/* Account Group */}
+          <div className="hidden sm:flex items-center px-1">
+            <span className="h-5 w-px bg-gray-300" />
+          </div>
+          <TabsTrigger value="notifications" className="gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <Bell className="h-4 w-4" />
+            <span className="hidden sm:inline">Alerts</span>
+          </TabsTrigger>
+          <TabsTrigger value="billing" className="gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
             <CreditCard className="h-4 w-4" />
             <span className="hidden sm:inline">Billing</span>
           </TabsTrigger>
-          <TabsTrigger value="security" className="gap-2">
+          <TabsTrigger value="security" className="gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
             <Shield className="h-4 w-4" />
             <span className="hidden sm:inline">Security</span>
           </TabsTrigger>
@@ -473,26 +539,38 @@ export default function SettingsPage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="clinicName">Clinic Name</Label>
-                  <Input id="clinicName" defaultValue={clinic?.name || ''} />
+                  <Input 
+                    id="clinicName" 
+                    value={clinicName}
+                    onChange={(e) => setClinicName(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone Number</Label>
-                  <Input id="phone" defaultValue={clinic?.phone || ''} />
+                  <Input 
+                    id="phone" 
+                    value={clinicPhone}
+                    onChange={(e) => setClinicPhone(e.target.value)}
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="address">Address</Label>
-                <Input id="address" defaultValue={clinic?.address || ''} />
+                <Input 
+                  id="address" 
+                  value={clinicAddress}
+                  onChange={(e) => setClinicAddress(e.target.value)}
+                />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="twilioNumber">Twilio Phone Number</Label>
-                  <Input id="twilioNumber" defaultValue={clinic?.twilio_number || ''} disabled />
+                  <Input id="twilioNumber" value={clinic?.twilio_number || ''} disabled />
                   <p className="text-xs text-muted-foreground">Contact support to change</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="timezone">Timezone</Label>
-                  <Select defaultValue="america_new_york">
+                  <Select value={clinicTimezone} onValueChange={setClinicTimezone}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -512,7 +590,10 @@ export default function SettingsPage() {
                   {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => (
                     <div key={day} className="flex items-center gap-4">
                       <span className="w-24 text-sm">{day}</span>
-                      <Select defaultValue={day === 'Sunday' ? 'closed' : 'open'}>
+                      <Select 
+                        value={businessHours[day]?.isOpen ? 'open' : 'closed'}
+                        onValueChange={(value) => updateBusinessHour(day, 'isOpen', value === 'open')}
+                      >
                         <SelectTrigger className="w-24">
                           <SelectValue />
                         </SelectTrigger>
@@ -521,11 +602,19 @@ export default function SettingsPage() {
                           <SelectItem value="closed">Closed</SelectItem>
                         </SelectContent>
                       </Select>
-                      {day !== 'Sunday' && (
+                      {businessHours[day]?.isOpen && (
                         <>
-                          <Input defaultValue="8:00 AM" className="w-28" />
+                          <Input 
+                            value={businessHours[day]?.open || '8:00 AM'} 
+                            onChange={(e) => updateBusinessHour(day, 'open', e.target.value)}
+                            className="w-28" 
+                          />
                           <span>to</span>
-                          <Input defaultValue={day === 'Saturday' ? '2:00 PM' : '5:00 PM'} className="w-28" />
+                          <Input 
+                            value={businessHours[day]?.close || '5:00 PM'} 
+                            onChange={(e) => updateBusinessHour(day, 'close', e.target.value)}
+                            className="w-28" 
+                          />
                         </>
                       )}
                     </div>

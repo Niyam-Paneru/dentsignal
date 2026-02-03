@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Shield, Clock, HeadphonesIcon } from "lucide-react";
 
 const quickLinks = [
   { label: "Product", href: "/" },
@@ -80,7 +81,9 @@ export function MarketingFooter() {
               founder@dentsignal.me
             </Link>
             <div className="mt-3 pt-3 border-t border-white/10">
-              <p className="text-xs text-slate-400 mb-2">📞 AI Demo Line (24/7)</p>
+              <p className="text-xs text-slate-400 mb-2 flex items-center gap-1">
+                <HeadphonesIcon className="h-3 w-3" /> AI Demo Line (24/7)
+              </p>
               <a href="tel:+19048679643" className="text-white font-mono hover:text-[#0099CC] transition-colors">
                 (904) 867-9643
               </a>
@@ -88,7 +91,27 @@ export function MarketingFooter() {
           </div>
         </div>
 
-        <div className="mt-10 text-sm text-slate-400 text-center sm:text-left">
+        {/* Trust Badges */}
+        <div className="mt-8 pt-6 border-t border-white/10">
+          <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-slate-400">
+            <span className="flex items-center gap-1.5">
+              <Shield className="h-4 w-4 text-emerald-400" />
+              HIPAA Ready
+            </span>
+            <span className="hidden sm:inline text-white/20">•</span>
+            <span className="flex items-center gap-1.5">
+              <Clock className="h-4 w-4 text-cyan-400" />
+              99.9% Uptime SLA
+            </span>
+            <span className="hidden sm:inline text-white/20">•</span>
+            <span className="flex items-center gap-1.5">
+              <HeadphonesIcon className="h-4 w-4 text-blue-400" />
+              4-Hour Support Response
+            </span>
+          </div>
+        </div>
+
+        <div className="mt-6 text-sm text-slate-400 text-center">
           <p>© 2026 DentSignal. Built for modern dental practices.</p>
         </div>
       </div>

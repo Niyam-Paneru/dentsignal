@@ -130,7 +130,7 @@ export function HeroCalculator() {
       </Link>
 
       <p className="text-xs text-center text-gray-400 mt-2">
-        7-day free trial • No credit card • $199/mo after
+        9-day free trial • No credit card • $199/mo after
       </p>
     </div>
   )

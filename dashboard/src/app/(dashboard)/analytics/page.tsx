@@ -18,7 +18,7 @@ import {
   Cell,
   Legend,
 } from '@/components/charts/dynamic-charts'
-import { TrendingUp, DollarSign, Clock, Phone, Loader2, Building2 } from 'lucide-react'
+import { TrendingUp, DollarSign, Clock, Phone, Loader2, Building2, PieChart as PieChartIcon } from 'lucide-react'
 import { 
   getWeeklyCallStats, 
   getMonthlyTrend, 
@@ -266,8 +266,11 @@ export default function AnalyticsPage() {
                       </DynamicPieChart>
                     </DynamicResponsiveContainer>
                   ) : (
-                    <div className="flex h-full items-center justify-center text-muted-foreground">
-                      No outcome data available
+                    <div className="flex h-full flex-col items-center justify-center text-center">
+                      <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-3">
+                        <PieChartIcon className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                      <p className="text-sm text-muted-foreground">No outcome data available yet</p>
                     </div>
                   )}
                 </div>
@@ -296,8 +299,11 @@ export default function AnalyticsPage() {
                       </DynamicBarChart>
                     </DynamicResponsiveContainer>
                   ) : (
-                    <div className="flex h-full items-center justify-center text-muted-foreground">
-                      No hourly data available
+                    <div className="flex h-full flex-col items-center justify-center text-center">
+                      <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-3">
+                        <Clock className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                      <p className="text-sm text-muted-foreground">No hourly data available yet</p>
                     </div>
                   )}
                 </div>
@@ -339,8 +345,11 @@ export default function AnalyticsPage() {
                       </DynamicLineChart>
                     </DynamicResponsiveContainer>
                   ) : (
-                    <div className="flex h-full items-center justify-center text-muted-foreground">
-                      No trend data available
+                    <div className="flex h-full flex-col items-center justify-center text-center">
+                      <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-3">
+                        <TrendingUp className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                      <p className="text-sm text-muted-foreground">No trend data available yet</p>
                     </div>
                   )}
                 </div>

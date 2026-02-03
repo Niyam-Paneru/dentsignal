@@ -27,11 +27,20 @@ export default function HomePage() {
       {/* Trust Badge Bar */}
       <div className="bg-[#1f2937] py-2.5 text-center text-sm text-white">
         <div className="container mx-auto flex flex-wrap items-center justify-center gap-4 sm:gap-8 px-4">
-          <span className="flex items-center gap-1.5">🛡️ HIPAA Ready</span>
+          <span className="flex items-center gap-1.5">
+            <Shield className="h-4 w-4 text-emerald-400" />
+            HIPAA Ready
+          </span>
           <span className="hidden sm:inline text-white/30">|</span>
-          <span className="flex items-center gap-1.5">⚡ Live in 48 Hours</span>
+          <span className="flex items-center gap-1.5">
+            <Clock className="h-4 w-4 text-cyan-400" />
+            Live in 48 Hours
+          </span>
           <span className="hidden sm:inline text-white/30">|</span>
-          <span className="flex items-center gap-1.5">🕐 24/7 Coverage</span>
+          <span className="flex items-center gap-1.5">
+            <Globe className="h-4 w-4 text-blue-400" />
+            24/7 Coverage
+          </span>
         </div>
       </div>
 
@@ -64,7 +73,7 @@ export default function HomePage() {
               <div className="flex flex-col sm:flex-row items-center lg:items-start gap-3 mb-4">
                 <Link href="/signup">
                   <Button size="lg" className="h-12 gap-2 bg-[#22C55E] hover:bg-[#16a34a] text-base font-bold shadow-lg shadow-[#22C55E]/25 transition-[transform,box-shadow] duration-150 hover:shadow-[#22C55E]/40 hover:-translate-y-0.5 rounded-lg px-6">
-                    Start 7-Day Free Trial
+                    Start 9-Day Free Trial
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
@@ -103,6 +112,21 @@ export default function HomePage() {
               <CheckCircle2 className="h-4 w-4 text-[#22C55E]" />
               Google Calendar + Calendly Integration
             </span>
+          </div>
+        </div>
+      </section>
+
+      {/* Visual Bridge - Transition Section */}
+      <section className="bg-gradient-to-b from-white to-gray-50 py-8">
+        <div className="container mx-auto px-4">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="text-lg text-gray-600">
+              That&apos;s real money your practice could be capturing.{' '}
+              <span className="font-semibold text-[#1B3A7C]">Here&apos;s how DentSignal makes it happen:</span>
+            </p>
+            <div className="mt-4 flex justify-center">
+              <ChevronRight className="h-6 w-6 text-[#4A90E2] rotate-90 animate-bounce" />
+            </div>
           </div>
         </div>
       </section>
@@ -200,7 +224,7 @@ export default function HomePage() {
           </p>
           <Link href="/signup">
             <Button size="lg" className="gap-2 bg-[#22C55E] hover:bg-[#16a34a] text-white font-bold px-8 shadow-lg">
-              Start 7-Day Free Trial
+              Start 9-Day Free Trial
               <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>

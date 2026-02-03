@@ -94,7 +94,7 @@ export default function PricingPage() {
               </ul>
               <Link href="/signup">
                 <Button className="w-full h-12 bg-[#22C55E] hover:bg-[#16a34a] text-white text-lg font-bold">
-                  Start 7-Day Free Trial
+                  Start 9-Day Free Trial
                 </Button>
               </Link>
               <p className="mt-3 text-center text-xs text-[#718096]">
@@ -236,7 +236,7 @@ export default function PricingPage() {
             <div className="mx-auto max-w-2xl rounded-2xl bg-[#1B3A7C] p-8 text-white sm:p-12 shadow-xl">
               <h2 className="mb-4 text-2xl font-bold">Ready to Get Started?</h2>
               <p className="mb-6 text-white/90">
-                Start your free 7-day trial today. No credit card required.
+                Start your free 9-day trial today. No credit card required.
               </p>
               <Link href="/signup">
                 <Button size="lg" className="gap-2 bg-[#0099CC] hover:bg-[#0077A3] text-white font-semibold">

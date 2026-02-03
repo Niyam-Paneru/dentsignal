@@ -1,45 +1,51 @@
-import { Check, X } from 'lucide-react'
+import { Check, X, Clock, Zap, DollarSign, Bot, Smartphone, CheckCircle, Lock, Gem, LucideIcon } from 'lucide-react'
 
-const comparisons = [
+interface ComparisonItem {
+  old: string
+  new: string
+  icon: LucideIcon
+}
+
+const comparisons: ComparisonItem[] = [
   {
     old: "Your receptionist answers phones during lunch break",
     new: "Your AI answers calls 24/7, even at lunch",
-    emoji: "🍽️",
+    icon: Clock,
   },
   {
     old: "Patient calls → voicemail → they call competitor instead",
     new: "Patient calls → AI books appointment instantly",
-    emoji: "⚡",
+    icon: Zap,
   },
   {
     old: "Industry data: 20-35% of calls missed, thousands lost monthly",
     new: "95%+ of calls answered, revenue captured daily",
-    emoji: "💰",
+    icon: DollarSign,
   },
   {
     old: "Hiring receptionist costs $65k/year + training + benefits",
     new: "AI costs $199/month, zero overhead",
-    emoji: "🤖",
+    icon: Bot,
   },
   {
     old: "No-show rates average 15-30%, losing $400+ per patient",
     new: "SMS reminders can reduce no-shows by up to 50%",
-    emoji: "📱",
+    icon: Smartphone,
   },
   {
     old: "Staffing shortage? Hope someone covers phones",
     new: "Staff shortage? Your AI doesn't call in sick",
-    emoji: "✅",
+    icon: CheckCircle,
   },
   {
     old: "Patient books during business hours only, limited slots",
     new: "Patient books 3am Tuesday. Appointment locked in.",
-    emoji: "🔒",
+    icon: Lock,
   },
   {
     old: "Other AI receptionists charge $300-500/month + setup fees",
     new: "DentSignal: $199/month, no setup fees, all features included",
-    emoji: "💎",
+    icon: Gem,
   },
 ]
 
@@ -82,7 +88,7 @@ export function WhyChooseSection() {
                   </div>
                 </div>
                 <p className="text-gray-800 text-sm md:text-base leading-relaxed font-medium">
-                  {item.new} <span className="ml-1">{item.emoji}</span>
+                  {item.new} <item.icon className="ml-1 inline h-4 w-4 text-[#1B3A7C]" />
                 </p>
               </div>
             </div>

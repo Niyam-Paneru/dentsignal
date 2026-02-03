@@ -47,7 +47,7 @@ function NavLinks({ onItemClick, isSuperAdmin, activeCallCount = 0 }: { onItemCl
   const pathname = usePathname()
 
   return (
-    <nav className="flex flex-col gap-1">
+    <nav className="flex flex-col gap-1" role="navigation" aria-label="Main navigation">
       {navigation.map((item) => {
         const isActive = pathname.startsWith(item.href)
         const showBadge = item.showActiveCount && activeCallCount > 0
@@ -59,7 +59,7 @@ function NavLinks({ onItemClick, isSuperAdmin, activeCallCount = 0 }: { onItemCl
             onClick={onItemClick}
             aria-current={isActive ? 'page' : undefined}
             className={cn(
-              'flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+              'flex items-center justify-between rounded-lg px-3 py-3 min-h-[44px] text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
               isActive
                 ? 'bg-primary text-primary-foreground'
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -96,7 +96,7 @@ function NavLinks({ onItemClick, isSuperAdmin, activeCallCount = 0 }: { onItemCl
                   onClick={onItemClick}
                   aria-current={isActive ? 'page' : undefined}
                   className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                    'flex items-center gap-3 rounded-lg px-3 py-3 min-h-[44px] text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                     isActive
                       ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                       : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -222,8 +222,8 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile menu button */}
-      <div className="fixed left-4 top-4 z-50 lg:hidden">
+      {/* Mobile menu button - positioned right for right-handed users */}
+      <div className="fixed right-4 top-4 z-50 lg:hidden">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" size="icon" aria-label="Open navigation menu">

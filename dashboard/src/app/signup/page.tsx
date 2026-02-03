@@ -417,7 +417,7 @@ export default function SignupPage() {
                 {step === 1 ? 'Create your account' : 'Tell us about your practice'}
               </h1>
               <p className="mt-2 text-sm text-[#718096]">
-                {step === 1 ? 'Start your 7-day free trial' : 'We\'ll customize your AI receptionist'}
+                {step === 1 ? 'Start your 9-day free trial' : 'We\'ll customize your AI receptionist'}
               </p>
             </div>
 
@@ -677,7 +677,7 @@ export default function SignupPage() {
                     </li>
                     <li className="flex items-start gap-2">
                       <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#22C55E]" />
-                      <span>7 days free, cancel anytime</span>
+                      <span>9 days free, cancel anytime</span>
                     </li>
                   </ul>
                 </div>

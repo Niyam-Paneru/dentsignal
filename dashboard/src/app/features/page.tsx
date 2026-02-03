@@ -187,7 +187,7 @@ export default function FeaturesPage() {
             </p>
             <Link href="/signup">
               <Button size="lg" className="h-12 gap-2 bg-white text-emerald-600 hover:bg-slate-100 font-bold px-8 shadow-lg">
-                Start 7-Day Free Trial <ArrowRight className="h-4 w-4" />
+                Start 9-Day Free Trial <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
             <p className="mt-3 text-sm text-white/70">No credit card • Cancel anytime • $199/mo after trial</p>
