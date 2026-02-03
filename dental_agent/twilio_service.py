@@ -19,6 +19,15 @@ from twilio.rest import Client
 from twilio.twiml.voice_response import VoiceResponse, Gather, Say
 from dotenv import load_dotenv
 
+try:
+    from utils import mask_phone
+except ImportError:
+    # Fallback if utils not available
+    def mask_phone(phone: str) -> str:
+        if len(phone) > 4:
+            return f"***{phone[-4:]}"
+        return "****"
+
 load_dotenv()
 
 logger = logging.getLogger(__name__)
@@ -678,9 +687,9 @@ def provision_clinic_number(
         else:
             return {"success": False, "error": "Must provide area_code or phone_number"}
         
-        logger.info(f"Provisioned {number.phone_number} for clinic {clinic_id}")
-        logger.info(f"  Voice webhook: {voice_webhook}")
-        logger.info(f"  SMS webhook: {sms_webhook}")
+        logger.info(f"Provisioned {mask_phone(number.phone_number)} for clinic {clinic_id}")
+        logger.debug(f"  Voice webhook: {voice_webhook}")
+        logger.debug(f"  SMS webhook: {sms_webhook}")
         
         return {
             "success": True,
@@ -726,7 +735,7 @@ def update_number_webhooks(phone_sid: str) -> dict:
             sms_method="POST",
         )
         
-        logger.info(f"Updated webhooks for {number.phone_number}")
+        logger.info(f"Updated webhooks for {mask_phone(number.phone_number)}")
         
         return {
             "success": True,
@@ -737,7 +746,7 @@ def update_number_webhooks(phone_sid: str) -> dict:
             },
         }
     except Exception as e:
-        logger.error(f"Error updating number {phone_sid}: {e}")
+        logger.error(f"Error updating number (SID: ***{phone_sid[-6:]}): {e}")
         return {"success": False, "error": str(e)}
 
 
@@ -759,10 +768,10 @@ def release_number(phone_sid: str) -> dict:
     
     try:
         client.incoming_phone_numbers(phone_sid).delete()
-        logger.info(f"Released phone number {phone_sid}")
+        logger.info(f"Released phone number (SID: ***{phone_sid[-6:]})")
         return {"success": True, "message": f"Number {phone_sid} released"}
     except Exception as e:
-        logger.error(f"Error releasing number {phone_sid}: {e}")
+        logger.error(f"Error releasing number (SID: ***{phone_sid[-6:]}): {e}")
         return {"success": False, "error": str(e)}
 
 
