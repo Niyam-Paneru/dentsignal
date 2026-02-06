@@ -17,6 +17,7 @@ import { MarketingHeader } from '@/components/landing/marketing-header'
 import { MarketingFooter } from '@/components/landing/marketing-footer'
 import { HeroCalculator } from '@/components/landing/hero-calculator'
 import { WhyChooseSection } from '@/components/landing/why-choose-section'
+import { ExitIntentPopup } from '@/components/landing/exit-intent-popup'
 
 export default function HomePage() {
   return (
@@ -243,7 +244,7 @@ export default function HomePage() {
           </p>
           <Link href="/signup">
             <Button size="lg" className="gap-2 bg-[#22C55E] hover:bg-[#16a34a] text-white font-bold px-8 shadow-lg">
-              Start 9-Day Free Trial
+              Start 14-Day Free Trial
               <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>
@@ -253,6 +254,7 @@ export default function HomePage() {
 
       </main>
       <MarketingFooter />
+      <ExitIntentPopup />
     </div>
   )
 }

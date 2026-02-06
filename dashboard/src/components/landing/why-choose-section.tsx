@@ -58,7 +58,7 @@ export function WhyChooseSection() {
               {/* Old Way */}
               <div className="flex items-start gap-2 mb-3">
                 <div className="flex-shrink-0 mt-0.5">
-                  <X className="h-4 w-4 text-red-400" />
+                  <X className="h-4 w-4 text-error" />
                 </div>
                 <p className="text-gray-400 text-sm line-through">
                   {item.old}
@@ -68,7 +68,7 @@ export function WhyChooseSection() {
               {/* New Way */}
               <div className="flex items-start gap-2">
                 <div className="flex-shrink-0 mt-0.5">
-                  <Check className="h-4 w-4 text-[#22C55E]" />
+                  <Check className="h-4 w-4 text-success" />
                 </div>
                 <p className="text-gray-800 text-sm font-medium">
                   {item.new}

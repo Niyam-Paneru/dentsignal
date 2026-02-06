@@ -32,7 +32,9 @@ import {
   Info,
   Clock,
   MessageSquare,
-  Copy
+  Copy,
+  FileText,
+  ArrowUpRight
 } from 'lucide-react'
 import { getClinicSettings, getClinic, updateClinicSettings, updateClinicInfo, getSmsSettings, updateSmsSettings, SmsTemplates } from '@/lib/api/dental'
 import { CallForwardingGuide } from '@/components/dashboard/call-forwarding-guide'
@@ -1323,8 +1325,8 @@ export default function SettingsPage() {
                       <div className="text-right">
                         <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ${
                           subscription.isActive 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
+                            ? 'bg-success/10 text-success' 
+                            : 'bg-error/10 text-error'
                         }`}>
                           {subscription.isActive ? (
                             <CheckCircle2 className="h-4 w-4" />
@@ -1365,12 +1367,12 @@ export default function SettingsPage() {
                     </div>
 
                     {subscription.isExpiringSoon && (
-                      <div className="rounded-lg bg-amber-50 border border-amber-200 p-4">
+                      <div className="rounded-lg bg-warning/10 border border-warning/20 p-4">
                         <div className="flex items-start gap-3">
-                          <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
+                          <AlertCircle className="h-5 w-5 text-warning mt-0.5" />
                           <div>
-                            <p className="font-medium text-amber-800">Subscription Renewing Soon</p>
-                            <p className="text-sm text-amber-700 mt-1">
+                            <p className="font-medium text-warning-foreground">Subscription Renewing Soon</p>
+                            <p className="text-sm mt-1">
                               Your subscription will renew in {subscription.daysRemaining} days. 
                               Contact us if you need to make changes.
                             </p>
@@ -1406,7 +1408,7 @@ export default function SettingsPage() {
                     'Priority support',
                   ].map((feature) => (
                     <div key={feature} className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      <CheckCircle2 className="h-4 w-4 text-success" />
                       <span className="text-sm">{feature}</span>
                     </div>
                   ))}
@@ -1414,25 +1416,40 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
 
-            {/* Billing Contact */}
+            {/* Manage Subscription */}
             <Card>
               <CardHeader>
-                <CardTitle>Billing Support</CardTitle>
-                <CardDescription>Need help with billing or want to change your plan?</CardDescription>
+                <CardTitle>Manage Subscription</CardTitle>
+                <CardDescription>Update payment method, view invoices, or change your plan</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  For billing inquiries, plan changes, or cancellations, please contact our support team.
-                </p>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-lg border p-4 text-center">
+                    <CreditCard className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-sm font-medium">Payment Method</p>
+                    <p className="text-xs text-muted-foreground mt-1">Update card or payment info</p>
+                  </div>
+                  <div className="rounded-lg border p-4 text-center">
+                    <FileText className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-sm font-medium">Invoices</p>
+                    <p className="text-xs text-muted-foreground mt-1">Download past invoices</p>
+                  </div>
+                  <div className="rounded-lg border p-4 text-center">
+                    <ArrowUpRight className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-sm font-medium">Change Plan</p>
+                    <p className="text-xs text-muted-foreground mt-1">Upgrade or modify plan</p>
+                  </div>
+                </div>
                 <div className="flex flex-wrap gap-3">
                   <Button asChild>
-                    <a href="mailto:hello@dentsignal.com?subject=Billing%20Inquiry">
-                      Contact Billing Support
+                    <a href={process.env.NEXT_PUBLIC_LEMONSQUEEZY_PORTAL_URL || 'https://dentsignal.lemonsqueezy.com/billing'} target="_blank" rel="noopener noreferrer">
+                      Open Billing Portal
+                      <ArrowUpRight className="h-4 w-4 ml-1" />
                     </a>
                   </Button>
                   <Button variant="outline" asChild>
-                    <a href="mailto:hello@dentsignal.com?subject=Plan%20Upgrade%20Request">
-                      Request Plan Change
+                    <a href="mailto:hello@dentsignal.com?subject=Billing%20Question">
+                      Contact Support
                     </a>
                   </Button>
                 </div>
@@ -1440,14 +1457,14 @@ export default function SettingsPage() {
             </Card>
 
             {/* Cancel Subscription */}
-            <Card className="border-red-200 dark:border-red-900">
+            <Card className="border-destructive/30">
               <CardHeader>
-                <CardTitle className="text-red-700 dark:text-red-400">Cancel Subscription</CardTitle>
+                <CardTitle className="text-destructive">Cancel Subscription</CardTitle>
                 <CardDescription>End your DentSignal subscription</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950">
-                  <p className="text-sm text-red-800 dark:text-red-200">
+                <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4">
+                  <p className="text-sm">
                     <strong>Before you go:</strong> Cancelling will immediately stop AI from answering your calls. 
                     All your call data and settings will be preserved for 30 days in case you change your mind.
                   </p>
@@ -1455,11 +1472,11 @@ export default function SettingsPage() {
                 <div className="flex flex-wrap gap-3">
                   <Button 
                     variant="outline" 
-                    className="border-red-300 text-red-700 hover:bg-red-50 hover:text-red-800"
+                    className="border-destructive/30 text-destructive hover:bg-destructive/10"
                     asChild
                   >
-                    <a href="mailto:hello@dentsignal.com?subject=Cancellation%20Request&body=Hi%2C%0A%0AI%20would%20like%20to%20cancel%20my%20DentSignal%20subscription.%0A%0AReason%20(optional)%3A%0A%0AClinic%20Name%3A%0AAccount%20Email%3A">
-                      Request Cancellation
+                    <a href={process.env.NEXT_PUBLIC_LEMONSQUEEZY_PORTAL_URL || 'https://dentsignal.lemonsqueezy.com/billing'} target="_blank" rel="noopener noreferrer">
+                      Cancel via Billing Portal
                     </a>
                   </Button>
                   <Button variant="ghost" asChild>
@@ -1469,7 +1486,7 @@ export default function SettingsPage() {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Cancellation requests are processed within 24 hours. You won&apos;t be charged after cancellation.
+                  You can cancel anytime through the billing portal. You won&apos;t be charged after cancellation.
                 </p>
               </CardContent>
             </Card>

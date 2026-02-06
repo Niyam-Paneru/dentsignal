@@ -41,6 +41,16 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* Semantic status colors */
+  --color-success: var(--success-green);
+  --color-success-foreground: #FFFFFF;
+  --color-warning: var(--warning-amber);
+  --color-warning-foreground: #78350F;
+  --color-error: var(--error-red);
+  --color-error-foreground: #FFFFFF;
+  --color-info: var(--teal-accent);
+  --color-info-foreground: #FFFFFF;
 }
 
 :root {
