@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -32,8 +32,7 @@ import {
   Info,
   Clock,
   MessageSquare,
-  Copy,
-  RotateCcw
+  Copy
 } from 'lucide-react'
 import { getClinicSettings, getClinic, updateClinicSettings, updateClinicInfo, getSmsSettings, updateSmsSettings, SmsTemplates } from '@/lib/api/dental'
 import { CallForwardingGuide } from '@/components/dashboard/call-forwarding-guide'
@@ -73,6 +72,12 @@ export default function SettingsPage() {
   const [clinic, setClinic] = useState<ClinicData | null>(null)
   const [settings, setSettings] = useState<SettingsData | null>(null)
   const { toast } = useToast()
+  
+  // Auto-save state
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const isInitialLoadRef = useRef(true)
   
   // Clinic info state (FIX-02: controlled inputs)
   const [clinicName, setClinicName] = useState('')
@@ -124,6 +129,18 @@ export default function SettingsPage() {
     }))
   }
 
+  // Copy Monday hours to all weekdays (Tue-Fri)
+  const copyMondayToWeekdays = () => {
+    const mondayHours = businessHours['Monday']
+    setBusinessHours(prev => ({
+      ...prev,
+      Tuesday: { ...mondayHours },
+      Wednesday: { ...mondayHours },
+      Thursday: { ...mondayHours },
+      Friday: { ...mondayHours },
+    }))
+  }
+
   useEffect(() => {
     async function loadData() {
       setLoading(true)
@@ -163,10 +180,90 @@ export default function SettingsPage() {
         console.error('Failed to load settings:', error)
       } finally {
         setLoading(false)
+        // Mark initial load complete after a brief delay to prevent false positive changes
+        setTimeout(() => { isInitialLoadRef.current = false }, 100)
       }
     }
     loadData()
   }, [])
+
+  // Debounced auto-save function
+  const performAutoSave = useCallback(async () => {
+    if (isInitialLoadRef.current || loading) return
+    
+    setSaveStatus('saving')
+    setIsSaving(true)
+    try {
+      await Promise.all([
+        updateClinicSettings({
+          agent_name: agentName,
+          agent_voice: agentVoice,
+          greeting_template: greeting,
+        }),
+        updateClinicInfo({
+          name: clinicName || undefined,
+          phone: clinicPhone || undefined,
+          address: clinicAddress || undefined,
+          owner_phone: transferPhone || undefined,
+          emergency_phone: emergencyPhone || undefined,
+          transfer_enabled: transferEnabled,
+          transfer_timeout_seconds: parseInt(transferTimeout) || 20,
+          transfer_fallback: transferFallback,
+        }),
+        updateSmsSettings({
+          sms_templates: smsTemplates,
+          sms_confirmation_enabled: smsConfirmationEnabled,
+          sms_reminder_24h_enabled: smsReminder24hEnabled,
+          sms_reminder_2h_enabled: smsReminder2hEnabled,
+          sms_recall_enabled: smsRecallEnabled,
+        })
+      ])
+      setSaveStatus('saved')
+      setHasUnsavedChanges(false)
+      // Reset to idle after showing "Saved" briefly
+      setTimeout(() => setSaveStatus('idle'), 2000)
+    } catch (error) {
+      console.error('Auto-save failed:', error)
+      setSaveStatus('error')
+    } finally {
+      setIsSaving(false)
+    }
+  }, [
+    agentName, agentVoice, greeting, clinicName, clinicPhone, clinicAddress,
+    transferPhone, emergencyPhone, transferEnabled, transferTimeout, transferFallback,
+    smsTemplates, smsConfirmationEnabled, smsReminder24hEnabled, smsReminder2hEnabled,
+    smsRecallEnabled, loading
+  ])
+
+  // Auto-save effect: debounce changes by 1.5 seconds
+  useEffect(() => {
+    if (isInitialLoadRef.current || loading) return
+    
+    setHasUnsavedChanges(true)
+    setSaveStatus('idle')
+    
+    // Clear existing timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+    }
+    
+    // Set new debounce timer
+    debounceTimerRef.current = setTimeout(() => {
+      performAutoSave()
+    }, 1500)
+    
+    // Cleanup on unmount
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+      }
+    }
+  }, [
+    agentName, agentVoice, greeting, clinicName, clinicPhone, clinicAddress,
+    transferPhone, emergencyPhone, transferEnabled, transferTimeout, transferFallback,
+    smsTemplates, smsConfirmationEnabled, smsReminder24hEnabled, smsReminder2hEnabled,
+    smsRecallEnabled, performAutoSave, loading
+  ])
 
   const handleSave = async () => {
     setIsSaving(true)
@@ -233,75 +330,99 @@ export default function SettingsPage() {
           <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
           <p className="text-muted-foreground">Configure your AI receptionist and clinic settings</p>
         </div>
-        <Button onClick={handleSave} disabled={isSaving}>
-          <Save className="mr-2 h-4 w-4" />
-          {isSaving ? 'Saving...' : 'Save Changes'}
-        </Button>
+        <div className="flex items-center gap-3">
+          {/* Auto-save status indicator */}
+          {saveStatus === 'saving' && (
+            <span className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Saving...
+            </span>
+          )}
+          {saveStatus === 'saved' && (
+            <span className="flex items-center gap-2 text-sm text-green-600">
+              <CheckCircle2 className="h-4 w-4" />
+              Saved
+            </span>
+          )}
+          {saveStatus === 'error' && (
+            <span className="flex items-center gap-2 text-sm text-red-600">
+              <AlertCircle className="h-4 w-4" />
+              Failed to save
+            </span>
+          )}
+          {/* Manual save button (instant save) */}
+          <Button 
+            onClick={handleSave} 
+            disabled={isSaving}
+            variant={hasUnsavedChanges ? "default" : "outline"}
+            size="sm"
+          >
+            <Save className="mr-2 h-4 w-4" />
+            {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save Now' : 'Save'}
+          </Button>
+        </div>
       </div>
 
-      <Tabs defaultValue="clinic" className="space-y-6">
-        <TabsList className="flex flex-wrap gap-1 h-auto p-2 bg-muted/50 rounded-xl">
-          {/* Practice Group */}
-          <TabsTrigger value="clinic" className="gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-            <Building2 className="h-4 w-4" />
-            <span className="hidden sm:inline">Clinic</span>
-          </TabsTrigger>
-          
-          {/* Phone System Group */}
-          <div className="hidden sm:flex items-center px-1">
-            <span className="h-5 w-px bg-gray-300" />
-          </div>
-          <TabsTrigger value="forwarding" className="gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-            <Phone className="h-4 w-4" />
-            <span className="hidden sm:inline">Forwarding</span>
-          </TabsTrigger>
-          <TabsTrigger value="takeover" className="gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-            <PhoneForwarded className="h-4 w-4" />
-            <span className="hidden sm:inline">Takeover</span>
-          </TabsTrigger>
-          <TabsTrigger value="sms" className="gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-            <MessageSquare className="h-4 w-4" />
-            <span className="hidden sm:inline">SMS</span>
-          </TabsTrigger>
-          
-          {/* AI & Scheduling Group */}
-          <div className="hidden sm:flex items-center px-1">
-            <span className="h-5 w-px bg-gray-300" />
-          </div>
-          <TabsTrigger value="agent" className="gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+      <Tabs defaultValue="agent" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4 h-auto p-1.5 bg-muted/50 rounded-xl">
+          {/* AI Assistant - PRIMARY (Core Product!) */}
+          <TabsTrigger value="agent" className="gap-2 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-lg">
             <Bot className="h-4 w-4" />
-            <span className="hidden sm:inline">AI Agent</span>
-          </TabsTrigger>
-          <TabsTrigger value="calendar" className="gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-            <Calendar className="h-4 w-4" />
-            <span className="hidden sm:inline">Calendar</span>
+            <span className="hidden sm:inline font-medium">AI Assistant</span>
+            <span className="sm:hidden text-xs">AI</span>
           </TabsTrigger>
           
-          {/* Account Group */}
-          <div className="hidden sm:flex items-center px-1">
-            <span className="h-5 w-px bg-gray-300" />
-          </div>
-          <TabsTrigger value="notifications" className="gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-            <Bell className="h-4 w-4" />
-            <span className="hidden sm:inline">Alerts</span>
+          {/* Practice Setup */}
+          <TabsTrigger value="practice" className="gap-2 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-lg">
+            <Building2 className="h-4 w-4" />
+            <span className="hidden sm:inline font-medium">Practice</span>
+            <span className="sm:hidden text-xs">Setup</span>
           </TabsTrigger>
-          <TabsTrigger value="billing" className="gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+          
+          {/* Communications */}
+          <TabsTrigger value="communications" className="gap-2 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-lg">
+            <MessageSquare className="h-4 w-4" />
+            <span className="hidden sm:inline font-medium">Communications</span>
+            <span className="sm:hidden text-xs">Comms</span>
+          </TabsTrigger>
+          
+          {/* Account */}
+          <TabsTrigger value="account" className="gap-2 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-lg">
             <CreditCard className="h-4 w-4" />
-            <span className="hidden sm:inline">Billing</span>
-          </TabsTrigger>
-          <TabsTrigger value="security" className="gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-            <Shield className="h-4 w-4" />
-            <span className="hidden sm:inline">Security</span>
+            <span className="hidden sm:inline font-medium">Account</span>
+            <span className="sm:hidden text-xs">Acct</span>
           </TabsTrigger>
         </TabsList>
 
-        {/* Call Forwarding Setup */}
-        <TabsContent value="forwarding">
-          <CallForwardingGuide twilioNumber={clinic?.twilio_number || '(904) 867-9643'} />
-        </TabsContent>
+        {/* ===== COMMUNICATIONS TAB ===== */}
+        <TabsContent value="communications">
+          <div className="space-y-8">
+            {/* Quick Nav */}
+            <div className="flex flex-wrap gap-2 pb-2 border-b">
+              <a href="#forwarding" className="text-sm text-muted-foreground hover:text-primary transition-colors">Forwarding</a>
+              <span className="text-muted-foreground/50">•</span>
+              <a href="#transfer" className="text-sm text-muted-foreground hover:text-primary transition-colors">Transfer</a>
+              <span className="text-muted-foreground/50">•</span>
+              <a href="#notifications" className="text-sm text-muted-foreground hover:text-primary transition-colors">Notifications</a>
+              <span className="text-muted-foreground/50">•</span>
+              <a href="#sms" className="text-sm text-muted-foreground hover:text-primary transition-colors">SMS Templates</a>
+            </div>
 
-        {/* Call Takeover Settings */}
-        <TabsContent value="takeover">
+            {/* Section: Call Forwarding */}
+            <div id="forwarding">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Phone className="h-5 w-5 text-[#0099CC]" />
+                Call Forwarding Setup
+              </h3>
+              <CallForwardingGuide twilioNumber={clinic?.twilio_number || '(904) 867-9643'} />
+            </div>
+
+            {/* Section: Call Transfer */}
+            <div id="transfer">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <PhoneForwarded className="h-5 w-5 text-[#0099CC]" />
+                Call Transfer Settings
+              </h3>
           <div className="grid gap-6">
             {/* Main Takeover Card */}
             <Card>
@@ -321,7 +442,7 @@ export default function SettingsPage() {
                     <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                     <div className="text-sm text-blue-800 dark:text-blue-200">
                       <p className="font-medium mb-1">Flexible Transfer Destinations</p>
-                      <p>Transfers can go to you, your office manager, a receptionist's direct line, or anyone you designate. 
+                      <p>Transfers can go to you, your office manager, a receptionist&apos;s direct line, or anyone you designate. 
                          Set different numbers for routine vs emergency transfers.</p>
                     </div>
                   </div>
@@ -351,7 +472,7 @@ export default function SettingsPage() {
                     disabled={!transferEnabled}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Where routine transfers go: when you click "Transfer to Me" or patient asks for a human.
+                    Where routine transfers go: when you click &quot;Transfer to Me&quot; or patient asks for a human.
                     Can be owner, office manager, or front desk direct line.
                   </p>
                 </div>
@@ -426,7 +547,7 @@ export default function SettingsPage() {
                     <div>
                       <p className="font-medium text-green-800 dark:text-green-200">Test Your Transfer Setup</p>
                       <p className="text-sm text-green-700 dark:text-green-300">
-                        We'll call your transfer phone to make sure it's working
+                        We&apos;ll call your transfer phone to make sure it&apos;s working
                       </p>
                     </div>
                     <Button 
@@ -457,7 +578,7 @@ export default function SettingsPage() {
                     <div>
                       <p className="font-medium">See Live Calls</p>
                       <p className="text-sm text-muted-foreground">
-                        Go to "Live Calls" in your dashboard or watch the notification badge in your sidebar
+                        Go to &quot;Live Calls&quot; in your dashboard or watch the notification badge in your sidebar
                       </p>
                     </div>
                   </div>
@@ -466,7 +587,7 @@ export default function SettingsPage() {
                       2
                     </div>
                     <div>
-                      <p className="font-medium">Click "Transfer to Me"</p>
+                      <p className="font-medium">Click &quot;Transfer to Me&quot;</p>
                       <p className="text-sm text-muted-foreground">
                         Found a call you want to handle personally? Click the transfer button
                       </p>
@@ -479,7 +600,7 @@ export default function SettingsPage() {
                     <div>
                       <p className="font-medium">AI Announces Transfer</p>
                       <p className="text-sm text-muted-foreground">
-                        The AI politely says: "I'm connecting you with the practice owner now. One moment please."
+                        The AI politely says: &quot;I&apos;m connecting you with the practice owner now. One moment please.&quot;
                       </p>
                     </div>
                   </div>
@@ -508,7 +629,7 @@ export default function SettingsPage() {
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="rounded-lg border p-3">
                     <p className="font-medium text-green-700 dark:text-green-400">🦷 Urgent Cases</p>
-                    <p className="text-sm text-muted-foreground">Patient says "I'm in severe pain" - take over to assess urgency</p>
+                    <p className="text-sm text-muted-foreground">Patient says &quot;I&apos;m in severe pain&quot; - take over to assess urgency</p>
                   </div>
                   <div className="rounded-lg border p-3">
                     <p className="font-medium text-green-700 dark:text-green-400">💰 High-Value Leads</p>
@@ -525,11 +646,202 @@ export default function SettingsPage() {
                 </div>
               </CardContent>
             </Card>
+            </div>
+            </div>
+
+            {/* Section: Notifications */}
+            <div id="notifications">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Bell className="h-5 w-5 text-[#0099CC]" />
+                Notification Preferences
+              </h3>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Notification Preferences</CardTitle>
+                  <CardDescription>Choose how you want to be notified about calls and bookings</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <h4 className="font-medium">Email Notifications</h4>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium">Daily Summary</p>
+                          <p className="text-xs text-muted-foreground">Receive a daily email with call stats</p>
+                        </div>
+                        <Switch defaultChecked />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium">New Appointments</p>
+                          <p className="text-xs text-muted-foreground">Get notified when AI books appointments</p>
+                        </div>
+                        <Switch defaultChecked />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium">Transfers</p>
+                          <p className="text-xs text-muted-foreground">Alert when calls are transferred</p>
+                        </div>
+                        <Switch defaultChecked />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="notifyEmail">Notification Email</Label>
+                    <Input id="notifyEmail" type="email" placeholder="reception@yourpractice.com" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Section: SMS Templates */}
+            <div id="sms">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-[#0099CC]" />
+                SMS Templates
+              </h3>
+              <div className="grid gap-6">
+                {/* Template Variables */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Template Variables</CardTitle>
+                    <CardDescription>Use these in your templates - they&apos;ll be replaced with actual values</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { var: '{patient_name}', desc: 'Patient name' },
+                        { var: '{clinic_name}', desc: 'Clinic name' },
+                        { var: '{date}', desc: 'Date' },
+                        { var: '{time}', desc: 'Time' },
+                        { var: '{phone}', desc: 'Phone' },
+                      ].map((item) => (
+                        <button
+                          key={item.var}
+                          onClick={() => navigator.clipboard.writeText(item.var)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm hover:bg-primary/20 transition-colors"
+                          title={item.desc}
+                        >
+                          <code>{item.var}</code>
+                          <Copy className="h-3 w-3" />
+                        </button>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Appointment Confirmation */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <CheckCircle2 className="h-5 w-5 text-green-600" />
+                      Appointment Confirmation
+                    </CardTitle>
+                    <CardDescription>Sent immediately after booking</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="sms-confirmation">Message Template</Label>
+                        <span className="text-xs text-muted-foreground">
+                          {(smsTemplates.confirmation || '').length}/160
+                        </span>
+                      </div>
+                      <Textarea
+                        id="sms-confirmation"
+                        rows={3}
+                        value={smsTemplates.confirmation || ''}
+                        placeholder="Hi {patient_name}! Your appointment at {clinic_name} is confirmed for {date} at {time}. Reply YES to confirm."
+                        onChange={(e) => setSmsTemplates({ ...smsTemplates, confirmation: e.target.value })}
+                        className="font-mono text-sm"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch 
+                        id="confirmation-enabled" 
+                        checked={smsConfirmationEnabled}
+                        onCheckedChange={setSmsConfirmationEnabled}
+                      />
+                      <Label htmlFor="confirmation-enabled">Auto-send on booking</Label>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* 24-Hour Reminder */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Clock className="h-5 w-5 text-blue-600" />
+                      24-Hour Reminder
+                    </CardTitle>
+                    <CardDescription>Sent 24 hours before appointment</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <Textarea
+                      rows={3}
+                      value={smsTemplates.reminder_24h || ''}
+                      placeholder="Reminder: {patient_name}, appointment tomorrow at {clinic_name} at {time}."
+                      onChange={(e) => setSmsTemplates({ ...smsTemplates, reminder_24h: e.target.value })}
+                      className="font-mono text-sm"
+                    />
+                    <div className="flex items-center gap-2">
+                      <Switch 
+                        checked={smsReminder24hEnabled}
+                        onCheckedChange={setSmsReminder24hEnabled}
+                      />
+                      <Label>Enable 24h reminder</Label>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Recall Messages */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Bell className="h-5 w-5 text-purple-600" />
+                      Recall / Reactivation
+                    </CardTitle>
+                    <CardDescription>For patients who haven&apos;t visited in 6+ months</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <Textarea
+                      rows={3}
+                      value={smsTemplates.recall || ''}
+                      placeholder="Hi {patient_name}! It's been a while since your last visit to {clinic_name}. Reply BOOK to schedule."
+                      onChange={(e) => setSmsTemplates({ ...smsTemplates, recall: e.target.value })}
+                      className="font-mono text-sm"
+                    />
+                    <div className="flex items-center gap-2">
+                      <Switch 
+                        checked={smsRecallEnabled}
+                        onCheckedChange={setSmsRecallEnabled}
+                      />
+                      <Label>Enable recall automation</Label>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </div>
         </TabsContent>
 
-        {/* Clinic Settings */}
-        <TabsContent value="clinic">
+        {/* ===== PRACTICE TAB ===== */}
+        <TabsContent value="practice">
+          <div className="space-y-8">
+            {/* Quick Nav */}
+            <div className="flex flex-wrap gap-2 pb-2 border-b">
+              <a href="#clinic-info" className="text-sm text-muted-foreground hover:text-primary transition-colors">Clinic Info</a>
+              <span className="text-muted-foreground/50">•</span>
+              <a href="#calendar" className="text-sm text-muted-foreground hover:text-primary transition-colors">Calendar</a>
+            </div>
+
+            {/* Section: Clinic Information */}
+            <div id="clinic-info">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-[#0099CC]" />
+                Clinic Information
+              </h3>
           <Card>
             <CardHeader>
               <CardTitle>Clinic Information</CardTitle>
@@ -585,7 +897,18 @@ export default function SettingsPage() {
               </div>
 
               <div className="space-y-4">
-                <h4 className="font-medium">Business Hours</h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium">Business Hours</h4>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={copyMondayToWeekdays}
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    <Copy className="mr-1.5 h-3 w-3" />
+                    Copy Monday → Tue-Fri
+                  </Button>
+                </div>
                 <div className="grid gap-3">
                   {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => (
                     <div key={day} className="flex items-center gap-4">
@@ -622,10 +945,147 @@ export default function SettingsPage() {
                 </div>
               </div>
             </CardContent>
-          </Card>
+            </Card>
+            </div>
+
+            {/* Section: Calendar Integration */}
+            <div id="calendar">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-[#0099CC]" />
+                Calendar & Scheduling
+              </h3>
+              <div className="grid gap-6">
+                {/* Connection Status Card */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Calendar Integration</CardTitle>
+                    <CardDescription>Connect your calendar so AI can check availability and book appointments</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Not Connected State */}
+                    <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 text-center">
+                      <div className="flex justify-center gap-4 mb-4">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white shadow-sm border">
+                          <svg className="h-6 w-6" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                        </div>
+                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white shadow-sm border">
+                          <svg className="h-6 w-6" viewBox="0 0 24 24"><path fill="#0078D4" d="M21.17 3H7.83A.83.83 0 0 0 7 3.83v16.34c0 .46.37.83.83.83h13.34c.46 0 .83-.37.83-.83V3.83a.83.83 0 0 0-.83-.83zM17 18H9v-2h8v2zm0-4H9v-2h8v2zm0-4H9V8h8v2z"/><path fill="#0078D4" opacity=".5" d="M3 7h2v14H3z"/></svg>
+                        </div>
+                      </div>
+                      <h3 className="font-medium mb-2">Connect Your Calendar</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        DentSignal needs calendar access to check your availability and book appointments.
+                      </p>
+                      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                        <Button className="gap-2">
+                          <svg className="h-4 w-4" viewBox="0 0 24 24"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/></svg>
+                          Connect Google Calendar
+                        </Button>
+                        <Button variant="outline" className="gap-2">
+                          <svg className="h-4 w-4" viewBox="0 0 24 24"><path fill="currentColor" d="M21.17 3H7.83A.83.83 0 0 0 7 3.83v16.34c0 .46.37.83.83.83h13.34c.46 0 .83-.37.83-.83V3.83a.83.83 0 0 0-.83-.83z"/></svg>
+                          Connect Outlook
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Alternative: Manual Mode */}
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950">
+                      <div className="flex gap-3">
+                        <Info className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <div className="text-sm text-amber-800 dark:text-amber-200">
+                          <p className="font-medium mb-1">Don&apos;t have Google or Outlook?</p>
+                          <p>DentSignal can work in &quot;manual mode&quot; - AI collects patient info and you confirm appointments manually.</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Practice Management Systems */}
+                    <div className="space-y-3">
+                      <Label>Practice Management System (Coming Soon)</Label>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div className="rounded-lg border p-3 text-center opacity-50">
+                          <p className="font-medium text-sm">Dentrix</p>
+                          <p className="text-xs text-muted-foreground">Coming Q1</p>
+                        </div>
+                        <div className="rounded-lg border p-3 text-center opacity-50">
+                          <p className="font-medium text-sm">Eaglesoft</p>
+                          <p className="text-xs text-muted-foreground">Coming Q1</p>
+                        </div>
+                        <div className="rounded-lg border p-3 text-center opacity-50">
+                          <p className="font-medium text-sm">Open Dental</p>
+                          <p className="text-xs text-muted-foreground">Coming Q2</p>
+                        </div>
+                        <div className="rounded-lg border p-3 text-center opacity-50">
+                          <p className="font-medium text-sm">Curve</p>
+                          <p className="text-xs text-muted-foreground">Coming Q2</p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Booking Settings */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Booking Settings</CardTitle>
+                    <CardDescription>Configure how AI handles appointment booking</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>Default Appointment Duration</Label>
+                        <Select defaultValue="60">
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="30">30 minutes</SelectItem>
+                            <SelectItem value="45">45 minutes</SelectItem>
+                            <SelectItem value="60">60 minutes</SelectItem>
+                            <SelectItem value="90">90 minutes</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Buffer Time Between Appointments</Label>
+                        <Select defaultValue="15">
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0">No buffer</SelectItem>
+                            <SelectItem value="5">5 minutes</SelectItem>
+                            <SelectItem value="10">10 minutes</SelectItem>
+                            <SelectItem value="15">15 minutes</SelectItem>
+                            <SelectItem value="30">30 minutes</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">Double-Booking Prevention</p>
+                        <p className="text-sm text-muted-foreground">Check calendar before confirming</p>
+                      </div>
+                      <Switch defaultChecked />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">Same-Day Appointments</p>
+                        <p className="text-sm text-muted-foreground">Allow booking appointments for today</p>
+                      </div>
+                      <Switch defaultChecked />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </div>
         </TabsContent>
 
-        {/* AI Agent Settings */}
+        {/* ===== AI ASSISTANT TAB (PRIMARY) ===== */}
         <TabsContent value="agent">
           <div className="grid gap-6">
             <Card>
@@ -770,7 +1230,7 @@ export default function SettingsPage() {
                     <Clock className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
                     <div className="text-sm text-amber-800 dark:text-amber-200">
                       <p className="font-medium mb-1">Business Hours Aware</p>
-                      <p>The AI automatically knows when you're open based on the hours set in the Clinic tab. 
+                      <p>The AI automatically knows when you&apos;re open based on the hours set in the Clinic tab. 
                          Outside those hours, it uses the after-hours behavior you configure here.</p>
                     </div>
                   </div>
@@ -794,7 +1254,7 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium">Announce Office is Closed</p>
-                    <p className="text-sm text-muted-foreground">"Thank you for calling. Our office is currently closed..."</p>
+                    <p className="text-sm text-muted-foreground">&quot;Thank you for calling. Our office is currently closed...&quot;</p>
                   </div>
                   <Switch defaultChecked />
                 </div>
@@ -820,488 +1280,22 @@ export default function SettingsPage() {
           </div>
         </TabsContent>
 
-        {/* Calendar Settings */}
-        <TabsContent value="calendar">
-          <div className="grid gap-6">
-            {/* Connection Status Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Calendar Integration</CardTitle>
-                <CardDescription>Connect your calendar so AI can check availability and book appointments</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Not Connected State */}
-                <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 text-center">
-                  <div className="flex justify-center gap-4 mb-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white shadow-sm border">
-                      <svg className="h-6 w-6" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-                    </div>
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white shadow-sm border">
-                      <svg className="h-6 w-6" viewBox="0 0 24 24"><path fill="#0078D4" d="M21.17 3H7.83A.83.83 0 0 0 7 3.83v16.34c0 .46.37.83.83.83h13.34c.46 0 .83-.37.83-.83V3.83a.83.83 0 0 0-.83-.83zM17 18H9v-2h8v2zm0-4H9v-2h8v2zm0-4H9V8h8v2z"/><path fill="#0078D4" opacity=".5" d="M3 7h2v14H3z"/></svg>
-                    </div>
-                  </div>
-                  <h3 className="font-medium mb-2">Connect Your Calendar</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    DentSignal needs calendar access to check your availability and book appointments.
-                  </p>
-                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                    <Button className="gap-2">
-                      <svg className="h-4 w-4" viewBox="0 0 24 24"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/></svg>
-                      Connect Google Calendar
-                    </Button>
-                    <Button variant="outline" className="gap-2">
-                      <svg className="h-4 w-4" viewBox="0 0 24 24"><path fill="currentColor" d="M21.17 3H7.83A.83.83 0 0 0 7 3.83v16.34c0 .46.37.83.83.83h13.34c.46 0 .83-.37.83-.83V3.83a.83.83 0 0 0-.83-.83z"/></svg>
-                      Connect Outlook
-                    </Button>
-                  </div>
-                </div>
+        {/* ===== ACCOUNT TAB ===== */}
+        <TabsContent value="account">
+          <div className="space-y-8">
+            {/* Quick Nav */}
+            <div className="flex flex-wrap gap-2 pb-2 border-b">
+              <a href="#billing" className="text-sm text-muted-foreground hover:text-primary transition-colors">Billing</a>
+              <span className="text-muted-foreground/50">•</span>
+              <a href="#security" className="text-sm text-muted-foreground hover:text-primary transition-colors">Security</a>
+            </div>
 
-                {/* Alternative: Manual Mode */}
-                <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950">
-                  <div className="flex gap-3">
-                    <Info className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                    <div className="text-sm text-amber-800 dark:text-amber-200">
-                      <p className="font-medium mb-1">Don't have Google or Outlook?</p>
-                      <p>DentSignal can work in "manual mode" - AI collects patient info and you confirm appointments manually. 
-                         Email <a href="mailto:founder@dentsignal.me" className="underline">founder@dentsignal.me</a> to set this up.</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Practice Management Systems */}
-                <div className="space-y-3">
-                  <Label>Practice Management System (Coming Soon)</Label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div className="rounded-lg border p-3 text-center opacity-50">
-                      <p className="font-medium text-sm">Dentrix</p>
-                      <p className="text-xs text-muted-foreground">Coming Q1</p>
-                    </div>
-                    <div className="rounded-lg border p-3 text-center opacity-50">
-                      <p className="font-medium text-sm">Eaglesoft</p>
-                      <p className="text-xs text-muted-foreground">Coming Q1</p>
-                    </div>
-                    <div className="rounded-lg border p-3 text-center opacity-50">
-                      <p className="font-medium text-sm">Open Dental</p>
-                      <p className="text-xs text-muted-foreground">Coming Q2</p>
-                    </div>
-                    <div className="rounded-lg border p-3 text-center opacity-50">
-                      <p className="font-medium text-sm">Curve</p>
-                      <p className="text-xs text-muted-foreground">Coming Q2</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Calendar Settings (shown when connected) */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Booking Settings</CardTitle>
-                <CardDescription>Configure how AI handles appointment booking</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Default Appointment Duration</Label>
-                    <Select defaultValue="60">
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="30">30 minutes</SelectItem>
-                        <SelectItem value="45">45 minutes</SelectItem>
-                        <SelectItem value="60">60 minutes</SelectItem>
-                        <SelectItem value="90">90 minutes</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Buffer Time Between Appointments</Label>
-                    <Select defaultValue="15">
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="0">No buffer</SelectItem>
-                        <SelectItem value="5">5 minutes</SelectItem>
-                        <SelectItem value="10">10 minutes</SelectItem>
-                        <SelectItem value="15">15 minutes</SelectItem>
-                        <SelectItem value="30">30 minutes</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Double-Booking Prevention</p>
-                    <p className="text-sm text-muted-foreground">Check calendar before confirming</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Same-Day Appointments</p>
-                    <p className="text-sm text-muted-foreground">Allow booking appointments for today</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Require Phone Confirmation</p>
-                    <p className="text-sm text-muted-foreground">AI reads back appointment details to confirm</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Notification Settings */}
-        <TabsContent value="notifications">
-          <Card>
-            <CardHeader>
-              <CardTitle>Notification Preferences</CardTitle>
-              <CardDescription>Choose how you want to be notified about calls and bookings</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Dashboard Celebrations */}
-              <div className="space-y-4">
-                <h4 className="font-medium">Dashboard Celebrations</h4>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium">Celebration Messages</p>
-                      <p className="text-xs text-muted-foreground">Show celebratory messages when AI books appointments or handles calls</p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <h4 className="font-medium">Email Notifications</h4>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium">Daily Summary</p>
-                      <p className="text-xs text-muted-foreground">Receive a daily email with call stats</p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium">New Appointments</p>
-                      <p className="text-xs text-muted-foreground">Get notified when AI books appointments</p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium">Transfers</p>
-                      <p className="text-xs text-muted-foreground">Alert when calls are transferred</p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium">Missed Calls</p>
-                      <p className="text-xs text-muted-foreground">Notify about missed or dropped calls</p>
-                    </div>
-                    <Switch />
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="notifyEmail">Notification Email</Label>
-                <Input id="notifyEmail" type="email" defaultValue="reception@sunshinedental.com" />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* SMS Templates */}
-        <TabsContent value="sms">
-          <div className="grid gap-6">
-            {/* Available Variables */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Template Variables</CardTitle>
-                <CardDescription>Use these variables in your templates - they&apos;ll be replaced with actual values</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    { var: '{patient_name}', desc: 'Patient first name' },
-                    { var: '{clinic_name}', desc: 'Your clinic name' },
-                    { var: '{date}', desc: 'Appointment date' },
-                    { var: '{time}', desc: 'Appointment time' },
-                    { var: '{provider}', desc: 'Provider name' },
-                    { var: '{procedure}', desc: 'Procedure type' },
-                    { var: '{phone}', desc: 'Clinic phone' },
-                    { var: '{confirm_link}', desc: 'Confirmation link' },
-                  ].map((item) => (
-                    <button
-                      key={item.var}
-                      onClick={() => navigator.clipboard.writeText(item.var)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm hover:bg-primary/20 transition-colors"
-                      title={item.desc}
-                    >
-                      <code>{item.var}</code>
-                      <Copy className="h-3 w-3" />
-                    </button>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Appointment Confirmation */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CheckCircle2 className="h-5 w-5 text-green-600" />
-                  Appointment Confirmation
-                </CardTitle>
-                <CardDescription>Sent immediately after booking an appointment</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="sms-confirmation">Message Template</Label>
-                    <span className="text-xs text-muted-foreground">
-                      {(smsTemplates.confirmation || '').length}/160 characters
-                    </span>
-                  </div>
-                  <Textarea
-                    id="sms-confirmation"
-                    rows={3}
-                    value={smsTemplates.confirmation || ''}
-                    placeholder="Hi {patient_name}! Your appointment at {clinic_name} is confirmed for {date} at {time}. Reply YES to confirm or call {phone} to reschedule."
-                    onChange={(e) => setSmsTemplates({ ...smsTemplates, confirmation: e.target.value })}
-                    className="font-mono text-sm"
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Switch 
-                      id="confirmation-enabled" 
-                      checked={smsConfirmationEnabled}
-                      onCheckedChange={setSmsConfirmationEnabled}
-                    />
-                    <Label htmlFor="confirmation-enabled">Auto-send on booking</Label>
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setSmsTemplates({ ...smsTemplates, confirmation: '' })}
-                  >
-                    <RotateCcw className="h-4 w-4 mr-2" />
-                    Reset to Default
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* 24-Hour Reminder */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-blue-600" />
-                  24-Hour Reminder
-                </CardTitle>
-                <CardDescription>Sent 24 hours before the appointment</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="sms-24h">Message Template</Label>
-                    <span className="text-xs text-muted-foreground">
-                      {(smsTemplates.reminder_24h || '').length}/160 characters
-                    </span>
-                  </div>
-                  <Textarea
-                    id="sms-24h"
-                    rows={3}
-                    value={smsTemplates.reminder_24h || ''}
-                    placeholder="Reminder: {patient_name}, you have an appointment tomorrow at {clinic_name} at {time}. Please reply C to confirm or R to reschedule."
-                    onChange={(e) => setSmsTemplates({ ...smsTemplates, reminder_24h: e.target.value })}
-                    className="font-mono text-sm"
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Switch 
-                      id="reminder24-enabled" 
-                      checked={smsReminder24hEnabled}
-                      onCheckedChange={setSmsReminder24hEnabled}
-                    />
-                    <Label htmlFor="reminder24-enabled">Enable 24h reminder</Label>
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setSmsTemplates({ ...smsTemplates, reminder_24h: '' })}
-                  >
-                    <RotateCcw className="h-4 w-4 mr-2" />
-                    Reset to Default
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* 2-Hour Reminder */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <AlertCircle className="h-5 w-5 text-orange-600" />
-                  2-Hour Reminder
-                </CardTitle>
-                <CardDescription>Sent 2 hours before the appointment</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="sms-2h">Message Template</Label>
-                    <span className="text-xs text-muted-foreground">
-                      {(smsTemplates.reminder_2h || '').length}/160 characters
-                    </span>
-                  </div>
-                  <Textarea
-                    id="sms-2h"
-                    rows={3}
-                    value={smsTemplates.reminder_2h || ''}
-                    placeholder="Hi {patient_name}! Just a quick reminder - your appointment at {clinic_name} is in 2 hours at {time}. See you soon!"
-                    onChange={(e) => setSmsTemplates({ ...smsTemplates, reminder_2h: e.target.value })}
-                    className="font-mono text-sm"
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Switch 
-                      id="reminder2-enabled" 
-                      checked={smsReminder2hEnabled}
-                      onCheckedChange={setSmsReminder2hEnabled}
-                    />
-                    <Label htmlFor="reminder2-enabled">Enable 2h reminder</Label>
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setSmsTemplates({ ...smsTemplates, reminder_2h: '' })}
-                  >
-                    <RotateCcw className="h-4 w-4 mr-2" />
-                    Reset to Default
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Recall Messages */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell className="h-5 w-5 text-purple-600" />
-                  Recall / Reactivation
-                </CardTitle>
-                <CardDescription>Messages for patients who haven&apos;t visited in 6+ months</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="sms-recall">First Recall Message</Label>
-                    <span className="text-xs text-muted-foreground">
-                      {(smsTemplates.recall || '').length}/160 characters
-                    </span>
-                  </div>
-                  <Textarea
-                    id="sms-recall"
-                    rows={3}
-                    value={smsTemplates.recall || ''}
-                    placeholder="Hi {patient_name}! It's been a while since your last visit to {clinic_name}. We'd love to see you! Reply BOOK or call {phone} to schedule."
-                    onChange={(e) => setSmsTemplates({ ...smsTemplates, recall: e.target.value })}
-                    className="font-mono text-sm"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="sms-recall-followup">Follow-up Message (7 days later)</Label>
-                    <span className="text-xs text-muted-foreground">
-                      {(smsTemplates.recall_followup || '').length}/160 characters
-                    </span>
-                  </div>
-                  <Textarea
-                    id="sms-recall-followup"
-                    rows={3}
-                    value={smsTemplates.recall_followup || ''}
-                    placeholder="{patient_name}, your smile matters to us! {clinic_name} has convenient appointment times available. Call {phone} or reply BOOK to schedule your checkup."
-                    onChange={(e) => setSmsTemplates({ ...smsTemplates, recall_followup: e.target.value })}
-                    className="font-mono text-sm"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Switch 
-                      id="recall-enabled" 
-                      checked={smsRecallEnabled}
-                      onCheckedChange={setSmsRecallEnabled}
-                    />
-                    <Label htmlFor="recall-enabled">Enable recall automation</Label>
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setSmsTemplates({ ...smsTemplates, recall: '', recall_followup: '' })}
-                  >
-                    <RotateCcw className="h-4 w-4 mr-2" />
-                    Reset to Default
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Preview */}
-            <Card className="border-dashed">
-              <CardHeader>
-                <CardTitle>Preview</CardTitle>
-                <CardDescription>See how your messages will look on a phone</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="mx-auto max-w-[320px] rounded-3xl border-8 border-gray-800 bg-gray-800 p-2">
-                  <div className="rounded-2xl bg-white p-4 min-h-[200px]">
-                    <div className="text-center text-xs text-muted-foreground mb-4">
-                      Message Preview
-                    </div>
-                    <div className="space-y-2">
-                      <div className="bg-green-100 rounded-2xl rounded-tl-sm px-4 py-2 text-sm max-w-[85%]">
-                        {(smsTemplates.confirmation || "Hi {patient_name}! Your appointment at {clinic_name} is confirmed for {date} at {time}. Reply YES to confirm or call {phone} to reschedule.")
-                          .replace('{patient_name}', 'Sarah')
-                          .replace('{clinic_name}', clinic?.name || 'Sunshine Dental')
-                          .replace('{date}', 'Dec 15')
-                          .replace('{time}', '2:00 PM')
-                          .replace('{phone}', clinic?.phone || '(555) 123-4567')}
-                      </div>
-                      <div className="bg-blue-600 text-white rounded-2xl rounded-tr-sm px-4 py-2 text-sm max-w-[85%] ml-auto text-right">
-                        YES
-                      </div>
-                      <div className="bg-green-100 rounded-2xl rounded-tl-sm px-4 py-2 text-sm max-w-[85%]">
-                        Thank you for confirming! We look forward to seeing you. 😊
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Billing Settings */}
-        <TabsContent value="billing">
+            {/* Section: Billing */}
+            <div id="billing">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-[#0099CC]" />
+                Billing & Subscription
+              </h3>
           <div className="grid gap-6">
             {/* Current Plan */}
             <Card>
@@ -1475,16 +1469,20 @@ export default function SettingsPage() {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Cancellation requests are processed within 24 hours. You won't be charged after cancellation.
+                  Cancellation requests are processed within 24 hours. You won&apos;t be charged after cancellation.
                 </p>
               </CardContent>
             </Card>
-          </div>
-        </TabsContent>
+            </div>
+            </div>
 
-        {/* Security Settings */}
-        <TabsContent value="security">
-          <div className="grid gap-6">
+            {/* Section: Security */}
+            <div id="security">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Shield className="h-5 w-5 text-[#0099CC]" />
+                Security
+              </h3>
+              <div className="grid gap-6">
             <Card>
               <CardHeader>
                 <CardTitle>Account Security</CardTitle>
@@ -1524,6 +1522,8 @@ export default function SettingsPage() {
                 </div>
               </CardContent>
             </Card>
+              </div>
+            </div>
           </div>
         </TabsContent>
       </Tabs>

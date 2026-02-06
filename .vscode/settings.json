@@ -1,0 +1,42 @@
+{
+  // ===========================================
+  // VS Code 1.109 New Features
+  // ===========================================
+
+  // Copilot Memory - AI remembers important context across sessions
+  // Example: "always use E.164 format for phone numbers" will be remembered
+  "github.copilot.chat.copilotMemory.enabled": true,
+
+  // Show detailed thinking tokens from Claude models
+  // See the AI's reasoning process interleaved with tool calls
+  "chat.thinking.style": "detailed",
+
+  // Open localhost links in the new integrated browser (with DevTools!)
+  // Great for testing your Next.js dashboard without leaving VS Code
+  "workbench.browser.openLocalhostLinks": true,
+
+  // Show agent status indicator in command center
+  // See which agent sessions need attention at a glance
+  "chat.agentsControl.enabled": true,
+
+  // ===========================================
+  // Subagent Features
+  // ===========================================
+
+  // Enable custom agents to run as subagents
+  // Allows Plan agent, Search subagent, and custom agents to work in parallel
+  "chat.customAgentInSubagent.enabled": true,
+
+  // Enable the experimental Search subagent for complex codebase searches
+  "github.copilot.chat.searchSubagent.enabled": true,
+
+  // ===========================================
+  // Additional Recommended Settings
+  // ===========================================
+
+  // Terminal sandboxing for safer agent commands
+  "chat.tools.terminal.enableAutoApprove": false,
+
+  // Auto-expand failed tool calls for easier debugging
+  "chat.tools.autoExpandFailures": true
+}

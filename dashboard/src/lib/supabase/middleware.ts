@@ -27,10 +27,29 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // Refresh session if expired
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // Refresh session if expired - handle auth errors gracefully
+  let user = null
+  try {
+    const { data } = await supabase.auth.getUser()
+    user = data?.user
+  } catch (error) {
+    // Auth error (invalid refresh token, etc.) - clear cookies and redirect to login
+    console.error('[Middleware] Auth error:', error instanceof Error ? error.message : 'Unknown error')
+    
+    // Clear auth cookies
+    const response = NextResponse.redirect(new URL('/login', request.url))
+    response.cookies.delete('sb-access-token')
+    response.cookies.delete('sb-refresh-token')
+    
+    // Clear all Supabase auth cookies (they start with sb-)
+    request.cookies.getAll().forEach(cookie => {
+      if (cookie.name.startsWith('sb-')) {
+        response.cookies.delete(cookie.name)
+      }
+    })
+    
+    return response
+  }
 
   // Protected routes - redirect to login if not authenticated
   const protectedRoutes = ['/dashboard', '/live-calls', '/calls', '/calendar', '/settings', '/analytics', '/superadmin', '/recalls']
@@ -53,21 +72,26 @@ export async function updateSession(request: NextRequest) {
   // Skip subscription check for /subscription-required page
   if (needsSubscription && user && !request.nextUrl.pathname.startsWith('/subscription-required')) {
     // Check if user has active subscription
-    const { data: clinic } = await supabase
-      .from('dental_clinics')
-      .select('subscription_status, subscription_expires_at')
-      .eq('owner_id', user.id)
-      .single()
+    try {
+      const { data: clinic } = await supabase
+        .from('dental_clinics')
+        .select('subscription_status, subscription_expires_at')
+        .eq('owner_id', user.id)
+        .single()
 
-    const now = new Date()
-    const expiresAt = clinic?.subscription_expires_at ? new Date(clinic.subscription_expires_at) : null
-    const isExpired = !expiresAt || expiresAt < now
-    const isCancelled = clinic?.subscription_status === 'cancelled'
+      const now = new Date()
+      const expiresAt = clinic?.subscription_expires_at ? new Date(clinic.subscription_expires_at) : null
+      const isExpired = !expiresAt || expiresAt < now
+      const isCancelled = clinic?.subscription_status === 'cancelled'
 
-    if (isExpired || isCancelled) {
-      const url = request.nextUrl.clone()
-      url.pathname = '/subscription-required'
-      return NextResponse.redirect(url)
+      if (isExpired || isCancelled) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/subscription-required'
+        return NextResponse.redirect(url)
+      }
+    } catch (error) {
+      // Database error - allow access but log
+      console.error('[Middleware] Subscription check error:', error instanceof Error ? error.message : 'Unknown error')
     }
   }
 

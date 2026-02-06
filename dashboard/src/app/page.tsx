@@ -10,7 +10,8 @@ import {
   Shield,
   Globe,
   ChevronRight,
-  CheckCircle2
+  CheckCircle2,
+  Play
 } from 'lucide-react'
 import { MarketingHeader } from '@/components/landing/marketing-header'
 import { MarketingFooter } from '@/components/landing/marketing-footer'
@@ -73,12 +74,21 @@ export default function HomePage() {
               <div className="flex flex-col sm:flex-row items-center lg:items-start gap-3 mb-4">
                 <Link href="/signup">
                   <Button size="lg" className="h-12 gap-2 bg-[#22C55E] hover:bg-[#16a34a] text-base font-bold shadow-lg shadow-[#22C55E]/25 transition-[transform,box-shadow] duration-150 hover:shadow-[#22C55E]/40 hover:-translate-y-0.5 rounded-lg px-6">
-                    Start 9-Day Free Trial
+                    Start 14-Day Free Trial
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
-                <Button size="lg" variant="outline" className="h-12 gap-2 bg-white/10 text-white border-white/20 hover:bg-white/20 font-semibold px-5">
-                  <Phone className="h-4 w-4" />
+                <a href="https://www.youtube.com/watch?v=YOUR_DEMO_VIDEO" target="_blank" rel="noopener noreferrer">
+                  <Button size="lg" variant="outline" className="h-12 gap-2 bg-white/10 text-white border-white/20 hover:bg-white/20 font-semibold px-5">
+                    <Play className="h-4 w-4" />
+                    Watch 2-Min Demo
+                  </Button>
+                </a>
+              </div>
+              
+              <div className="flex items-center gap-4 mt-2">
+                <Button size="sm" variant="ghost" className="h-9 gap-2 text-white/70 hover:text-white hover:bg-white/10 text-sm">
+                  <Phone className="h-3.5 w-3.5" />
                   Call Demo: (904) 867-9643
                 </Button>
               </div>
@@ -116,22 +126,31 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Visual Bridge - Transition Section */}
-      <section className="bg-gradient-to-b from-white to-gray-50 py-8">
-        <div className="container mx-auto px-4">
-          <div className="mx-auto max-w-2xl text-center">
-            <p className="text-lg text-gray-600">
-              That&apos;s real money your practice could be capturing.{' '}
-              <span className="font-semibold text-[#1B3A7C]">Here&apos;s how DentSignal makes it happen:</span>
-            </p>
-            <div className="mt-4 flex justify-center">
-              <ChevronRight className="h-6 w-6 text-[#4A90E2] rotate-90 animate-bounce" />
-            </div>
+      {/* ROI Action Bridge - Personalized Impact */}
+      <section className="bg-[#1B3A7C] py-10 border-y-4 border-[#22C55E]">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-2xl font-bold text-white mb-3">
+            Ready to Capture That Revenue?
+          </h2>
+          <p className="text-white/80 mb-6 max-w-xl mx-auto">
+            Your custom ROI calculation shows real money on the table. Let us prove it works for your practice.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link href="/signup">
+              <Button size="lg" className="gap-2 bg-[#22C55E] hover:bg-[#16a34a] text-white font-bold px-8 shadow-lg">
+                Start Free Trial - See It Work
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Button size="lg" variant="outline" className="gap-2 bg-white/10 text-white border-white/30 hover:bg-white/20 font-semibold">
+              <Phone className="h-4 w-4" />
+              Book a 15-Min Demo
+            </Button>
           </div>
         </div>
       </section>
 
-      {/* Why Choose DentSignal - Comparison Section */}
+      {/* Why Choose DentSignal - Simplified */}
       <WhyChooseSection />
 
       {/* Quick Features Overview - Compact */}
