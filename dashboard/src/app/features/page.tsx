@@ -104,8 +104,8 @@ export default function FeaturesPage() {
                 icon={Globe}
                 iconColor="text-purple-500"
                 bgColor="bg-purple-500/10"
-                title="English + Spanish"
-                points={["Native English AI", "Spanish support", "More languages coming"]}
+                title="English AI Voice"
+                points={["Native English AI", "Natural conversation flow", "More languages coming"]}
               />
               <FeatureCard
                 icon={BarChart3}

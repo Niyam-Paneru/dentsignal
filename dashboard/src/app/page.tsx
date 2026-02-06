@@ -10,14 +10,14 @@ import {
   Shield,
   Globe,
   ChevronRight,
-  CheckCircle2,
-  Play
+  CheckCircle2
 } from 'lucide-react'
 import { MarketingHeader } from '@/components/landing/marketing-header'
 import { MarketingFooter } from '@/components/landing/marketing-footer'
 import { HeroCalculator } from '@/components/landing/hero-calculator'
 import { WhyChooseSection } from '@/components/landing/why-choose-section'
 import { ExitIntentPopup } from '@/components/landing/exit-intent-popup'
+import { VideoModal } from '@/components/landing/video-modal'
 
 export default function HomePage() {
   return (
@@ -79,19 +79,20 @@ export default function HomePage() {
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
-                <a href="https://www.youtube.com/watch?v=YOUR_DEMO_VIDEO" target="_blank" rel="noopener noreferrer">
-                  <Button size="lg" variant="outline" className="h-12 gap-2 bg-white/10 text-white border-white/20 hover:bg-white/20 font-semibold px-5">
-                    <Play className="h-4 w-4" />
-                    Watch 2-Min Demo
-                  </Button>
-                </a>
+                <VideoModal 
+                  videoId="YOUR_DEMO_VIDEO"
+                  buttonSize="lg"
+                  buttonClassName="h-12 gap-2 bg-white/10 text-white border-white/20 hover:bg-white/20 font-semibold px-5"
+                />
               </div>
               
               <div className="flex items-center gap-4 mt-2">
-                <Button size="sm" variant="ghost" className="h-9 gap-2 text-white/70 hover:text-white hover:bg-white/10 text-sm">
-                  <Phone className="h-3.5 w-3.5" />
-                  Call Demo: (904) 867-9643
-                </Button>
+                <a href="tel:+19048679643">
+                  <Button size="sm" variant="ghost" className="h-9 gap-2 text-white/70 hover:text-white hover:bg-white/10 text-sm">
+                    <Phone className="h-3.5 w-3.5" />
+                    Try It Now: (904) 867-9643
+                  </Button>
+                </a>
               </div>
               
               <p className="text-xs text-white/50">No credit card required • Cancel anytime • Live in 48 hours</p>
@@ -168,7 +169,7 @@ export default function HomePage() {
             <QuickFeature icon={Bell} title="SMS Reminders" desc="Reduce no-shows" />
             <QuickFeature icon={Shield} title="Emergency Detection" desc="Routes urgent calls" />
             <QuickFeature icon={BarChart3} title="Dashboard" desc="Real-time analytics" />
-            <QuickFeature icon={Globe} title="English + Spanish" desc="More languages soon" />
+            <QuickFeature icon={Globe} title="English" desc="More languages soon" />
           </div>
 
           <div className="mt-6 text-center">
@@ -242,12 +243,20 @@ export default function HomePage() {
           <p className="mb-8 text-white/80 max-w-xl mx-auto">
             Be one of 5 founding practices to get AI that answers every call and books appointments 24/7.
           </p>
-          <Link href="/signup">
-            <Button size="lg" className="gap-2 bg-[#22C55E] hover:bg-[#16a34a] text-white font-bold px-8 shadow-lg">
-              Start 14-Day Free Trial
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </Link>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link href="/signup">
+              <Button size="lg" className="gap-2 bg-[#22C55E] hover:bg-[#16a34a] text-white font-bold px-8 shadow-lg">
+                Start 14-Day Free Trial
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+            <a href="tel:+19048679643">
+              <Button size="lg" variant="outline" className="gap-2 bg-white/10 text-white border-white/30 hover:bg-white/20 font-semibold">
+                <Phone className="h-4 w-4" />
+                Call AI Demo: (904) 867-9643
+              </Button>
+            </a>
+          </div>
           <p className="mt-4 text-sm text-white/50">No credit card required</p>
         </div>
       </section>

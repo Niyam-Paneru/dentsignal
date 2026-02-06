@@ -96,7 +96,7 @@ export default function SubscriptionRequiredPage() {
         'Advanced Analytics & ROI',
         'Custom AI Voice & Script',
         'Priority Support',
-        'Multi-language Support',
+        'English AI Voice',
       ]
     }
   ]
