@@ -49,6 +49,7 @@ const nextConfig: NextConfig = {
               "connect-src 'self' *.supabase.co *.sentry.io challenges.cloudflare.com wss://*.supabase.co",
               "frame-src challenges.cloudflare.com",
               "frame-ancestors 'none'",
+              "worker-src 'self' blob:",
               "base-uri 'self'",
               "form-action 'self'",
             ].join('; '),
