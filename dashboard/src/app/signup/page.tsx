@@ -142,11 +142,10 @@ export default function SignupPage() {
   const router = useRouter()
   const supabase = createClient()
   
-  // Handle CAPTCHA errors - SECURITY: block signup to prevent automated attacks
+  // Handle CAPTCHA errors - log but don't block signup
   const handleCaptchaError = () => {
     setCaptchaError(true)
-    console.error('[Signup] CAPTCHA failed to load')
-    setError('Security verification failed. Please refresh the page and try again.')
+    console.warn('[Signup] CAPTCHA failed to load - signup will proceed without it')
   }
 
   // Check rate limiting
@@ -288,7 +287,7 @@ export default function SignupPage() {
     if (signUpError) {
       // Handle captcha-related errors more gracefully
       if (signUpError.message.toLowerCase().includes('captcha') || captchaError) {
-        setError('Sign up failed. Please try again.')
+        setError('Security verification is loading. Please wait a moment and try again.')
       } else {
         setError(signUpError.message)
       }
@@ -296,19 +295,43 @@ export default function SignupPage() {
       return
     }
     
-    // Create clinic record
+    // Create clinic record with retry logic
+    // The auth session may not be immediately available for RLS policies
     if (authData.user) {
-      const { error: clinicError } = await supabase
-        .from('dental_clinics')
-        .insert({
-          owner_id: authData.user.id,
-          name: clinicName,
-          owner_name: `${firstName} ${lastName}`,
-          phone: stripPhoneFormatting(phone),
-        })
+      let clinicCreated = false
+      let lastClinicError = null
       
-      if (clinicError) {
-        console.error('Failed to create clinic:', clinicError)
+      for (let attempt = 0; attempt < 3; attempt++) {
+        if (attempt > 0) {
+          // Wait before retrying (exponential backoff: 1s, 2s)
+          await new Promise(resolve => setTimeout(resolve, attempt * 1000))
+        }
+        
+        const { error: clinicError } = await supabase
+          .from('dental_clinics')
+          .insert({
+            owner_id: authData.user.id,
+            name: clinicName,
+            owner_name: `${firstName} ${lastName}`,
+            phone: stripPhoneFormatting(phone),
+          })
+        
+        if (!clinicError) {
+          clinicCreated = true
+          break
+        }
+        
+        lastClinicError = clinicError
+        console.warn(`[Signup] Clinic creation attempt ${attempt + 1} failed:`, clinicError.message)
+      }
+      
+      if (!clinicCreated) {
+        console.error('[Signup] Failed to create clinic after 3 attempts:', lastClinicError)
+        setError('Account created but clinic setup failed. Please sign in — your clinic will be set up automatically.')
+        setIsLoading(false)
+        // Still redirect to login since the auth account was created
+        setTimeout(() => router.push('/login?message=check-email'), 3000)
+        return
       }
       
       // Also create default clinic settings
@@ -431,7 +454,7 @@ export default function SignupPage() {
 
             {step === 1 ? (
               /* Step 1: Account Information */
-              <div className="space-y-5">
+              <form onSubmit={(e) => { e.preventDefault(); handleNextStep(); }} className="space-y-5">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="firstName" className="text-[#2D3748]">First name</Label>
@@ -615,8 +638,7 @@ export default function SignupPage() {
                 </div>
 
                 <Button 
-                  type="button" 
-                  onClick={handleNextStep}
+                  type="submit" 
                   disabled={!hasMinLength(password) || !hasSpecialChar(password) || !hasNumber(password) || !hasUpperAndLower(password)}
                   className="h-11 w-full bg-[#0099CC] hover:bg-[#0077A3] text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -630,7 +652,7 @@ export default function SignupPage() {
                   {' '}and{' '}
                   <Link href="/privacy" className="text-[#0099CC] hover:underline">Privacy Policy</Link>
                 </p>
-              </div>
+              </form>
             ) : (
               /* Step 2: Clinic Information */
               <form onSubmit={handleSubmit} className="space-y-5">

@@ -305,7 +305,7 @@ export default function DashboardPage() {
             {hasForwarding && stats.totalCalls > 0 && (
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-900 border border-green-200 dark:border-green-800">
                 <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-xs font-medium text-green-700 dark:text-green-300">You're Live</span>
+                <span className="text-xs font-medium text-green-700 dark:text-green-300">You&apos;re Live</span>
               </div>
             )}
             {hasForwarding && stats.totalCalls === 0 && (

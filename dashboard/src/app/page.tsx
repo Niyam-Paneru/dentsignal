@@ -75,7 +75,7 @@ export default function HomePage() {
               <div className="flex flex-col sm:flex-row items-center lg:items-start gap-3 mb-4">
                 <Link href="/signup">
                   <Button size="lg" className="h-12 gap-2 bg-[#22C55E] hover:bg-[#16a34a] text-base font-bold shadow-lg shadow-[#22C55E]/25 transition-[transform,box-shadow] duration-150 hover:shadow-[#22C55E]/40 hover:-translate-y-0.5 rounded-lg px-6">
-                    Start 14-Day Free Trial
+                    Start 9-Day Free Trial
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
@@ -246,7 +246,7 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/signup">
               <Button size="lg" className="gap-2 bg-[#22C55E] hover:bg-[#16a34a] text-white font-bold px-8 shadow-lg">
-                Start 14-Day Free Trial
+                Start 9-Day Free Trial
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>

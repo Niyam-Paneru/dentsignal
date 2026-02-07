@@ -60,9 +60,10 @@ function LoginForm() {
 
   const handleCaptchaError = () => {
     setCaptchaError(true)
-    // SECURITY: CAPTCHA errors block login to prevent automated attacks
-    console.error('[Login] CAPTCHA failed to load')
-    setError('Security verification failed. Please refresh the page and try again.')
+    // Log but don't block - invisible CAPTCHA can fail due to ad blockers, VPNs, etc.
+    // Login will still work if Supabase doesn't require captcha, or will show
+    // a helpful message if Supabase rejects the request
+    console.warn('[Login] CAPTCHA failed to load - login will proceed without it')
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -96,7 +97,7 @@ function LoginForm() {
     if (signInError) {
       // Provide more helpful error messages
       if (signInError.message.includes('captcha')) {
-        setError('Login failed. Please try again.')
+        setError('Security verification is loading. Please wait a moment and try again.')
       } else if (signInError.message.includes('Invalid login')) {
         setError('Invalid email or password. Please check your credentials.')
       } else if (signInError.message.includes('Email not confirmed') || signInError.message.includes('email_not_confirmed')) {

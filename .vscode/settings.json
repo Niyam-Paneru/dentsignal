@@ -38,5 +38,17 @@
   "chat.tools.terminal.enableAutoApprove": false,
 
   // Auto-expand failed tool calls for easier debugging
-  "chat.tools.autoExpandFailures": true
+  "chat.tools.autoExpandFailures": true,
+
+  // ===========================================
+  // Exclude broken dentsignal submodule
+  // ===========================================
+  // dentsignal is a duplicate submodule with no node_modules,
+  // causing false TypeScript errors. Exclude it from VS Code.
+  "files.exclude": {
+    "dentsignal": true
+  },
+  "search.exclude": {
+    "dentsignal": true
+  }
 }

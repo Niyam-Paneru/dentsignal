@@ -325,7 +325,7 @@ export default function LiveCallsPage() {
               </Link>
             )}
           </div>
-          <CardDescription>Real-time view of ongoing calls • Click "Transfer to Me" to take over any call</CardDescription>
+          <CardDescription>Real-time view of ongoing calls &bull; Click &quot;Transfer to Me&quot; to take over any call</CardDescription>
         </CardHeader>
         <CardContent>
           {/* Transfer Error Message */}
@@ -352,7 +352,7 @@ export default function LiveCallsPage() {
             <div className="mb-4 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-sm flex items-start gap-2 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-300">
               <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
               <p>
-                <span className="font-medium">You're in control.</span> Click "Transfer to Me" on any call. 
+                <span className="font-medium">You&apos;re in control.</span> Click &quot;Transfer to Me&quot; on any call.
                 The AI will announce the transfer and ring your phone ({clinicSettings.owner_phone}).
               </p>
             </div>
