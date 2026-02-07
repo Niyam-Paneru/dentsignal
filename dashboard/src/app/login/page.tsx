@@ -186,11 +186,12 @@ function LoginForm() {
                 />
               </div>
               
-              {/* Invisible Turnstile CAPTCHA - optional, won't block login */}
+              {/* Visible Turnstile CAPTCHA with graceful degradation */}
               <Turnstile 
                 onVerify={setCaptchaToken}
                 onError={handleCaptchaError}
                 onExpire={() => setCaptchaToken(null)}
+                mode="normal"
               />
               
               <Button type="submit" className="w-full" disabled={isLoading}>

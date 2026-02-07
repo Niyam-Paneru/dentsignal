@@ -718,11 +718,12 @@ export default function SignupPage() {
                   />
                 </div>
 
-                {/* Invisible Turnstile CAPTCHA - optional, won't block signup */}
+                {/* Visible Turnstile CAPTCHA with graceful degradation */}
                 <Turnstile 
                   onVerify={setCaptchaToken}
                   onError={handleCaptchaError}
                   onExpire={() => setCaptchaToken(null)}
+                  mode="normal"
                 />
 
                 <Button 
