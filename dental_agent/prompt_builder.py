@@ -493,15 +493,21 @@ DATA: 80% of hangups happen in first 15 seconds. 45% who hang up NEVER call back
         # In production, you might customize these per clinic
         return FUNCTION_SCHEMAS
     
-    def build_agent_config(self) -> dict:
+    def build_agent_config(self, available_slots_text: Optional[str] = None) -> dict:
         """
         Build complete configuration for Deepgram Voice Agent.
+        
+        Args:
+            available_slots_text: Pre-formatted availability text from PMS.
+                                 If provided, overrides the default template.
         
         Returns:
             Dict containing all agent configuration
         """
+        system_prompt = self.build_system_prompt(available_slots=available_slots_text)
+        
         return {
-            "system_prompt": self.build_system_prompt(),
+            "system_prompt": system_prompt,
             "greeting_message": self.build_greeting(),
             "voice_id": self.get_voice_id(),
             "voice_info": self.get_voice_info(),

@@ -37,6 +37,7 @@ import {
   ArrowUpRight
 } from 'lucide-react'
 import { getClinicSettings, getClinic, updateClinicSettings, updateClinicInfo, getSmsSettings, updateSmsSettings, SmsTemplates } from '@/lib/api/dental'
+import { getPMSConfig, savePMSConfig, deletePMSConfig, testPMSConnection, updatePMSSettings, type PMSConfig, type ConnectionTestResult } from '@/lib/api/pms'
 import { CallForwardingGuide } from '@/components/dashboard/call-forwarding-guide'
 import { useSubscription, getPlanDisplayName, getPlanPrice } from '@/lib/hooks/use-subscription'
 import { useToast } from '@/hooks/use-toast'
@@ -111,6 +112,18 @@ export default function SettingsPage() {
   const [smsReminder2hEnabled, setSmsReminder2hEnabled] = useState(true)
   const [smsRecallEnabled, setSmsRecallEnabled] = useState(true)
   
+  // PMS Integration state
+  const [pmsConfig, setPmsConfig] = useState<PMSConfig | null>(null)
+  const [pmsLoading, setPmsLoading] = useState(false)
+  const [pmsConnecting, setPmsConnecting] = useState(false)
+  const [pmsTesting, setPmsTesting] = useState(false)
+  const [pmsTestResult, setPmsTestResult] = useState<ConnectionTestResult | null>(null)
+  const [pmsCustomerKey, setPmsCustomerKey] = useState('')
+  const [pmsApiMode, setPmsApiMode] = useState('remote')
+  const [pmsBaseUrl, setPmsBaseUrl] = useState('')
+  const [pmsClinicNum, setPmsClinicNum] = useState('')
+  const [pmsShowConfig, setPmsShowConfig] = useState(false)
+  
   // FIX-03: Business hours state
   type DayHours = { isOpen: boolean; open: string; close: string }
   const defaultBusinessHours: Record<string, DayHours> = {
@@ -177,6 +190,19 @@ export default function SettingsPage() {
           setSmsReminder24hEnabled(smsData.sms_reminder_24h_enabled ?? true)
           setSmsReminder2hEnabled(smsData.sms_reminder_2h_enabled ?? true)
           setSmsRecallEnabled(smsData.sms_recall_enabled ?? true)
+        }
+        
+        // Load PMS config (separate try/catch so it doesn't block other settings)
+        try {
+          const pmsData = await getPMSConfig()
+          if (pmsData) {
+            setPmsConfig(pmsData)
+            setPmsApiMode(pmsData.od_api_mode || 'remote')
+            setPmsBaseUrl(pmsData.od_base_url || '')
+            setPmsClinicNum(pmsData.od_clinic_num ? String(pmsData.od_clinic_num) : '')
+          }
+        } catch {
+          // PMS not configured yet - that's fine
         }
       } catch (error) {
         console.error('Failed to load settings:', error)
@@ -1002,26 +1028,325 @@ export default function SettingsPage() {
                     </div>
 
                     {/* Practice Management Systems */}
-                    <div className="space-y-3">
-                      <Label>Practice Management System (Coming Soon)</Label>
+                    <div className="space-y-4">
+                      <Label>Practice Management System</Label>
+                      
+                      {/* PMS Provider Selection */}
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        <div className="rounded-lg border p-3 text-center opacity-50">
-                          <p className="font-medium text-sm">Dentrix</p>
-                          <p className="text-xs text-muted-foreground">Coming Q1</p>
-                        </div>
-                        <div className="rounded-lg border p-3 text-center opacity-50">
-                          <p className="font-medium text-sm">Eaglesoft</p>
-                          <p className="text-xs text-muted-foreground">Coming Q1</p>
-                        </div>
-                        <div className="rounded-lg border p-3 text-center opacity-50">
+                        {/* Open Dental - Active */}
+                        <button
+                          type="button"
+                          onClick={() => setPmsShowConfig(!pmsShowConfig)}
+                          className={`rounded-lg border-2 p-3 text-center transition-all hover:shadow-md ${
+                            pmsConfig?.provider === 'open_dental' && pmsConfig?.is_active
+                              ? 'border-green-500 bg-green-50 dark:bg-green-950'
+                              : pmsShowConfig
+                              ? 'border-primary bg-primary/5'
+                              : 'border-muted hover:border-primary/50'
+                          }`}
+                        >
                           <p className="font-medium text-sm">Open Dental</p>
-                          <p className="text-xs text-muted-foreground">Coming Q2</p>
+                          {pmsConfig?.provider === 'open_dental' && pmsConfig?.is_active ? (
+                            <div className="flex items-center justify-center gap-1 mt-1">
+                              <CheckCircle2 className="h-3 w-3 text-green-600" />
+                              <p className="text-xs text-green-600 font-medium">Connected</p>
+                            </div>
+                          ) : (
+                            <p className="text-xs text-primary font-medium mt-1">Available</p>
+                          )}
+                        </button>
+                        
+                        {/* Dentrix - Coming Soon */}
+                        <div className="rounded-lg border p-3 text-center opacity-50 cursor-not-allowed">
+                          <p className="font-medium text-sm">Dentrix</p>
+                          <p className="text-xs text-muted-foreground">Coming Soon</p>
                         </div>
-                        <div className="rounded-lg border p-3 text-center opacity-50">
+                        <div className="rounded-lg border p-3 text-center opacity-50 cursor-not-allowed">
+                          <p className="font-medium text-sm">Eaglesoft</p>
+                          <p className="text-xs text-muted-foreground">Coming Soon</p>
+                        </div>
+                        <div className="rounded-lg border p-3 text-center opacity-50 cursor-not-allowed">
                           <p className="font-medium text-sm">Curve</p>
-                          <p className="text-xs text-muted-foreground">Coming Q2</p>
+                          <p className="text-xs text-muted-foreground">Coming Soon</p>
                         </div>
                       </div>
+
+                      {/* Open Dental Configuration Form */}
+                      {pmsShowConfig && (
+                        <div className="rounded-lg border bg-card p-4 space-y-4 animate-in slide-in-from-top-2 duration-200">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-medium text-sm flex items-center gap-2">
+                              <Shield className="h-4 w-4 text-primary" />
+                              Open Dental Connection
+                            </h4>
+                            {pmsConfig?.is_active && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-destructive hover:text-destructive h-7 text-xs"
+                                onClick={async () => {
+                                  try {
+                                    await deletePMSConfig()
+                                    setPmsConfig(null)
+                                    setPmsCustomerKey('')
+                                    setPmsTestResult(null)
+                                    setPmsShowConfig(false)
+                                    toast({ title: 'PMS disconnected', description: 'Open Dental integration has been removed.' })
+                                  } catch {
+                                    toast({ title: 'Error', description: 'Failed to disconnect PMS.', variant: 'destructive' })
+                                  }
+                                }}
+                              >
+                                Disconnect
+                              </Button>
+                            )}
+                          </div>
+
+                          {/* Customer API Key */}
+                          <div className="space-y-2">
+                            <Label htmlFor="pms-key" className="text-sm">
+                              Customer API Key
+                              <span className="text-muted-foreground ml-1 font-normal">(from your Open Dental office)</span>
+                            </Label>
+                            <Input
+                              id="pms-key"
+                              type="password"
+                              placeholder={pmsConfig?.is_active ? '••••••••••••••••' : 'Paste your Open Dental API key'}
+                              value={pmsCustomerKey}
+                              onChange={(e) => setPmsCustomerKey(e.target.value)}
+                              className="font-mono text-sm"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Found in Open Dental → Setup → Advanced Setup → API → Customer API Key
+                            </p>
+                          </div>
+
+                          {/* API Mode */}
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="space-y-2">
+                              <Label className="text-sm">Connection Mode</Label>
+                              <Select value={pmsApiMode} onValueChange={setPmsApiMode}>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="remote">Cloud (Recommended)</SelectItem>
+                                  <SelectItem value="service">On-Premise Service</SelectItem>
+                                  <SelectItem value="local">Local Workstation</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            {pmsApiMode !== 'remote' && (
+                              <div className="space-y-2">
+                                <Label className="text-sm">Server URL</Label>
+                                <Input
+                                  placeholder={pmsApiMode === 'service' ? 'http://server:30223' : 'http://localhost:30222'}
+                                  value={pmsBaseUrl}
+                                  onChange={(e) => setPmsBaseUrl(e.target.value)}
+                                  className="font-mono text-sm"
+                                />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Optional Clinic Number */}
+                          <div className="space-y-2">
+                            <Label className="text-sm">
+                              Clinic Number <span className="text-muted-foreground font-normal">(optional, for multi-location)</span>
+                            </Label>
+                            <Input
+                              type="number"
+                              placeholder="Leave blank for single-location practices"
+                              value={pmsClinicNum}
+                              onChange={(e) => setPmsClinicNum(e.target.value)}
+                              className="w-48"
+                            />
+                          </div>
+
+                          {/* Connect / Test Buttons */}
+                          <div className="flex flex-col sm:flex-row gap-3">
+                            <Button
+                              onClick={async () => {
+                                if (!pmsCustomerKey && !pmsConfig?.is_active) {
+                                  toast({ title: 'Missing API key', description: 'Please enter your Customer API Key.', variant: 'destructive' })
+                                  return
+                                }
+                                setPmsConnecting(true)
+                                try {
+                                  const config = await savePMSConfig({
+                                    provider: 'open_dental',
+                                    customer_key: pmsCustomerKey,
+                                    api_mode: pmsApiMode,
+                                    base_url: pmsBaseUrl || undefined,
+                                    clinic_num: pmsClinicNum ? parseInt(pmsClinicNum) : undefined,
+                                  })
+                                  setPmsConfig(config)
+                                  setPmsCustomerKey('')
+                                  toast({ title: 'Connected!', description: 'Open Dental integration saved. Testing connection...' })
+                                  
+                                  // Auto-test after saving
+                                  try {
+                                    const result = await testPMSConnection()
+                                    setPmsTestResult(result)
+                                    if (result.success) {
+                                      setPmsConfig(prev => prev ? { ...prev, connection_status: 'connected' } : prev)
+                                      toast({ title: 'Connection verified', description: result.message })
+                                    } else {
+                                      toast({ title: 'Connection issue', description: result.message, variant: 'destructive' })
+                                    }
+                                  } catch {
+                                    // Connection test failed but config is saved
+                                  }
+                                } catch (error: unknown) {
+                                  const message = error instanceof Error ? error.message : 'Failed to save configuration'
+                                  toast({ title: 'Connection failed', description: message, variant: 'destructive' })
+                                } finally {
+                                  setPmsConnecting(false)
+                                }
+                              }}
+                              disabled={pmsConnecting}
+                              className="gap-2"
+                            >
+                              {pmsConnecting ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : pmsConfig?.is_active ? (
+                                <Save className="h-4 w-4" />
+                              ) : (
+                                <ArrowUpRight className="h-4 w-4" />
+                              )}
+                              {pmsConfig?.is_active ? 'Update Connection' : 'Connect Open Dental'}
+                            </Button>
+
+                            {pmsConfig?.is_active && (
+                              <Button
+                                variant="outline"
+                                onClick={async () => {
+                                  setPmsTesting(true)
+                                  setPmsTestResult(null)
+                                  try {
+                                    const result = await testPMSConnection()
+                                    setPmsTestResult(result)
+                                    toast({
+                                      title: result.success ? 'Connection OK' : 'Connection Failed',
+                                      description: result.message,
+                                      variant: result.success ? 'default' : 'destructive',
+                                    })
+                                  } catch {
+                                    toast({ title: 'Test failed', description: 'Could not reach the backend.', variant: 'destructive' })
+                                  } finally {
+                                    setPmsTesting(false)
+                                  }
+                                }}
+                                disabled={pmsTesting}
+                                className="gap-2"
+                              >
+                                {pmsTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                                Test Connection
+                              </Button>
+                            )}
+                          </div>
+
+                          {/* Test Result */}
+                          {pmsTestResult && (
+                            <div className={`rounded-lg border p-3 text-sm ${
+                              pmsTestResult.success
+                                ? 'border-green-200 bg-green-50 text-green-800 dark:border-green-900 dark:bg-green-950 dark:text-green-200'
+                                : 'border-red-200 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200'
+                            }`}>
+                              <div className="flex items-start gap-2">
+                                {pmsTestResult.success ? (
+                                  <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                                ) : (
+                                  <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                                )}
+                                <div>
+                                  <p className="font-medium">{pmsTestResult.message}</p>
+                                  {pmsTestResult.details?.provider_count !== undefined && (
+                                    <p className="mt-1 text-xs opacity-80">
+                                      {pmsTestResult.details.provider_count} providers, {pmsTestResult.details.operatory_count} operatories found
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Sync Settings (only when connected) */}
+                          {pmsConfig?.is_active && (
+                            <div className="space-y-3 border-t pt-4">
+                              <Label className="text-sm font-medium">Sync Settings</Label>
+                              
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium">Sync Appointments</p>
+                                  <p className="text-xs text-muted-foreground">Read & write appointments from Open Dental</p>
+                                </div>
+                                <Switch
+                                  checked={pmsConfig.sync_appointments}
+                                  onCheckedChange={async (checked) => {
+                                    try {
+                                      const updated = await updatePMSSettings({ sync_appointments: checked })
+                                      setPmsConfig(updated)
+                                    } catch {
+                                      toast({ title: 'Error', description: 'Failed to update sync settings.', variant: 'destructive' })
+                                    }
+                                  }}
+                                />
+                              </div>
+
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium">Sync Patients</p>
+                                  <p className="text-xs text-muted-foreground">Look up existing patients in Open Dental</p>
+                                </div>
+                                <Switch
+                                  checked={pmsConfig.sync_patients}
+                                  onCheckedChange={async (checked) => {
+                                    try {
+                                      const updated = await updatePMSSettings({ sync_patients: checked })
+                                      setPmsConfig(updated)
+                                    } catch {
+                                      toast({ title: 'Error', description: 'Failed to update sync settings.', variant: 'destructive' })
+                                    }
+                                  }}
+                                />
+                              </div>
+
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium">Auto-Create Patients</p>
+                                  <p className="text-xs text-muted-foreground">Automatically create new patients in Open Dental during calls</p>
+                                </div>
+                                <Switch
+                                  checked={pmsConfig.auto_create_patients}
+                                  onCheckedChange={async (checked) => {
+                                    try {
+                                      const updated = await updatePMSSettings({ auto_create_patients: checked })
+                                      setPmsConfig(updated)
+                                    } catch {
+                                      toast({ title: 'Error', description: 'Failed to update sync settings.', variant: 'destructive' })
+                                    }
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Helpful info when not connected */}
+                      {!pmsConfig?.is_active && !pmsShowConfig && (
+                        <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-900 dark:bg-blue-950">
+                          <div className="flex gap-3">
+                            <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                            <div className="text-sm text-blue-800 dark:text-blue-200">
+                              <p className="font-medium mb-1">Connect your Practice Management System</p>
+                              <p>Link your PMS so DentSignal can check real availability, book appointments, and look up patients automatically during calls.</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

@@ -574,6 +574,64 @@ class CalendarIntegration(SQLModel, table=True):
 
 
 # -----------------------------------------------------------------------------
+# PMS (Practice Management System) Integration
+# -----------------------------------------------------------------------------
+
+class PMSProvider(str, enum.Enum):
+    """Supported PMS providers."""
+    NONE = "none"
+    OPEN_DENTAL = "open_dental"
+    DENTRIX = "dentrix"
+    EAGLESOFT = "eaglesoft"
+    CURVE = "curve"
+
+
+class PMSIntegration(SQLModel, table=True):
+    """PMS integration settings per clinic (e.g., Open Dental, Dentrix)."""
+    __tablename__ = "pms_integrations"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    clinic_id: int = Field(foreign_key="clients.id", unique=True, index=True)
+
+    # Provider
+    provider: str = Field(default="none")  # "open_dental", "dentrix", "eaglesoft", "curve", "none"
+    is_active: bool = Field(default=False)
+
+    # Open Dental settings
+    od_customer_key: Optional[str] = None       # Customer API key (per clinic)
+    od_api_mode: str = Field(default="remote")   # "remote", "service", "local"
+    od_base_url: Optional[str] = None            # Override URL for service/local mode
+    od_clinic_num: Optional[int] = None          # ClinicNum for multi-location practices
+    od_permission_tier: str = Field(default="free")  # "free", "comm", "appointments", "all"
+
+    # Dentrix settings (placeholder for future)
+    dentrix_api_key: Optional[str] = None
+    dentrix_practice_id: Optional[str] = None
+
+    # Eaglesoft settings (placeholder for future)
+    eaglesoft_api_key: Optional[str] = None
+    eaglesoft_practice_id: Optional[str] = None
+
+    # Connection status
+    last_connection_test: Optional[datetime] = None
+    connection_status: str = Field(default="not_tested")  # "not_tested", "connected", "failed"
+    connection_error: Optional[str] = None
+
+    # Sync settings
+    sync_appointments: bool = Field(default=True)
+    sync_patients: bool = Field(default=True)
+    auto_create_patients: bool = Field(default=True)  # Create patients in PMS when booked via AI
+
+    # Timestamps
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    last_sync: Optional[datetime] = None
+
+    def __repr__(self) -> str:
+        return f"<PMSIntegration clinic_id={self.clinic_id} provider={self.provider} active={self.is_active}>"
+
+
+# -----------------------------------------------------------------------------
 # Proactive Recall System Models
 # -----------------------------------------------------------------------------
 

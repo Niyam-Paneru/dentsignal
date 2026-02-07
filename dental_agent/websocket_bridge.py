@@ -521,16 +521,24 @@ class VoiceAgentBridge:
         # Build agent configuration
         self.prompt_builder = PromptBuilder(clinic)
         self.agent_config = self.prompt_builder.build_agent_config()
+        
+        # PMS integration (loaded asynchronously in connect_to_deepgram)
+        self._pms_service = None
+        self._pms_integration = None
     
     async def connect_to_deepgram(self) -> bool:
         """
         Establish WebSocket connection to Deepgram Voice Agent.
         
         Uses circuit breaker pattern and retry logic for resilience.
+        Loads real-time PMS availability if Open Dental is configured.
         
         Returns:
             True if connection successful, False otherwise
         """
+        # Try to load PMS availability before connecting
+        await self._load_pms_availability()
+        
         if not DEEPGRAM_API_KEY:
             logger.error("DEEPGRAM_API_KEY not configured")
             raise ConfigurationError("DEEPGRAM_API_KEY not configured")
@@ -598,6 +606,65 @@ class VoiceAgentBridge:
         deepgram_circuit.record_failure()
         logger.error(f"Failed to connect to Deepgram after {MAX_RECONNECT_ATTEMPTS} attempts")
         return False
+    
+    async def _load_pms_availability(self) -> None:
+        """
+        Load real-time availability from PMS (Open Dental) if configured.
+        
+        Updates the agent config with actual available slots so the AI
+        can offer real appointment times instead of placeholder data.
+        This is a best-effort operation - failures don't block the call.
+        """
+        try:
+            from db import PMSIntegration, get_session
+            from sqlmodel import select
+            import os
+            
+            session = next(get_session())
+            try:
+                pms = session.exec(
+                    select(PMSIntegration).where(
+                        PMSIntegration.clinic_id == self.clinic.id
+                    )
+                ).first()
+                
+                if not pms or not pms.is_active or pms.provider != "open_dental":
+                    return  # No PMS configured, use default slots
+                
+                developer_key = os.getenv("OPEN_DENTAL_DEVELOPER_KEY", "")
+                if not developer_key or not pms.od_customer_key:
+                    return
+                
+                from open_dental_service import create_open_dental_service
+                
+                service = create_open_dental_service(
+                    developer_key=developer_key,
+                    customer_key=pms.od_customer_key,
+                    api_mode=pms.od_api_mode or "remote",
+                    base_url=pms.od_base_url,
+                    clinic_num=pms.od_clinic_num,
+                )
+                
+                # Fetch formatted slots for the next 7 days
+                slots_text = await service.get_available_slots_formatted(
+                    days_ahead=7,
+                    length_minutes=30,
+                )
+                
+                # Rebuild agent config with real PMS data
+                self.agent_config = self.prompt_builder.build_agent_config(
+                    available_slots_text=slots_text,
+                )
+                
+                self._pms_service = service
+                logger.info(f"Loaded PMS availability for clinic {self.clinic.id}")
+                
+            finally:
+                session.close()
+                
+        except Exception as e:
+            # PMS loading failure should never block a call
+            logger.warning(f"Could not load PMS availability for call {self.call_id}: {e}")
     
     async def send_agent_settings(self) -> None:
         """
