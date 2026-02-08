@@ -13,7 +13,6 @@ TWILIO_SID=
 TWILIO_TOKEN=
 TWILIO_NUMBER=
 
-SENTRY_DSN=
 '''
 
 Run with: uvicorn api_main:app --reload
@@ -26,31 +25,6 @@ from dotenv import load_dotenv
 
 # Load environment variables FIRST
 load_dotenv()
-
-# Sentry error tracking (optional)
-try:
-    import sentry_sdk
-    from sentry_sdk.integrations.fastapi import FastApiIntegration
-    from sentry_sdk.integrations.starlette import StarletteIntegration
-    SENTRY_AVAILABLE = True
-except ImportError:
-    SENTRY_AVAILABLE = False
-
-# Initialize Sentry BEFORE app creation (if available)
-_sentry_dsn = os.getenv("SENTRY_DSN")
-if SENTRY_AVAILABLE and _sentry_dsn:
-    sentry_sdk.init(
-        dsn=_sentry_dsn,
-        integrations=[
-            FastApiIntegration(),
-            StarletteIntegration(),
-        ],
-        traces_sample_rate=0.1,
-        send_default_pii=False,
-        environment=os.getenv("ENVIRONMENT", "development"),
-        release=os.getenv("RELEASE_VERSION", "dentsignal-api@1.0.0"),
-    )
-# Note: Sentry warning logged after logger is initialized below
 
 import csv
 import io
@@ -285,7 +259,6 @@ app.add_middleware(SecurityHeadersMiddleware)
 def on_startup():
     """Initialize database on startup."""
     logger.info(f"Initializing database: {DATABASE_URL}")
-    logger.info("Sentry initialized for error monitoring")
     create_db(DATABASE_URL)
     
     # SECURITY: Demo user creation is OPT-IN only via ENABLE_DEMO_USER
@@ -922,12 +895,6 @@ def twilio_webhook(request: TwilioWebhookRequest, session: Session = Depends(get
 def health_check():
     """Health check endpoint."""
     return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
-
-
-@app.get("/sentry-debug")
-async def trigger_sentry_error():
-    """Debug endpoint to test Sentry integration. Remove in production."""
-    division_by_zero = 1 / 0
 
 
 @app.get("/")

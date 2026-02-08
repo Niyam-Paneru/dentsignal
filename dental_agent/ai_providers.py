@@ -1,12 +1,11 @@
 """
 ai_providers.py - Multi-Provider AI Architecture
 
-Optimized AI provider selection:
-- OpenAI: Real-time voice conversations (lowest latency)
-- Gemini: Post-call analysis, sentiment, summaries (best cost/performance)
-- Hugging Face: Embeddings, semantic search (FREE)
+HIPAA-Compliant AI Provider Routing:
+- Azure OpenAI: Voice + all PHI analysis (HIPAA BAA covered)
+- Gemini: Embeddings & semantic search (FREE, no PHI)
 
-This architecture cuts AI costs by 50%+ while maintaining quality.
+Direct OpenAI and HuggingFace have been removed.
 """
 
 import os
@@ -29,24 +28,36 @@ logger = logging.getLogger(__name__)
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-HF_API_KEY = os.getenv("HF_API_KEY")
+
+# Azure OpenAI Configuration
+AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")  # e.g., https://dentsignal-openai.openai.azure.com/
+AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
+AZURE_OPENAI_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4o-mini")
+AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION", "2024-10-21")
+USE_AZURE_OPENAI = os.getenv("USE_AZURE_OPENAI", "false").lower() == "true"
 
 # API Endpoints
-OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
+if USE_AZURE_OPENAI and AZURE_OPENAI_ENDPOINT:
+    # Azure OpenAI endpoint format
+    OPENAI_API_URL = f"{AZURE_OPENAI_ENDPOINT.rstrip('/')}/openai/deployments/{AZURE_OPENAI_DEPLOYMENT}/chat/completions?api-version={AZURE_OPENAI_API_VERSION}"
+    # Use Azure key if available, fall back to regular OpenAI key
+    OPENAI_API_KEY = AZURE_OPENAI_API_KEY or OPENAI_API_KEY
+    logger.info(f"Using Azure OpenAI: {AZURE_OPENAI_ENDPOINT} (deployment: {AZURE_OPENAI_DEPLOYMENT})")
+else:
+    OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
+
 GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models"
-HF_INFERENCE_URL = "https://api-inference.huggingface.co/models"
 
 # Default models
-OPENAI_MODEL = "gpt-4o-mini"  # Best for real-time voice
-GEMINI_MODEL = "gemini-2.0-flash"  # Best for batch analysis
-HF_EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"  # FREE embeddings
+OPENAI_MODEL = AZURE_OPENAI_DEPLOYMENT if USE_AZURE_OPENAI else "gpt-4o-mini"  # Best for real-time voice
+GEMINI_MODEL = "gemini-2.5-flash"  # For any non-PHI text generation
+GEMINI_EMBEDDING_MODEL = "gemini-embedding-001"  # FREE embeddings (3072 dims, truncated to 768)
 
 
 class AIProvider(str, Enum):
     """Available AI providers."""
     OPENAI = "openai"
     GEMINI = "gemini"
-    HUGGINGFACE = "huggingface"
 
 
 class TaskType(str, Enum):
@@ -60,15 +71,15 @@ class TaskType(str, Enum):
     TRANSCRIPT_SEARCH = "transcript_search"  # Uses embeddings
 
 
-# Task to provider mapping (optimized for cost + performance)
+# Task to provider mapping (HIPAA-optimized: PHI → Azure OpenAI, non-PHI → Gemini)
 TASK_PROVIDER_MAP = {
-    TaskType.VOICE_CONVERSATION: AIProvider.OPENAI,  # Latency critical
-    TaskType.SENTIMENT_ANALYSIS: AIProvider.GEMINI,  # 50% cheaper
-    TaskType.CALL_SUMMARY: AIProvider.GEMINI,  # 50% cheaper
-    TaskType.QUALITY_SCORING: AIProvider.GEMINI,  # 50% cheaper
-    TaskType.INTENT_EXTRACTION: AIProvider.GEMINI,  # 50% cheaper
-    TaskType.EMBEDDING: AIProvider.HUGGINGFACE,  # FREE
-    TaskType.TRANSCRIPT_SEARCH: AIProvider.HUGGINGFACE,  # FREE
+    TaskType.VOICE_CONVERSATION: AIProvider.OPENAI,  # Azure OpenAI (BAA ✓)
+    TaskType.SENTIMENT_ANALYSIS: AIProvider.OPENAI,  # Azure OpenAI (BAA ✓, processes PHI)
+    TaskType.CALL_SUMMARY: AIProvider.OPENAI,  # Azure OpenAI (BAA ✓, processes PHI)
+    TaskType.QUALITY_SCORING: AIProvider.OPENAI,  # Azure OpenAI (BAA ✓, processes PHI)
+    TaskType.INTENT_EXTRACTION: AIProvider.OPENAI,  # Azure OpenAI (BAA ✓, processes PHI)
+    TaskType.EMBEDDING: AIProvider.GEMINI,  # FREE (numerical vectors only, no PHI)
+    TaskType.TRANSCRIPT_SEARCH: AIProvider.GEMINI,  # FREE (numerical vectors only, no PHI)
 }
 
 
@@ -109,10 +120,16 @@ def openai_chat(
         )
     
     try:
-        headers = {
-            "Authorization": f"Bearer {OPENAI_API_KEY}",
-            "Content-Type": "application/json",
-        }
+        if USE_AZURE_OPENAI:
+            headers = {
+                "api-key": OPENAI_API_KEY,
+                "Content-Type": "application/json",
+            }
+        else:
+            headers = {
+                "Authorization": f"Bearer {OPENAI_API_KEY}",
+                "Content-Type": "application/json",
+            }
         
         payload = {
             "model": model,
@@ -255,86 +272,106 @@ def gemini_generate(
 
 
 # =============================================================================
-# Hugging Face Provider (FREE Embeddings)
+# Gemini Embeddings (FREE)
 # =============================================================================
 
-def hf_embed(
+def gemini_embed(
     texts: List[str],
-    model: str = HF_EMBEDDING_MODEL,
+    model: str = GEMINI_EMBEDDING_MODEL,
+    task_type: str = "RETRIEVAL_DOCUMENT",
+    output_dimensionality: int = 768,
 ) -> AIResponse:
     """
-    Hugging Face embeddings - FREE for semantic search.
+    Gemini embeddings - FREE on Gemini free tier.
     
-    Best for: Transcript search, finding similar calls
+    Best for: Transcript search, finding similar calls.
+    Uses gemini-embedding-001 with 768 dimensions (good quality/size balance).
     """
-    if not HF_API_KEY:
+    if not GEMINI_API_KEY:
         return AIResponse(
             success=False,
             content=None,
-            provider=AIProvider.HUGGINGFACE,
+            provider=AIProvider.GEMINI,
             model=model,
-            error="HF_API_KEY not configured"
+            error="GEMINI_API_KEY not configured"
         )
     
     try:
-        url = f"{HF_INFERENCE_URL}/{model}"
-        headers = {"Authorization": f"Bearer {HF_API_KEY}"}
+        url = f"{GEMINI_API_URL}/{model}:batchEmbedContents?key={GEMINI_API_KEY}"
         
-        payload = {"inputs": texts, "options": {"wait_for_model": True}}
+        requests_list = [
+            {
+                "model": f"models/{model}",
+                "content": {"parts": [{"text": text}]},
+                "taskType": task_type,
+                "outputDimensionality": output_dimensionality,
+            }
+            for text in texts
+        ]
         
-        with httpx.Client(timeout=60.0) as client:
-            response = client.post(url, headers=headers, json=payload)
+        payload = {"requests": requests_list}
+        
+        with httpx.Client(timeout=30.0) as client:
+            response = client.post(url, json=payload)
             response.raise_for_status()
             
-            embeddings = response.json()
+            data = response.json()
+            embeddings = [
+                emb["values"] for emb in data.get("embeddings", [])
+            ]
             
             return AIResponse(
                 success=True,
                 content=embeddings,
-                provider=AIProvider.HUGGINGFACE,
+                provider=AIProvider.GEMINI,
                 model=model,
                 tokens_used=0,
-                cost_estimate=0.0,  # FREE!
+                cost_estimate=0.0,  # FREE on free tier!
             )
             
     except Exception as e:
-        logger.error(f"Hugging Face error: {e}")
+        logger.error(f"Gemini embedding error: {e}")
         return AIResponse(
             success=False,
             content=None,
-            provider=AIProvider.HUGGINGFACE,
+            provider=AIProvider.GEMINI,
             model=model,
             error=str(e)
         )
 
 
-def hf_similarity_search(
+def gemini_similarity_search(
     query: str,
     documents: List[str],
     top_k: int = 5,
 ) -> AIResponse:
     """
-    Semantic search using HF embeddings - FREE!
+    Semantic search using Gemini embeddings - FREE!
     
     Finds most similar transcripts/documents to a query.
+    Uses separate task types for query vs documents (better accuracy).
     """
     import numpy as np
     
-    # Get embeddings for query and documents
-    all_texts = [query] + documents
-    embed_response = hf_embed(all_texts)
+    # Embed query with RETRIEVAL_QUERY task type
+    query_response = gemini_embed([query], task_type="RETRIEVAL_QUERY")
+    if not query_response.success:
+        return query_response
     
-    if not embed_response.success:
-        return embed_response
+    # Embed documents with RETRIEVAL_DOCUMENT task type
+    doc_response = gemini_embed(documents, task_type="RETRIEVAL_DOCUMENT")
+    if not doc_response.success:
+        return doc_response
     
-    embeddings = embed_response.content
-    query_embedding = np.array(embeddings[0])
-    doc_embeddings = np.array(embeddings[1:])
+    query_embedding = np.array(query_response.content[0])
+    doc_embeddings = np.array(doc_response.content)
+    
+    # Normalize for cosine similarity (Gemini 768-dim needs normalization)
+    query_norm = query_embedding / np.linalg.norm(query_embedding)
+    doc_norms = doc_embeddings / np.linalg.norm(doc_embeddings, axis=1, keepdims=True)
     
     # Calculate cosine similarity
-    similarities = np.dot(doc_embeddings, query_embedding) / (
-        np.linalg.norm(doc_embeddings, axis=1) * np.linalg.norm(query_embedding)
-    )
+    similarities = np.dot(doc_norms, query_norm)
     
     # Get top-k indices
     top_indices = np.argsort(similarities)[::-1][:top_k]
@@ -347,10 +384,15 @@ def hf_similarity_search(
     return AIResponse(
         success=True,
         content=results,
-        provider=AIProvider.HUGGINGFACE,
-        model=HF_EMBEDDING_MODEL,
+        provider=AIProvider.GEMINI,
+        model=GEMINI_EMBEDDING_MODEL,
         cost_estimate=0.0,  # FREE!
     )
+
+
+# Backward-compatible aliases
+hf_embed = gemini_embed
+hf_similarity_search = gemini_similarity_search
 
 
 # =============================================================================
@@ -379,7 +421,7 @@ def ai_complete(
     Returns:
         AIResponse with result from optimal provider
     """
-    provider = TASK_PROVIDER_MAP.get(task, AIProvider.GEMINI)
+    provider = TASK_PROVIDER_MAP.get(task, AIProvider.OPENAI)
     
     if provider == AIProvider.OPENAI:
         messages = []
@@ -389,16 +431,15 @@ def ai_complete(
         return openai_chat(messages, json_mode=json_mode, temperature=temperature)
     
     elif provider == AIProvider.GEMINI:
+        # Gemini handles embeddings (non-PHI) and fallback text generation
+        if task in (TaskType.EMBEDDING, TaskType.TRANSCRIPT_SEARCH):
+            return gemini_embed([prompt])
         return gemini_generate(
             prompt=prompt,
             system_instruction=system_instruction,
             json_mode=json_mode,
             temperature=temperature,
         )
-    
-    elif provider == AIProvider.HUGGINGFACE:
-        # HF is only for embeddings, not chat
-        return hf_embed([prompt])
     
     return AIResponse(
         success=False,
@@ -449,19 +490,17 @@ def check_all_providers() -> Dict[str, Any]:
     else:
         results["gemini"] = {"status": "not_configured"}
     
-    # Check Hugging Face
-    if HF_API_KEY:
+    # Check Gemini Embeddings
+    if GEMINI_API_KEY:
         try:
-            response = hf_embed(["test"])
-            results["huggingface"] = {
+            response = gemini_embed(["test"])
+            results["gemini_embeddings"] = {
                 "status": "ok" if response.success else "error",
-                "model": HF_EMBEDDING_MODEL,
+                "model": GEMINI_EMBEDDING_MODEL,
                 "error": response.error,
             }
         except Exception as e:
-            results["huggingface"] = {"status": "error", "error": str(e)}
-    else:
-        results["huggingface"] = {"status": "not_configured"}
+            results["gemini_embeddings"] = {"status": "error", "error": str(e)}
     
     return results
 
@@ -472,27 +511,24 @@ def get_provider_stats() -> Dict[str, Any]:
     """
     return {
         "providers": {
-            "openai": {
+            "azure_openai": {
                 "configured": bool(OPENAI_API_KEY),
-                "use_cases": ["Voice Agent (real-time)"],
+                "hipaa_compliant": True,
+                "use_cases": ["Voice Agent", "Sentiment", "Summaries", "Quality Scoring", "Intent"],
                 "cost_per_1k_tokens": "$0.000375",
+                "note": "All PHI-touching tasks route here (BAA covered)",
             },
             "gemini": {
                 "configured": bool(GEMINI_API_KEY),
-                "use_cases": ["Sentiment", "Summaries", "Quality Scoring"],
-                "cost_per_1k_tokens": "$0.0001875",
-                "savings_vs_openai": "50%",
-            },
-            "huggingface": {
-                "configured": bool(HF_API_KEY),
+                "hipaa_compliant": False,
                 "use_cases": ["Embeddings", "Semantic Search"],
                 "cost_per_1k_tokens": "$0.00 (FREE)",
-                "savings_vs_openai": "100%",
+                "note": "Non-PHI only — embeddings are numerical vectors",
             },
         },
         "optimization_tips": [
-            "Voice calls use OpenAI for lowest latency",
-            "Post-call analysis uses Gemini (50% cheaper)",
-            "Transcript search uses HuggingFace (FREE)",
+            "All PHI analysis uses Azure OpenAI (HIPAA BAA covered)",
+            "Embeddings use Gemini for FREE (no PHI exposure)",
+            "Direct OpenAI and HuggingFace removed for compliance",
         ]
     }

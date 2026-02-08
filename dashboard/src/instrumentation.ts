@@ -1,13 +1,4 @@
-import * as Sentry from "@sentry/nextjs";
-
 export async function register() {
-  if (process.env.NEXT_RUNTIME === "nodejs") {
-    await import("../sentry.server.config");
-  }
-
-  if (process.env.NEXT_RUNTIME === "edge") {
-    await import("../sentry.edge.config");
-  }
+  // Instrumentation hooks for Next.js
+  // Sentry removed for HIPAA compliance (no BAA without Business plan)
 }
-
-export const onRequestError = Sentry.captureRequestError;

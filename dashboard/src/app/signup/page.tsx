@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -138,6 +138,10 @@ export default function SignupPage() {
   // Captcha
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
   const [captchaError, setCaptchaError] = useState(false)
+  const [slowAuth, setSlowAuth] = useState(false)
+  const timeoutRef = useRef(false)
+  const warnTimerRef = useRef<number | null>(null)
+  const hardTimerRef = useRef<number | null>(null)
   
   const router = useRouter()
   const supabase = createClient()
@@ -229,6 +233,8 @@ export default function SignupPage() {
     setIsLoading(true)
     setError(null)
     setSuccess(null)
+    setSlowAuth(false)
+    timeoutRef.current = false
     
     // Honeypot check - if filled, it's a bot
     if (honeypot) {
@@ -271,6 +277,16 @@ export default function SignupPage() {
     }
     
     // Sign up user
+    warnTimerRef.current = window.setTimeout(() => {
+      setSlowAuth(true)
+    }, 8000)
+
+    hardTimerRef.current = window.setTimeout(() => {
+      timeoutRef.current = true
+      setIsLoading(false)
+      setError('Signup is taking longer than expected (usually under 10 seconds). Please try again.')
+    }, 20000)
+
     const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
@@ -283,15 +299,28 @@ export default function SignupPage() {
         }
       }
     })
+
+    if (warnTimerRef.current) {
+      clearTimeout(warnTimerRef.current)
+      warnTimerRef.current = null
+    }
+    if (hardTimerRef.current) {
+      clearTimeout(hardTimerRef.current)
+      hardTimerRef.current = null
+    }
+
+    if (timeoutRef.current) {
+      return
+    }
     
     if (signUpError) {
       // Handle captcha-related errors more gracefully
       if (signUpError.message.toLowerCase().includes('captcha') || captchaError) {
-        setError('Security verification is loading. Please wait a moment and try again.')
+        setError('Security check failed to load. Please allow challenges.cloudflare.com and try again.')
       } else {
         setError(signUpError.message)
       }
-      setIsLoading(false)
+        setIsLoading(false)
       return
     }
     
@@ -307,6 +336,21 @@ export default function SignupPage() {
           await new Promise(resolve => setTimeout(resolve, attempt * 1000))
         }
         
+        const { data: existingClinic, error: existingError } = await supabase
+          .from('dental_clinics')
+          .select('id')
+          .eq('owner_id', authData.user.id)
+          .maybeSingle()
+
+        if (existingError) {
+          lastClinicError = existingError
+        }
+
+        if (existingClinic?.id) {
+          clinicCreated = true
+          break
+        }
+
         const { error: clinicError } = await supabase
           .from('dental_clinics')
           .insert({
@@ -321,8 +365,15 @@ export default function SignupPage() {
           break
         }
         
-        lastClinicError = clinicError
-        console.warn(`[Signup] Clinic creation attempt ${attempt + 1} failed:`, clinicError.message)
+        if (clinicError) {
+          lastClinicError = clinicError
+          const isDuplicate = clinicError.code === '23505' || clinicError.message.toLowerCase().includes('duplicate')
+          if (isDuplicate) {
+            clinicCreated = true
+            break
+          }
+          console.warn(`[Signup] Clinic creation attempt ${attempt + 1} failed:`, clinicError.message)
+        }
       }
       
       if (!clinicCreated) {
@@ -740,6 +791,11 @@ export default function SignupPage() {
                     'Start Free Trial'
                   )}
                 </Button>
+                {slowAuth && (
+                  <p className="text-xs text-[#718096]" role="status" aria-live="polite">
+                    Still working... this usually takes under 10 seconds.
+                  </p>
+                )}
               </form>
             )}
           </div>

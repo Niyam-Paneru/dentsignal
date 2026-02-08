@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -22,6 +22,10 @@ function LoginForm() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
   const [captchaError, setCaptchaError] = useState(false)
+  const [slowAuth, setSlowAuth] = useState(false)
+  const timeoutRef = useRef(false)
+  const warnTimerRef = useRef<number | null>(null)
+  const hardTimerRef = useRef<number | null>(null)
   const searchParams = useSearchParams()
   
   // Check for messages from signup
@@ -70,6 +74,8 @@ function LoginForm() {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
+    setSlowAuth(false)
+    timeoutRef.current = false
     
     // Rate limiting check
     if (isRateLimited()) {
@@ -88,16 +94,39 @@ function LoginForm() {
       authOptions.captchaToken = captchaToken
     }
     
+    warnTimerRef.current = window.setTimeout(() => {
+      setSlowAuth(true)
+    }, 8000)
+
+    hardTimerRef.current = window.setTimeout(() => {
+      timeoutRef.current = true
+      setIsLoading(false)
+      setError('Sign-in is taking longer than expected (usually under 10 seconds). Please try again.')
+    }, 20000)
+
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
       options: authOptions,
     })
+
+    if (warnTimerRef.current) {
+      clearTimeout(warnTimerRef.current)
+      warnTimerRef.current = null
+    }
+    if (hardTimerRef.current) {
+      clearTimeout(hardTimerRef.current)
+      hardTimerRef.current = null
+    }
+
+    if (timeoutRef.current) {
+      return
+    }
     
     if (signInError) {
       // Provide more helpful error messages
-      if (signInError.message.includes('captcha')) {
-        setError('Security verification is loading. Please wait a moment and try again.')
+      if (signInError.message.includes('captcha') || captchaError) {
+        setError('Security check failed to load. Please allow challenges.cloudflare.com and try again.')
       } else if (signInError.message.includes('Invalid login')) {
         setError('Invalid email or password. Please check your credentials.')
       } else if (signInError.message.includes('Email not confirmed') || signInError.message.includes('email_not_confirmed')) {
@@ -204,6 +233,11 @@ function LoginForm() {
                   'Sign In'
                 )}
               </Button>
+              {slowAuth && (
+                <p className="text-xs text-muted-foreground" role="status" aria-live="polite">
+                  Still working... this usually takes under 10 seconds.
+                </p>
+              )}
             </form>
 
             <div className="mt-6 text-center text-sm text-muted-foreground">

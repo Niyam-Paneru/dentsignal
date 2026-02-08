@@ -678,6 +678,32 @@ class VoiceAgentBridge:
         if not self.deepgram_ws:
             return
         
+        # Build think provider config - Azure OpenAI or direct OpenAI
+        azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+        azure_api_key = os.getenv("AZURE_OPENAI_API_KEY")
+        azure_deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4o-mini")
+        azure_api_version = os.getenv("AZURE_OPENAI_API_VERSION", "2024-10-21")
+        use_azure = os.getenv("USE_AZURE_OPENAI", "false").lower() == "true"
+        
+        if use_azure and azure_endpoint and azure_api_key:
+            think_provider = {
+                "type": "open_ai",
+                "model": azure_deployment,
+                "endpoint": {
+                    "url": f"{azure_endpoint.rstrip('/')}/openai/deployments/{azure_deployment}/chat/completions?api-version={azure_api_version}",
+                    "headers": {
+                        "api-key": azure_api_key
+                    }
+                }
+            }
+            logger.info(f"Deepgram think provider: Azure OpenAI ({azure_endpoint}, deployment: {azure_deployment})")
+        else:
+            think_provider = {
+                "type": "open_ai",
+                "model": "gpt-4o-mini"  # Fast and cost-effective
+            }
+            logger.info("Deepgram think provider: Direct OpenAI (gpt-4o-mini)")
+        
         settings = {
             "type": "SettingsConfiguration",
             "audio": {
@@ -689,10 +715,7 @@ class VoiceAgentBridge:
                     "model": "nova-3",  # Latest STT model - best accuracy
                 },
                 "think": {
-                    "provider": {
-                        "type": "openai",
-                        "model": "gpt-4o-mini"  # Fast and cost-effective
-                    },
+                    "provider": think_provider,
                     "instructions": self.agent_config["system_prompt"],
                     "functions": self.agent_config["functions"],
                 },

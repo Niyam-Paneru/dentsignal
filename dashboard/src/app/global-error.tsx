@@ -1,6 +1,5 @@
 "use client";
 
-import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
 
 export default function GlobalError({
@@ -20,7 +19,7 @@ export default function GlobalError({
     error.message?.includes('token');
 
   useEffect(() => {
-    Sentry.captureException(error);
+    console.error("Global error:", error);
     
     // Auto-redirect to login for auth errors
     if (isAuthError && typeof window !== 'undefined') {

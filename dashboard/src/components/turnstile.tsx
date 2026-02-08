@@ -29,7 +29,7 @@ declare global {
   }
 }
 
-const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '0x4AAAAAACJCGDiUek-rJNYJ'
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
 
 export function Turnstile({ onVerify, onError, onExpire, mode = 'normal' }: TurnstileProps) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -37,6 +37,7 @@ export function Turnstile({ onVerify, onError, onExpire, mode = 'normal' }: Turn
   const [loadFailed, setLoadFailed] = useState(false)
   const retryCountRef = useRef(0)
   const MAX_RETRIES = 2
+  const [retryNonce, setRetryNonce] = useState(0)
 
   const handleError = useCallback(() => {
     retryCountRef.current += 1
@@ -58,6 +59,13 @@ export function Turnstile({ onVerify, onError, onExpire, mode = 'normal' }: Turn
   }, [onError])
 
   useEffect(() => {
+    if (!TURNSTILE_SITE_KEY) {
+      console.warn('[Turnstile] Missing NEXT_PUBLIC_TURNSTILE_SITE_KEY - CAPTCHA unavailable')
+      setLoadFailed(true)
+      onError?.()
+      return
+    }
+
     const loadTurnstile = () => {
       if (containerRef.current && window.turnstile && !widgetIdRef.current) {
         try {
@@ -125,12 +133,24 @@ export function Turnstile({ onVerify, onError, onExpire, mode = 'normal' }: Turn
         widgetIdRef.current = null
       }
     }
-  }, [onVerify, onExpire, handleError, onError, mode])
+  }, [onVerify, onExpire, handleError, onError, mode, retryNonce])
 
   if (loadFailed && mode === 'normal') {
     return (
       <div className="text-xs text-amber-600 text-center py-1">
-        Security check unavailable. You can still sign in.
+        Security check unavailable. Please refresh or contact support.
+        <button
+          type="button"
+          className="ml-2 underline"
+          onClick={() => {
+            setLoadFailed(false)
+            retryCountRef.current = 0
+            widgetIdRef.current = null
+            setRetryNonce((prev) => prev + 1)
+          }}
+        >
+          Retry
+        </button>
       </div>
     )
   }
