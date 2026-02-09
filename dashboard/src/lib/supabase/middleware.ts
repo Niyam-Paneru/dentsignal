@@ -79,12 +79,21 @@ export async function updateSession(request: NextRequest) {
         .eq('owner_id', user.id)
         .single()
 
-      const now = new Date()
-      const expiresAt = clinic?.subscription_expires_at ? new Date(clinic.subscription_expires_at) : null
-      const isExpired = !expiresAt || expiresAt < now
-      const isCancelled = clinic?.subscription_status === 'cancelled'
+      // No clinic record yet (signup may still be processing) — allow access
+      if (!clinic) {
+        return supabaseResponse
+      }
 
-      if (isExpired || isCancelled) {
+      const now = new Date()
+      const expiresAt = clinic.subscription_expires_at ? new Date(clinic.subscription_expires_at) : null
+      const isTrial = clinic.subscription_status === 'trial'
+      const isCancelled = clinic.subscription_status === 'cancelled'
+
+      // Trial/active with valid expiry — allow access
+      // Expired or cancelled — block
+      const isExpired = expiresAt ? expiresAt < now : false
+
+      if (isCancelled || isExpired) {
         const url = request.nextUrl.clone()
         url.pathname = '/subscription-required'
         return NextResponse.redirect(url)

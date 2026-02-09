@@ -354,6 +354,10 @@ export default function SignupPage() {
           break
         }
 
+        // Set 9-day trial explicitly (don't rely on DB defaults)
+        const trialExpiresAt = new Date()
+        trialExpiresAt.setDate(trialExpiresAt.getDate() + 9)
+
         const { error: clinicError } = await supabase
           .from('dental_clinics')
           .insert({
@@ -361,6 +365,8 @@ export default function SignupPage() {
             name: clinicName,
             owner_name: `${firstName} ${lastName}`,
             phone: stripPhoneFormatting(phone),
+            subscription_status: 'trial',
+            subscription_expires_at: trialExpiresAt.toISOString(),
           })
         
         if (!clinicError) {
