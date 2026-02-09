@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useCallback, useState } from 'react'
+import { useState, useCallback } from 'react'
+import { Turnstile as TurnstileWidget } from '@marsidev/react-turnstile'
 
 interface TurnstileProps {
   onVerify: (token: string) => void
@@ -9,137 +10,26 @@ interface TurnstileProps {
   mode?: 'normal' | 'invisible'
 }
 
-declare global {
-  interface Window {
-    turnstile: {
-      render: (container: HTMLElement, options: {
-        sitekey: string
-        callback: (token: string) => void
-        'error-callback'?: () => void
-        'expired-callback'?: () => void
-        theme?: 'light' | 'dark' | 'auto'
-        size?: 'normal' | 'compact' | 'invisible'
-        appearance?: 'always' | 'execute' | 'interaction-only'
-        retry?: 'auto' | 'never'
-        'retry-interval'?: number
-      }) => string
-      reset: (widgetId: string) => void
-      remove: (widgetId: string) => void
-    }
-    onTurnstileLoad?: () => void
-  }
-}
-
-const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
 
 export function Turnstile({ onVerify, onError, onExpire, mode = 'normal' }: TurnstileProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const widgetIdRef = useRef<string | null>(null)
-  const [loadFailed, setLoadFailed] = useState(!TURNSTILE_SITE_KEY)
-  const retryCountRef = useRef(0)
-  const MAX_RETRIES = 2
-  const [retryNonce, setRetryNonce] = useState(0)
-
-  // If site key is missing, fire the error callback once on mount
-  const missingKeyNotified = useRef(false)
-  useEffect(() => {
-    if (!TURNSTILE_SITE_KEY && !missingKeyNotified.current) {
-      missingKeyNotified.current = true
-      console.warn('[Turnstile] Missing NEXT_PUBLIC_TURNSTILE_SITE_KEY - CAPTCHA unavailable')
-      onError?.()
-    }
-  }, [onError])
+  const [loadFailed, setLoadFailed] = useState(false)
+  const [retryKey, setRetryKey] = useState(0)
 
   const handleError = useCallback(() => {
-    retryCountRef.current += 1
-    if (retryCountRef.current <= MAX_RETRIES && widgetIdRef.current && window.turnstile) {
-      // Auto-retry by resetting the widget
-      console.warn(`[Turnstile] Error occurred, retrying (${retryCountRef.current}/${MAX_RETRIES})...`)
-      try {
-        window.turnstile.reset(widgetIdRef.current)
-      } catch {
-        // Reset failed, fall through to error handler
-        setLoadFailed(true)
-        onError?.()
-      }
-    } else {
-      console.warn('[Turnstile] CAPTCHA failed after retries')
-      setLoadFailed(true)
-      onError?.()
-    }
+    console.warn('[Turnstile] CAPTCHA challenge failed')
+    setLoadFailed(true)
+    onError?.()
   }, [onError])
 
-  useEffect(() => {
-    if (!TURNSTILE_SITE_KEY) {
-      return
-    }
-
-    const loadTurnstile = () => {
-      if (containerRef.current && window.turnstile && !widgetIdRef.current) {
-        try {
-          widgetIdRef.current = window.turnstile.render(containerRef.current, {
-            sitekey: TURNSTILE_SITE_KEY,
-            callback: (token: string) => {
-              retryCountRef.current = 0
-              onVerify(token)
-            },
-            'error-callback': handleError,
-            'expired-callback': onExpire,
-            theme: 'auto',
-            size: mode === 'normal' ? 'normal' : 'invisible',
-          })
-        } catch (err) {
-          console.warn('[Turnstile] Failed to render widget:', err)
-          setLoadFailed(true)
-          onError?.()
-        }
-      }
-    }
-
-    // Check if script already loaded
-    if (window.turnstile) {
-      loadTurnstile()
-    } else {
-      // Load the script
-      const existingScript = document.querySelector('script[src*="turnstile"]')
-      if (!existingScript) {
-        const script = document.createElement('script')
-        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileLoad'
-        script.async = true
-        script.defer = true
-        script.onerror = () => {
-          console.warn('[Turnstile] Failed to load Cloudflare script - ad blocker or network issue')
-          setLoadFailed(true)
-          onError?.()
-        }
-        window.onTurnstileLoad = loadTurnstile
-        document.head.appendChild(script)
-      } else {
-        window.onTurnstileLoad = loadTurnstile
-      }
-    }
-
-    // Timeout fallback: if widget hasn't loaded after 10s, surface an error state
-    const timeout = setTimeout(() => {
-      if (!widgetIdRef.current) {
-        console.warn('[Turnstile] Widget load timeout')
-        setLoadFailed(true)
-        onError?.()
-      }
-    }, 10000)
-
-    return () => {
-      clearTimeout(timeout)
-      if (widgetIdRef.current && window.turnstile) {
-        try {
-          window.turnstile.remove(widgetIdRef.current)
-        } catch {
-          // Widget may already be removed
-        }
-        widgetIdRef.current = null
-      }
-    }
-  }, [onVerify, onExpire, handleError, onError, mode, retryNonce])
+  if (!TURNSTILE_SITE_KEY) {
+    console.warn('[Turnstile] Missing NEXT_PUBLIC_TURNSTILE_SITE_KEY')
+    return (
+      <div className="text-xs text-amber-600 text-center py-1">
+        Security check unavailable — site key not configured.
+      </div>
+    )
+  }
 
   if (loadFailed && mode === 'normal') {
     return (
@@ -150,9 +40,7 @@ export function Turnstile({ onVerify, onError, onExpire, mode = 'normal' }: Turn
           className="ml-2 underline"
           onClick={() => {
             setLoadFailed(false)
-            retryCountRef.current = 0
-            widgetIdRef.current = null
-            setRetryNonce((prev) => prev + 1)
+            setRetryKey((k) => k + 1)
           }}
         >
           Retry
@@ -161,15 +49,21 @@ export function Turnstile({ onVerify, onError, onExpire, mode = 'normal' }: Turn
     )
   }
 
-  return <div ref={containerRef} />
-}
-
-export function resetTurnstile(widgetId: string) {
-  if (window.turnstile && widgetId) {
-    try {
-      window.turnstile.reset(widgetId)
-    } catch {
-      // Widget may have been removed
-    }
-  }
+  return (
+    <TurnstileWidget
+      key={retryKey}
+      siteKey={TURNSTILE_SITE_KEY}
+      onSuccess={onVerify}
+      onError={handleError}
+      onExpire={() => {
+        onExpire?.()
+      }}
+      options={{
+        theme: 'light',
+        size: mode === 'normal' ? 'normal' : 'invisible',
+        retry: 'auto',
+        retryInterval: 3000,
+      }}
+    />
+  )
 }
