@@ -24,7 +24,7 @@ r = requests.get(
     params={'PhoneNumber': phone}
 )
 phone_sid = r.json()['incoming_phone_numbers'][0]['sid']
-print(f"Phone SID: {phone_sid}")
+print(f"Phone SID: ***{phone_sid[-6:]}")
 
 # Update webhook
 r = requests.post(
@@ -36,4 +36,4 @@ r = requests.post(
 if r.status_code == 200:
     print(f"✓ Webhook updated successfully!")
 else:
-    print(f"✗ Error: {r.status_code} - {r.text}")
+    print(f"✗ Error: {r.status_code}")

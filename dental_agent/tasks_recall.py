@@ -371,7 +371,7 @@ def process_recall_response(self, recall_id: int, response_type: str, response_d
                     recall.status = RecallStatus.BOOKED
                     recall.completed_at = datetime.utcnow()
                     # TODO: Create appointment or notify staff
-                    logger.info(f"Patient {recall.patient_name} wants to book!")
+                    logger.info(f"Recall {recall_id}: patient wants to book")
                     
                 elif any(word in response_lower for word in ["no", "stop", "cancel", "remove"]):
                     recall.status = RecallStatus.DECLINED

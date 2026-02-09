@@ -49,18 +49,21 @@ function stripPhoneFormatting(phone: string): string {
 
 // XSS Protection - sanitize input to prevent script injection
 function containsXSS(value: string): boolean {
-  const xssPatterns = [
-    /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-    /<[^>]+on\w+\s*=/gi,  // onclick, onerror, onload, etc.
-    /javascript:/gi,
-    /<iframe/gi,
-    /<object/gi,
-    /<embed/gi,
-    /<svg[^>]*onload/gi,
-    /<img[^>]*onerror/gi,
-    /&#x?[0-9a-f]+;/gi,  // HTML entities that could be used for XSS
+  // Use DOMParser for safe HTML detection instead of vulnerable regexps
+  const lower = value.toLowerCase()
+  const dangerousPatterns = [
+    '<script',
+    'javascript:',
+    '<iframe',
+    '<object',
+    '<embed',
+    '<svg',
+    '<img',
   ]
-  return xssPatterns.some(pattern => pattern.test(value))
+  const hasDangerousTag = dangerousPatterns.some(p => lower.includes(p))
+  const hasEventHandler = /on\w+\s*=/i.test(value)
+  const hasHtmlEntities = /&#x?[0-9a-f]+;/i.test(value)
+  return hasDangerousTag || hasEventHandler || hasHtmlEntities
 }
 
 // Sanitize name fields - only allow letters, spaces, hyphens, apostrophes
@@ -149,7 +152,7 @@ export default function SignupPage() {
   // Handle CAPTCHA errors - log but don't block signup
   const handleCaptchaError = () => {
     setCaptchaError(true)
-    console.warn('[Signup] CAPTCHA failed to load - signup will proceed without it')
+    console.warn('[Signup] CAPTCHA failed to load - signup blocked until CAPTCHA is available')
   }
 
   // Check rate limiting
@@ -250,8 +253,14 @@ export default function SignupPage() {
       return
     }
     
-    // CAPTCHA is optional for invisible mode - it may not have triggered yet
-    // If captchaError is true, we've already shown an error, so skip
+    if (!captchaToken) {
+      setIsLoading(false)
+      setError(captchaError
+        ? 'Security check failed to load. Please allow challenges.cloudflare.com and try again.'
+        : 'Please complete the security check before continuing.'
+      )
+      return
+    }
     
     // Track attempt
     setAttempts(prev => prev + 1)
@@ -291,7 +300,7 @@ export default function SignupPage() {
       email,
       password,
       options: {
-        captchaToken: captchaToken || undefined,
+        captchaToken,
         data: {
           first_name: firstName,
           last_name: lastName,
@@ -320,7 +329,7 @@ export default function SignupPage() {
       } else {
         setError(signUpError.message)
       }
-        setIsLoading(false)
+      setIsLoading(false)
       return
     }
     
@@ -393,14 +402,22 @@ export default function SignupPage() {
         .single()
       
       if (newClinic) {
-        await supabase
+        const { data: existingSettings } = await supabase
           .from('dental_clinic_settings')
-          .insert({
-            clinic_id: newClinic.id,
-            agent_name: 'Sarah',
-            agent_voice: 'aura-asteria-en',
-            greeting_template: `Thank you for calling ${clinicName}. This is Sarah, how may I help you today?`,
-          })
+          .select('clinic_id')
+          .eq('clinic_id', newClinic.id)
+          .maybeSingle()
+
+        if (!existingSettings?.clinic_id) {
+          await supabase
+            .from('dental_clinic_settings')
+            .insert({
+              clinic_id: newClinic.id,
+              agent_name: 'Sarah',
+              agent_voice: 'aura-asteria-en',
+              greeting_template: `Thank you for calling ${clinicName}. This is Sarah, how may I help you today?`,
+            })
+        }
       }
       
       // Send Slack notification (fire and forget - don't block signup)

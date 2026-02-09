@@ -90,7 +90,7 @@ def test_prompt_builder():
     voices = get_available_voices()
     print(f"\n✅ Available Voices: {len(voices)}")
     for vid, vinfo in voices.items():
-        print(f"   - {vid}: {vinfo['name']} ({vinfo['gender']}, {vinfo['accent']})")
+        print(f"   - {vid}: {vinfo['name']}")
     
     print("\n✅ Prompt Builder Test PASSED")
     return True

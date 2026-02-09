@@ -43,12 +43,12 @@ async def test_deepgram_connection():
     if not DEEPGRAM_API_KEY:
         print_status("DEEPGRAM_API_KEY", False, "Not set in .env")
         return False
-    print_status("DEEPGRAM_API_KEY", True, f"{DEEPGRAM_API_KEY[:8]}...{DEEPGRAM_API_KEY[-4:]}")
+    print_status("DEEPGRAM_API_KEY", True, f"{DEEPGRAM_API_KEY[:4]}***")
     
     if not OPENAI_API_KEY:
         print_status("OPENAI_API_KEY", False, "Not set in .env (required for LLM)")
         return False
-    print_status("OPENAI_API_KEY", True, f"{OPENAI_API_KEY[:12]}...{OPENAI_API_KEY[-4:]}")
+    print_status("OPENAI_API_KEY", True, f"{OPENAI_API_KEY[:4]}***")
     
     # Test WebSocket connection
     print("\n2. Connecting to Deepgram Voice Agent...")

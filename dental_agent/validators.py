@@ -28,15 +28,17 @@ from pydantic import field_validator, ValidationInfo
 # =============================================================================
 
 # XSS Detection Patterns
+# NOTE: Avoid greedy/backtracking HTML regexps (CodeQL "Bad HTML filtering regexp").
+# Use simple substring or anchored patterns instead of matching full tag pairs.
 XSS_PATTERNS: list[Pattern] = [
-    re.compile(r'<script[^>]*>.*?<\/script>', re.IGNORECASE | re.DOTALL),
-    re.compile(r'<[^>]+on\w+\s*=', re.IGNORECASE),  # onclick, onerror, etc.
+    re.compile(r'<\s*script', re.IGNORECASE),  # Detect opening script tag only
+    re.compile(r'on\w+\s*=', re.IGNORECASE),  # onclick, onerror, etc.
     re.compile(r'javascript:', re.IGNORECASE),
-    re.compile(r'<iframe', re.IGNORECASE),
-    re.compile(r'<object', re.IGNORECASE),
-    re.compile(r'<embed', re.IGNORECASE),
-    re.compile(r'<form', re.IGNORECASE),
-    re.compile(r'<input', re.IGNORECASE),
+    re.compile(r'<\s*iframe', re.IGNORECASE),
+    re.compile(r'<\s*object', re.IGNORECASE),
+    re.compile(r'<\s*embed', re.IGNORECASE),
+    re.compile(r'<\s*form', re.IGNORECASE),
+    re.compile(r'<\s*input', re.IGNORECASE),
     re.compile(r'document\.cookie', re.IGNORECASE),
     re.compile(r'document\.location', re.IGNORECASE),
     re.compile(r'window\.location', re.IGNORECASE),

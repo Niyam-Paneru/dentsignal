@@ -59,7 +59,7 @@ async def test_agent_connection():
             print(f"\n📋 Agent Config:")
             print(f"   - Clinic: {config['clinic_name']}")
             print(f"   - Voice: {config['voice_id']}")
-            print(f"   - Greeting: {config['greeting_message'][:50]}...")
+            print(f"   - Greeting: [configured]")
             print(f"   - Functions: {len(config['functions'])} available")
             
             # Send settings

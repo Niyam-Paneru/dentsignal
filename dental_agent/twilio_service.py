@@ -386,7 +386,7 @@ def send_sms(
             to=to_number,
         )
         
-        logger.info(f"SMS sent to {to_number}: {sms.sid}")
+        logger.info(f"SMS sent to {mask_phone(to_number)}: {sms.sid}")
         
         return {
             "success": True,
@@ -396,7 +396,7 @@ def send_sms(
         }
         
     except Exception as e:
-        logger.error(f"Failed to send SMS to {to_number}: {e}")
+        logger.error(f"Failed to send SMS to {mask_phone(to_number)}: {e}")
         return {"success": False, "error": str(e)}
 
 
@@ -688,8 +688,6 @@ def provision_clinic_number(
             return {"success": False, "error": "Must provide area_code or phone_number"}
         
         logger.info(f"Provisioned {mask_phone(number.phone_number)} for clinic {clinic_id}")
-        logger.debug(f"  Voice webhook: {voice_webhook}")
-        logger.debug(f"  SMS webhook: {sms_webhook}")
         
         return {
             "success": True,

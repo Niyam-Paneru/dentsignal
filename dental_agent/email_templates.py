@@ -645,12 +645,11 @@ if __name__ == "__main__":
     print("=== Welcome Email Subject ===")
     print(welcome.get_subject())
     print("\n=== Plain Text Version ===")
-    print(welcome.render_plain())
+    print(welcome.render_plain()[:200] + "...")
     
-    # Write HTML to file for preview
-    with open("test_welcome_email.html", "w") as f:
-        f.write(welcome.render())
-    print("\nHTML saved to test_welcome_email.html")
+    # Verify HTML renders without errors (don't write to disk with sensitive data)
+    html_content = welcome.render()
+    print(f"\nHTML rendered successfully ({len(html_content)} chars)")
     
     # Test weekly digest
     digest = get_weekly_digest(
