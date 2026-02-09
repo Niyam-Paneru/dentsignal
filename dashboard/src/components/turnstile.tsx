@@ -19,6 +19,7 @@ declare global {
         'expired-callback'?: () => void
         theme?: 'light' | 'dark' | 'auto'
         size?: 'normal' | 'compact' | 'invisible'
+        appearance?: 'always' | 'execute' | 'interaction-only'
         retry?: 'auto' | 'never'
         'retry-interval'?: number
       }) => string
@@ -34,10 +35,20 @@ const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
 export function Turnstile({ onVerify, onError, onExpire, mode = 'normal' }: TurnstileProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const widgetIdRef = useRef<string | null>(null)
-  const [loadFailed, setLoadFailed] = useState(false)
+  const [loadFailed, setLoadFailed] = useState(!TURNSTILE_SITE_KEY)
   const retryCountRef = useRef(0)
   const MAX_RETRIES = 2
   const [retryNonce, setRetryNonce] = useState(0)
+
+  // If site key is missing, fire the error callback once on mount
+  const missingKeyNotified = useRef(false)
+  useEffect(() => {
+    if (!TURNSTILE_SITE_KEY && !missingKeyNotified.current) {
+      missingKeyNotified.current = true
+      console.warn('[Turnstile] Missing NEXT_PUBLIC_TURNSTILE_SITE_KEY - CAPTCHA unavailable')
+      onError?.()
+    }
+  }, [onError])
 
   const handleError = useCallback(() => {
     retryCountRef.current += 1
@@ -52,7 +63,7 @@ export function Turnstile({ onVerify, onError, onExpire, mode = 'normal' }: Turn
         onError?.()
       }
     } else {
-      console.warn('[Turnstile] CAPTCHA failed after retries - allowing form submission without it')
+      console.warn('[Turnstile] CAPTCHA failed after retries')
       setLoadFailed(true)
       onError?.()
     }
@@ -60,9 +71,6 @@ export function Turnstile({ onVerify, onError, onExpire, mode = 'normal' }: Turn
 
   useEffect(() => {
     if (!TURNSTILE_SITE_KEY) {
-      console.warn('[Turnstile] Missing NEXT_PUBLIC_TURNSTILE_SITE_KEY - CAPTCHA unavailable')
-      setLoadFailed(true)
-      onError?.()
       return
     }
 
@@ -77,10 +85,8 @@ export function Turnstile({ onVerify, onError, onExpire, mode = 'normal' }: Turn
             },
             'error-callback': handleError,
             'expired-callback': onExpire,
-            theme: 'light',
-            size: mode,
-            retry: 'auto',
-            'retry-interval': 3000,
+            theme: 'auto',
+            size: mode === 'normal' ? 'normal' : 'invisible',
           })
         } catch (err) {
           console.warn('[Turnstile] Failed to render widget:', err)
@@ -98,7 +104,7 @@ export function Turnstile({ onVerify, onError, onExpire, mode = 'normal' }: Turn
       const existingScript = document.querySelector('script[src*="turnstile"]')
       if (!existingScript) {
         const script = document.createElement('script')
-        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad'
+        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileLoad'
         script.async = true
         script.defer = true
         script.onerror = () => {
@@ -113,10 +119,10 @@ export function Turnstile({ onVerify, onError, onExpire, mode = 'normal' }: Turn
       }
     }
 
-    // Timeout fallback: if widget hasn't loaded after 10s, don't block the user
+    // Timeout fallback: if widget hasn't loaded after 10s, surface an error state
     const timeout = setTimeout(() => {
       if (!widgetIdRef.current) {
-        console.warn('[Turnstile] Widget load timeout - allowing form submission without CAPTCHA')
+        console.warn('[Turnstile] Widget load timeout')
         setLoadFailed(true)
         onError?.()
       }
