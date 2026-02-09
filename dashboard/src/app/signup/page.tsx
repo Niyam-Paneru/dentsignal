@@ -253,14 +253,9 @@ export default function SignupPage() {
       return
     }
     
-    if (!captchaToken) {
-      setIsLoading(false)
-      setError(captchaError
-        ? 'Security check failed to load. Please allow challenges.cloudflare.com and try again.'
-        : 'Please complete the security check before continuing.'
-      )
-      return
-    }
+    // CAPTCHA: include token if available, but don't block signup
+    // If Supabase requires captcha and token is missing, it will return an error
+    // that we handle gracefully below
     
     // Track attempt
     setAttempts(prev => prev + 1)
@@ -300,7 +295,7 @@ export default function SignupPage() {
       email,
       password,
       options: {
-        captchaToken,
+        ...(captchaToken ? { captchaToken } : {}),
         data: {
           first_name: firstName,
           last_name: lastName,

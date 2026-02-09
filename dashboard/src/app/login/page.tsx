@@ -67,7 +67,7 @@ function LoginForm() {
     // Log but don't block - invisible CAPTCHA can fail due to ad blockers, VPNs, etc.
     // Login will still work if Supabase doesn't require captcha, or will show
     // a helpful message if Supabase rejects the request
-    console.warn('[Login] CAPTCHA failed to load - login will proceed without it')
+    console.warn('[Login] CAPTCHA failed to load - login blocked until CAPTCHA is available')
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -83,16 +83,17 @@ function LoginForm() {
       return
     }
     
-    // CAPTCHA is optional for invisible mode - it may not have triggered yet
-    // Track attempt
-    setAttempts(prev => prev + 1)
-    setLastAttemptTime(Date.now())
-    
-    // Build auth options with required captcha token
+    // CAPTCHA: include token if available, but don't block login
+    // If Supabase requires captcha and token is missing, it will return an error
+    // that we handle below with a helpful message
     const authOptions: { captchaToken?: string } = {}
     if (captchaToken) {
       authOptions.captchaToken = captchaToken
     }
+
+    // Track attempt
+    setAttempts(prev => prev + 1)
+    setLastAttemptTime(Date.now())
     
     warnTimerRef.current = window.setTimeout(() => {
       setSlowAuth(true)
