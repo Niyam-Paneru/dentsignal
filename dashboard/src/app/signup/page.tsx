@@ -241,7 +241,6 @@ export default function SignupPage() {
     
     // Honeypot check - if filled, it's a bot
     if (honeypot) {
-      console.log('Honeypot triggered - bot detected')
       setIsLoading(false)
       // Silently fail for bots, don't give them feedback
       return

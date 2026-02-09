@@ -17,6 +17,11 @@ export function VideoModal({
 }: VideoModalProps) {
   const [isOpen, setIsOpen] = useState(false)
 
+  // Don't render the button if no real video ID is set
+  const hasVideo = videoId && videoId !== 'YOUR_DEMO_VIDEO'
+
+  if (!hasVideo) return null
+
   return (
     <>
       <Button 

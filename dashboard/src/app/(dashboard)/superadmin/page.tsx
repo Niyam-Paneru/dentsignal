@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { createClient } from "@/lib/supabase/client";
 import {
   Activity,
+  AlertCircle,
   AlertTriangle,
   Building2,
   CheckCircle2,
@@ -248,7 +249,20 @@ function SubscriptionManagement({ userEmail }: { userEmail: string | null }) {
   const [activationPlan, setActivationPlan] = useState<'starter_149' | 'pro_199'>('starter_149');
   const [activationNotes, setActivationNotes] = useState('');
   const [activationDays, setActivationDays] = useState('30');
+  const [activationError, setActivationError] = useState<string | null>(null);
+  const [activationSuccess, setActivationSuccess] = useState<string | null>(null);
   const supabase = createClient();
+
+  // Auto-dismiss toast messages after 4 seconds
+  useEffect(() => {
+    if (activationError || activationSuccess) {
+      const timer = setTimeout(() => {
+        setActivationError(null);
+        setActivationSuccess(null);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [activationError, activationSuccess]);
 
   const fetchClinics = useCallback(async () => {
     setLoading(true);
@@ -315,9 +329,9 @@ function SubscriptionManagement({ userEmail }: { userEmail: string | null }) {
 
     if (error) {
       console.error('Error activating subscription:', error);
-      alert('Failed to activate subscription: ' + error.message);
+      setActivationError('Failed to activate subscription: ' + error.message);
     } else {
-      alert('Subscription activated successfully!');
+      setActivationSuccess('Subscription activated successfully!');
       setSelectedClinic(null);
       setActivationNotes('');
       fetchClinics();
@@ -348,9 +362,9 @@ function SubscriptionManagement({ userEmail }: { userEmail: string | null }) {
 
     if (error) {
       console.error('Error extending subscription:', error);
-      alert('Failed to extend subscription: ' + error.message);
+      setActivationError('Failed to extend subscription: ' + error.message);
     } else {
-      alert(`Subscription extended by ${days} days!`);
+      setActivationSuccess(`Subscription extended by ${days} days!`);
       fetchClinics();
     }
     setActivating(null);
@@ -793,6 +807,22 @@ export default function SuperAdminPage() {
 
   return (
     <div className="flex-1 space-y-6 p-6">
+      {/* Toast Notifications */}
+      {activationError && (
+        <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>{activationError}</span>
+          <button onClick={() => setActivationError(null)} className="ml-auto text-red-500 hover:text-red-700">✕</button>
+        </div>
+      )}
+      {activationSuccess && (
+        <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+          <CheckCircle2 className="h-4 w-4 shrink-0" />
+          <span>{activationSuccess}</span>
+          <button onClick={() => setActivationSuccess(null)} className="ml-auto text-green-500 hover:text-green-700">✕</button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

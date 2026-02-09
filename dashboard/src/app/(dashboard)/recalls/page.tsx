@@ -250,14 +250,12 @@ export default function RecallsPage() {
     setIsCreatingCampaign(false)
   }
 
-  const handleSendSms = async (recallId: number) => {
-    // In production, call API to trigger SMS
-    console.log('Sending SMS for recall:', recallId)
+  const handleSendSms = async (_recallId: number) => {
+    // TODO: Call API to trigger SMS when backend SMS service is ready
   }
 
-  const handleScheduleCall = async (recallId: number) => {
-    // In production, call API to schedule AI call
-    console.log('Scheduling call for recall:', recallId)
+  const handleScheduleCall = async (_recallId: number) => {
+    // TODO: Call API to schedule AI call when backend is ready
   }
 
   const filteredRecalls = recalls.filter(recall => {

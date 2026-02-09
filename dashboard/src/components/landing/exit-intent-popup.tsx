@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { X, Gift, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { createClient } from '@/lib/supabase/client'
 
 export function ExitIntentPopup() {
   const [isVisible, setIsVisible] = useState(false)
@@ -43,14 +44,17 @@ export function ExitIntentPopup() {
     e.preventDefault()
     if (!email) return
 
-    // TODO: Send to your email list (LemonSqueezy, ConvertKit, etc.)
-    // For now, just store locally and log
+    // Save lead to Supabase
     try {
-      const leads = JSON.parse(localStorage.getItem('dentsignal-leads') || '[]')
-      leads.push({ email, source: 'exit-intent', timestamp: new Date().toISOString() })
-      localStorage.setItem('dentsignal-leads', JSON.stringify(leads))
+      const supabase = createClient()
+      await supabase
+        .from('dental_leads')
+        .upsert(
+          { email, source: 'exit-intent' },
+          { onConflict: 'email,source' }
+        )
     } catch {
-      // Silently fail
+      // Silently fail — don't block the user experience
     }
 
     setSubmitted(true)
