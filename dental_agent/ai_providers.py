@@ -472,7 +472,8 @@ def check_all_providers() -> Dict[str, Any]:
                 "error": response.error,
             }
         except Exception as e:
-            results["openai"] = {"status": "error", "error": str(e)}
+            logger.error(f"OpenAI health check failed: {e}")
+            results["openai"] = {"status": "error", "error": "Health check failed"}
     else:
         results["openai"] = {"status": "not_configured"}
     
@@ -486,7 +487,8 @@ def check_all_providers() -> Dict[str, Any]:
                 "error": response.error,
             }
         except Exception as e:
-            results["gemini"] = {"status": "error", "error": str(e)}
+            logger.error(f"Gemini health check failed: {e}")
+            results["gemini"] = {"status": "error", "error": "Health check failed"}
     else:
         results["gemini"] = {"status": "not_configured"}
     
@@ -500,7 +502,8 @@ def check_all_providers() -> Dict[str, Any]:
                 "error": response.error,
             }
         except Exception as e:
-            results["gemini_embeddings"] = {"status": "error", "error": str(e)}
+            logger.error(f"Gemini embeddings health check failed: {e}")
+            results["gemini_embeddings"] = {"status": "error", "error": "Health check failed"}
     
     return results
 

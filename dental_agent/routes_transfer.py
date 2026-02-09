@@ -149,7 +149,7 @@ async def initiate_transfer(
         logger.error(f"Transfer failed: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to initiate transfer: {str(e)}"
+            detail="Failed to initiate transfer"
         )
 
 
@@ -224,7 +224,8 @@ async def can_transfer(call_sid: str):
         }
         
     except Exception as e:
+        logger.error(f"Error checking transfer availability: {e}")
         return {
             "can_transfer": False,
-            "reason": str(e)
+            "reason": "Internal error checking transfer availability"
         }

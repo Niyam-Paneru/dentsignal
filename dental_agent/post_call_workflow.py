@@ -129,12 +129,12 @@ async def run_post_call_workflow(
             next_action = {
                 "action": "send_reminder",
                 "scheduled_for": "24 hours before appointment",
-                "phone": caller_phone,
                 "patient_name": patient_name,
             }
             
         except Exception as e:
-            errors.append({"action": "send_confirmation", "error": str(e)})
+            logger.error(f"Failed to send confirmation: {e}")
+            errors.append({"action": "send_confirmation", "error": "SMS delivery failed"})
             
     elif analysis.outcome in [CallOutcome.QUESTION_ANSWERED, CallOutcome.UNKNOWN]:
         # Send thank-you follow-up
@@ -153,7 +153,8 @@ async def run_post_call_workflow(
             })
             
         except Exception as e:
-            errors.append({"action": "send_followup", "error": str(e)})
+            logger.error(f"Failed to send followup: {e}")
+            errors.append({"action": "send_followup", "error": "SMS delivery failed"})
     
     # Step 3: Handle sentiment-based actions
     if analysis.overall_sentiment in [Sentiment.NEGATIVE, Sentiment.VERY_NEGATIVE, Sentiment.FRUSTRATED]:

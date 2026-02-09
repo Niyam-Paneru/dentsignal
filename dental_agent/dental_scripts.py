@@ -641,6 +641,5 @@ if __name__ == "__main__":
     print("=" * 80)
     print("GENERATED SYSTEM PROMPT")
     print("=" * 80)
-    print(prompt[:3000])  # Print first 3000 chars
-    print("\n... (truncated for display)")
+    print("[System prompt content hidden for security]")
     print(f"\nTotal length: {len(prompt)} characters")

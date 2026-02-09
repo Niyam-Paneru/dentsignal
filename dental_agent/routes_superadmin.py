@@ -292,7 +292,7 @@ async def _get_openai_usage() -> Dict[str, Any]:
             "note": "Costs are estimated. Check dashboard.openai.com for exact usage."
         }
     except Exception as e:
-        return {"status": "error", "error": str(e)}
+        return {"status": "error", "error": "Operation failed"}
 
 
 async def _get_gemini_usage() -> Dict[str, Any]:
@@ -315,7 +315,7 @@ async def _get_gemini_usage() -> Dict[str, Any]:
             "note": "Using free tier. Upgrade at aistudio.google.com for higher limits."
         }
     except Exception as e:
-        return {"status": "error", "error": str(e)}
+        return {"status": "error", "error": "Operation failed"}
 
 
 async def _get_huggingface_usage() -> Dict[str, Any]:
@@ -362,7 +362,7 @@ async def _get_deepgram_usage() -> Dict[str, Any]:
             else:
                 return {"status": "error", "error": f"API returned {response.status_code}"}
     except Exception as e:
-        return {"status": "error", "error": str(e)}
+        return {"status": "error", "error": "Operation failed"}
 
 
 async def _get_twilio_usage() -> Dict[str, Any]:
@@ -391,13 +391,13 @@ async def _get_twilio_usage() -> Dict[str, Any]:
                     "currency": data.get("currency", "USD"),
                     "cost_today": 12.50,  # Would come from usage API
                     "cost_month": 375.00,
-                    "phone_number": os.getenv("TWILIO_NUMBER"),
+                    "phone_number": "configured",
                     "note": "Balance shown. Check twilio.com/console for details."
                 }
             else:
                 return {"status": "error", "error": f"API returned {response.status_code}"}
     except Exception as e:
-        return {"status": "error", "error": str(e)}
+        return {"status": "error", "error": "Operation failed"}
 
 
 # =============================================================================
@@ -494,7 +494,7 @@ async def list_all_clinics(
         
     except Exception as e:
         logger.error(f"Error listing clinics: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/clinics/{clinic_id}/details")
@@ -542,7 +542,7 @@ async def get_clinic_details(
         raise
     except Exception as e:
         logger.error(f"Error getting clinic details: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # =============================================================================
@@ -659,7 +659,7 @@ async def get_call_summaries(
         
     except Exception as e:
         logger.error(f"Error getting call summaries: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/calls/{call_id}/details")
@@ -704,7 +704,7 @@ async def get_call_details(
         raise
     except Exception as e:
         logger.error(f"Error getting call details: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # =============================================================================
@@ -848,7 +848,7 @@ async def get_analytics_overview(
         }
     except Exception as e:
         logger.error(f"Error getting analytics overview: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/analytics/common-issues")

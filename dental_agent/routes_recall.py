@@ -10,10 +10,13 @@ Features:
 - Process SMS replies and call outcomes
 """
 
+import logging
 from datetime import datetime, timedelta
 from typing import Optional, List
 from fastapi import APIRouter, HTTPException, Query, Body
 from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
 
 from sqlmodel import select, Session
 
@@ -118,7 +121,8 @@ async def get_recall_candidates(
     result = generate_recall_list(clinic_id, recall_type_enum, overdue_days)
     
     if result.get("error"):
-        raise HTTPException(status_code=500, detail=result["error"])
+        logger.error(f"Operation failed: {result.get('error', 'unknown')}")
+        raise HTTPException(status_code=500, detail="Operation failed")
     
     return result
 
@@ -190,7 +194,8 @@ async def get_recalls(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Operation failed: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/stats")
@@ -239,7 +244,8 @@ async def get_recall_stats(
             }
             
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Operation failed: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # =============================================================================
@@ -274,7 +280,8 @@ async def create_campaign(
     )
     
     if result.get("error"):
-        raise HTTPException(status_code=500, detail=result["error"])
+        logger.error(f"Operation failed: {result.get('error', 'unknown')}")
+        raise HTTPException(status_code=500, detail="Operation failed")
     
     return result
 
@@ -317,7 +324,8 @@ async def get_campaigns(
             }
             
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Operation failed: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/campaigns/{campaign_id}")
@@ -363,7 +371,8 @@ async def get_campaign(campaign_id: int):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Operation failed: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # =============================================================================
@@ -403,7 +412,8 @@ async def get_recall(recall_id: int):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Operation failed: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.patch("/{recall_id}")
@@ -440,7 +450,8 @@ async def update_recall(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Operation failed: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/{recall_id}/send-sms")
@@ -469,7 +480,8 @@ async def trigger_recall_sms(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Operation failed: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/{recall_id}/call")
@@ -494,7 +506,8 @@ async def trigger_recall_call(recall_id: int):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Operation failed: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/{recall_id}/response")
@@ -515,14 +528,16 @@ async def record_recall_response(
         )
         
         if result.get("error"):
-            raise HTTPException(status_code=500, detail=result["error"])
+            logger.error(f"Operation failed: {result.get('error', 'unknown')}")
+            raise HTTPException(status_code=500, detail="Operation failed")
         
         return result
         
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Operation failed: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # =============================================================================
@@ -550,4 +565,5 @@ async def trigger_process_recalls(
         }
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Operation failed: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")

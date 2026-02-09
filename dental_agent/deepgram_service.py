@@ -127,7 +127,7 @@ def transcribe_audio(
         logger.error(f"Deepgram STT error: {e}")
         return {
             "success": False,
-            "error": str(e),
+            "error": "Speech-to-text processing failed",
             "transcript": "",
         }
 
@@ -371,7 +371,8 @@ def verify_deepgram_credentials() -> dict:
                 }
                 
     except Exception as e:
+        logger.error(f"Deepgram API verification failed: {e}")
         return {
             "success": False,
-            "error": str(e),
+            "error": "Deepgram API verification failed",
         }

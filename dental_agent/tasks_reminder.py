@@ -619,6 +619,6 @@ def handle_patient_sms_response(
     except Exception as e:
         logger.error(f"Error processing SMS response: {e}")
         return {
-            "error": str(e),
+            "error": "SMS processing failed",
             "response": "Sorry, we had trouble processing your message. Please call us directly.",
         }

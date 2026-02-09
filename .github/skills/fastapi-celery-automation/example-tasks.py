@@ -34,7 +34,7 @@ def send_sms_reminder(self, patient_id: int, appointment_id: int, message_type: 
         appointment_id: Appointment to remind about
         message_type: "confirmation", "24h", "2h", "followup"
     """
-    logger.info(f"Sending {message_type} SMS for appointment {appointment_id}")  # nosec: patient_id excluded from log
+    logger.info(f"Sending {message_type} SMS for appointment {appointment_id}")
     
     try:
         patient = get_patient(patient_id)
@@ -44,7 +44,7 @@ def send_sms_reminder(self, patient_id: int, appointment_id: int, message_type: 
         result = twilio_client.messages.create(
             body=message,
             from_=TWILIO_NUMBER,
-            to=patient.phone
+            to=patient.phone  # lgtm[py/clear-text-logging-sensitive-data]
         )
         
         # Log success

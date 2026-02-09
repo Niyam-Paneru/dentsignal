@@ -154,7 +154,7 @@ async def create_batch(request: BatchCreateRequest):
     
     except Exception as e:
         logger.error(f"Failed to create batch: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Failed to create batch")
 
 
 @router.post("/calls/{call_id}/result", response_model=CallResultResponse)

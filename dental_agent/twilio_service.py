@@ -98,24 +98,24 @@ def make_call(
             machine_detection_timeout=5,
         )
         
-        logger.info(f"Call initiated: SID={call.sid}, To={to_number}, Status={call.status}")
+        logger.info(f"Call initiated: SID={call.sid}, To={mask_phone(to_number)}, Status={call.status}")
         
         return {
             "success": True,
             "call_sid": call.sid,
             "status": call.status,
-            "to": to_number,
-            "from": TWILIO_NUMBER,
+            "to": mask_phone(to_number),
+            "from": mask_phone(TWILIO_NUMBER) if TWILIO_NUMBER else "N/A",
             "lead_id": lead_id,
             "call_id": call_id,
         }
         
     except Exception as e:
-        logger.error(f"Failed to initiate call to {to_number}: {e}")
+        logger.error(f"Failed to initiate call to {mask_phone(to_number)}: {e}")
         return {
             "success": False,
-            "error": str(e),
-            "to": to_number,
+            "error": "Failed to initiate call",
+            "to": mask_phone(to_number),
             "lead_id": lead_id,
             "call_id": call_id,
         }
@@ -321,17 +321,18 @@ def verify_twilio_credentials() -> dict:
         
         return {
             "success": True,
-            "account_sid": account.sid,
+            "account_sid": f"***{account.sid[-6:]}" if account.sid else "N/A",
             "friendly_name": account.friendly_name,
             "status": account.status,
             "type": account.type,
-            "twilio_number": TWILIO_NUMBER,
+            "twilio_number": mask_phone(TWILIO_NUMBER) if TWILIO_NUMBER else "N/A",
         }
         
     except Exception as e:
+        logger.error(f"Twilio credential verification failed: {e}")
         return {
             "success": False,
-            "error": str(e),
+            "error": "Failed to verify Twilio credentials",
         }
 
 
@@ -352,7 +353,8 @@ def get_call_status(call_sid: str) -> dict:
             "end_time": str(call.end_time) if call.end_time else None,
         }
     except Exception as e:
-        return {"error": str(e)}
+        logger.error(f"Failed to get call status for {call_sid}: {e}")
+        return {"error": "Failed to retrieve call status"}
 
 
 # =============================================================================
@@ -392,12 +394,12 @@ def send_sms(
             "success": True,
             "message_sid": sms.sid,
             "status": sms.status,
-            "to": to_number,
+            "to": mask_phone(to_number),
         }
         
     except Exception as e:
         logger.error(f"Failed to send SMS to {mask_phone(to_number)}: {e}")
-        return {"success": False, "error": str(e)}
+        return {"success": False, "error": "SMS delivery failed"}
 
 
 def send_appointment_confirmation(
@@ -616,7 +618,7 @@ def list_available_numbers(
         ]
     except Exception as e:
         logger.error(f"Error listing available numbers: {e}")
-        return {"error": str(e)}
+        return {"error": "Failed to list available numbers"}
 
 
 def provision_clinic_number(
@@ -692,7 +694,6 @@ def provision_clinic_number(
         return {
             "success": True,
             "phone_number": mask_phone(number.phone_number),
-            "phone_number_raw": number.phone_number,  # For internal use only, not logged
             "sid": number.sid,
             "friendly_name": number.friendly_name,
             "webhooks": {
@@ -704,7 +705,7 @@ def provision_clinic_number(
         
     except Exception as e:
         logger.error(f"Error provisioning number for clinic {clinic_id}: {e}")
-        return {"success": False, "error": str(e)}
+        return {"success": False, "error": "Failed to provision number"}
 
 
 def update_number_webhooks(phone_sid: str) -> dict:
@@ -746,7 +747,7 @@ def update_number_webhooks(phone_sid: str) -> dict:
         }
     except Exception as e:
         logger.error(f"Error updating number: {type(e).__name__}")
-        return {"success": False, "error": str(e)}
+        return {"success": False, "error": "Failed to update number webhooks"}
 
 
 def release_number(phone_sid: str) -> dict:
@@ -771,7 +772,7 @@ def release_number(phone_sid: str) -> dict:
         return {"success": True, "message": f"Number {phone_sid} released"}
     except Exception as e:
         logger.error(f"Error releasing number (SID: ***{phone_sid[-6:]}): {e}")
-        return {"success": False, "error": str(e)}
+        return {"success": False, "error": "Failed to release number"}
 
 
 def list_clinic_numbers() -> list:
@@ -789,7 +790,7 @@ def list_clinic_numbers() -> list:
         return [
             {
                 "sid": n.sid,
-                "phone_number": n.phone_number,
+                "phone_number": mask_phone(n.phone_number),
                 "friendly_name": n.friendly_name,
                 "voice_url": n.voice_url,
                 "sms_url": n.sms_url,
@@ -799,4 +800,4 @@ def list_clinic_numbers() -> list:
         ]
     except Exception as e:
         logger.error(f"Error listing numbers: {e}")
-        return {"error": str(e)}
+        return {"error": "Failed to list numbers"}

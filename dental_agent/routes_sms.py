@@ -24,6 +24,7 @@ from twilio_service import (
     send_recall_reminder,
     send_review_request,
 )
+from utils import mask_phone
 
 try:
     from tasks_reminder import handle_patient_sms_response
@@ -388,7 +389,7 @@ async def inbound_sms_webhook(
         logger.warning("Inbound SMS missing From or Body")
         return {"status": "error", "message": "Missing required fields"}
     
-    logger.info(f"Inbound SMS from {From}: {Body[:50]}...")
+    logger.info(f"Inbound SMS from {mask_phone(From)}: [message body hidden]")
     
     # Process the response
     result = handle_patient_sms_response(
