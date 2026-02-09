@@ -410,7 +410,6 @@ async def inbound_sms_webhook(
     # Return TwiML response (empty is fine - we send response via API)
     return {
         "status": "success",
-        "from": From,
         "intent": result.get("intent"),
         "action": result.get("action"),
         "appointment_id": result.get("appointment_id"),

@@ -311,8 +311,6 @@ def make_twilio_call(
     return {
         "call_sid": call.sid,
         "status": call.status,
-        "to": to_number,
-        "from": TWILIO_NUMBER,
     }
 
 

@@ -691,7 +691,8 @@ def provision_clinic_number(
         
         return {
             "success": True,
-            "phone_number": number.phone_number,
+            "phone_number": mask_phone(number.phone_number),
+            "phone_number_raw": number.phone_number,  # For internal use only, not logged
             "sid": number.sid,
             "friendly_name": number.friendly_name,
             "webhooks": {
@@ -737,14 +738,14 @@ def update_number_webhooks(phone_sid: str) -> dict:
         
         return {
             "success": True,
-            "phone_number": number.phone_number,
+            "phone_number": mask_phone(number.phone_number),
             "webhooks": {
                 "voice": voice_webhook,
                 "sms": sms_webhook,
             },
         }
     except Exception as e:
-        logger.error(f"Error updating number (SID: ***{phone_sid[-6:]}): {e}")
+        logger.error(f"Error updating number: {type(e).__name__}")
         return {"success": False, "error": str(e)}
 
 

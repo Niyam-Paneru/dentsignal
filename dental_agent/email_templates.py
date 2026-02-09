@@ -662,5 +662,5 @@ if __name__ == "__main__":
         top_hours=["10am", "2pm", "4pm"]
     )
     
-    print("\n=== Weekly Digest Subject ===")
-    print(digest.get_subject())
+    print("\n=== Weekly Digest ===")
+    print(f"Digest rendered successfully ({len(digest.render())} chars)")

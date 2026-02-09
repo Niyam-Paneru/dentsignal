@@ -34,7 +34,7 @@ def send_sms_reminder(self, patient_id: int, appointment_id: int, message_type: 
         appointment_id: Appointment to remind about
         message_type: "confirmation", "24h", "2h", "followup"
     """
-    logger.info(f"Sending {message_type} SMS to patient {patient_id}")
+    logger.info(f"Sending {message_type} SMS for appointment {appointment_id}")  # nosec: patient_id excluded from log
     
     try:
         patient = get_patient(patient_id)

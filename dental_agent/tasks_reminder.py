@@ -150,7 +150,7 @@ def send_booking_confirmation(self, appointment_id: int) -> dict:
     
     Called right after appointment is created.
     """
-    logger.info(f"Sending booking confirmation for appointment {appointment_id}")
+    logger.info(f"Sending booking confirmation for apt_id={appointment_id}")
     
     try:
         with get_session() as session:

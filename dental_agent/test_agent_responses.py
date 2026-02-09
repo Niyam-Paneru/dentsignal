@@ -57,8 +57,8 @@ async def test_agent_connection():
             config = builder.build_agent_config()
             
             print(f"\n📋 Agent Config:")
-            print(f"   - Clinic: {config['clinic_name']}")
-            print(f"   - Voice: {config['voice_id']}")
+            print(f"   - Clinic: [configured]")
+            print(f"   - Voice: [configured]")
             print(f"   - Greeting: [configured]")
             print(f"   - Functions: {len(config['functions'])} available")
             
