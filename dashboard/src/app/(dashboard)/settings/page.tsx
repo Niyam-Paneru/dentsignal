@@ -1773,7 +1773,7 @@ export default function SettingsPage() {
                     </a>
                   </Button>
                   <Button variant="outline" asChild>
-                    <a href="mailto:hello@dentsignal.com?subject=Billing%20Question">
+                    <a href="mailto:founder@dentsignal.me?subject=Billing%20Question">
                       Contact Support
                     </a>
                   </Button>

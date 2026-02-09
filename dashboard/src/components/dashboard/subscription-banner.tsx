@@ -57,7 +57,7 @@ export function SubscriptionBanner() {
           </p>
         </div>
         <a
-          href="mailto:hello@dentsignal.com?subject=Subscription%20Inquiry"
+          href="mailto:founder@dentsignal.me?subject=Subscription%20Inquiry"
           className={`inline-flex items-center gap-1.5 rounded-md bg-white px-3 py-1.5 text-sm font-medium shadow-sm border hover:bg-gray-50 transition-colors shrink-0 ${textColor}`}
         >
           <CreditCard className="h-4 w-4" />

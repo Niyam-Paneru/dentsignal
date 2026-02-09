@@ -105,7 +105,7 @@ function LoginForm() {
       setError('Sign-in is taking longer than expected (usually under 10 seconds). Please try again.')
     }, 20000)
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
       options: authOptions,
@@ -137,6 +137,51 @@ function LoginForm() {
       }
       setIsLoading(false)
       return
+    }
+
+    const user = signInData?.user
+
+    if (user) {
+      try {
+        const { data: existingClinic } = await supabase
+          .from('dental_clinics')
+          .select('id')
+          .eq('owner_id', user.id)
+          .maybeSingle()
+
+        if (!existingClinic?.id) {
+          const trialExpiresAt = new Date()
+          trialExpiresAt.setDate(trialExpiresAt.getDate() + 9)
+
+          const clinicName = (user.user_metadata?.clinic_name as string | undefined) || 'Your Dental Practice'
+          const ownerName = `${user.user_metadata?.first_name || ''} ${user.user_metadata?.last_name || ''}`.trim()
+
+          const { data: newClinic, error: clinicCreateError } = await supabase
+            .from('dental_clinics')
+            .insert({
+              owner_id: user.id,
+              name: clinicName,
+              owner_name: ownerName || null,
+              subscription_status: 'trial',
+              subscription_expires_at: trialExpiresAt.toISOString(),
+            })
+            .select('id')
+            .single()
+
+          if (!clinicCreateError && newClinic?.id) {
+            await supabase
+              .from('dental_clinic_settings')
+              .insert({
+                clinic_id: newClinic.id,
+                agent_name: 'Sarah',
+                agent_voice: 'aura-asteria-en',
+                greeting_template: `Thank you for calling ${clinicName}. This is Sarah, how may I help you today?`,
+              })
+          }
+        }
+      } catch (error) {
+        console.error('[Login] Failed to create clinic on first login:', error)
+      }
     }
     
     router.push('/dashboard')

@@ -115,7 +115,7 @@ Please send me the payment instructions.
 
 Thank you!`)
     
-    window.location.href = `mailto:hello@dentsignal.com?subject=${subject}&body=${body}`
+    window.location.href = `mailto:founder@dentsignal.me?subject=${subject}&body=${body}`
   }
 
   if (loading) {
@@ -258,7 +258,7 @@ Thank you!`)
                   </Button>
                 </div>
                 <p className="text-center text-sm text-gray-500 mt-3">
-                  Or email us directly at <a href="mailto:hello@dentsignal.com" className="text-blue-600 hover:underline">hello@dentsignal.com</a>
+                  Or email us directly at <a href="mailto:founder@dentsignal.me" className="text-blue-600 hover:underline">founder@dentsignal.me</a>
                 </p>
               </div>
             </CardContent>
