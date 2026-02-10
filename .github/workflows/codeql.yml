@@ -34,6 +34,7 @@ on:
       - 'scripts/**'
   schedule:
     - cron: '18 4 * * 6'
+  workflow_dispatch:
 
 jobs:
   analyze:
