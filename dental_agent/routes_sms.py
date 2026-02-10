@@ -258,7 +258,7 @@ async def send_bulk_recall(request: BulkRecallRequest, background_tasks: Backgro
                     "patient": patient["patient_name"],
                     "error": result.get("error"),
                 })
-        logger.info(f"Bulk recall complete: {results}")
+        logger.info(f"Bulk recall complete: sent={results['sent']} failed={results['failed']}")
     
     background_tasks.add_task(send_recalls)
     
@@ -389,7 +389,7 @@ async def inbound_sms_webhook(
         logger.warning("Inbound SMS missing From or Body")
         return {"status": "error", "message": "Missing required fields"}
     
-    logger.info(f"Inbound SMS from {mask_phone(From)}: [message body hidden]")
+    logger.info("Inbound SMS received")
     
     # Process the response
     result = handle_patient_sms_response(
@@ -402,8 +402,8 @@ async def inbound_sms_webhook(
         try:
             send_sms(From, result["response"])
             result["response_sent"] = True
-        except Exception as e:
-            logger.error(f"Failed to send response SMS: {e}")
+        except Exception:
+            logger.error("Failed to send response SMS")
             result["response_sent"] = False
     
     logger.info(f"Inbound SMS processed: {result.get('action', 'unknown')}")

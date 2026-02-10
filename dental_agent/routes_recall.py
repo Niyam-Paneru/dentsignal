@@ -121,7 +121,7 @@ async def get_recall_candidates(
     result = generate_recall_list(clinic_id, recall_type_enum, overdue_days)
     
     if result.get("error"):
-        logger.error(f"Operation failed: {result.get('error', 'unknown')}")
+        logger.error("Operation failed")
         raise HTTPException(status_code=500, detail="Operation failed")
     
     return result
@@ -193,8 +193,8 @@ async def get_recalls(
             
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(f"Operation failed: {e}")
+    except Exception:
+        logger.error("Operation failed")
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -243,8 +243,8 @@ async def get_recall_stats(
                 "period_days": days,
             }
             
-    except Exception as e:
-        logger.error(f"Operation failed: {e}")
+    except Exception:
+        logger.error("Operation failed")
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -280,7 +280,7 @@ async def create_campaign(
     )
     
     if result.get("error"):
-        logger.error(f"Operation failed: {result.get('error', 'unknown')}")
+        logger.error("Operation failed")
         raise HTTPException(status_code=500, detail="Operation failed")
     
     return result
@@ -323,8 +323,8 @@ async def get_campaigns(
                 ]
             }
             
-    except Exception as e:
-        logger.error(f"Operation failed: {e}")
+    except Exception:
+        logger.error("Operation failed")
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -370,8 +370,8 @@ async def get_campaign(campaign_id: int):
             
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(f"Operation failed: {e}")
+    except Exception:
+        logger.error("Operation failed")
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -528,15 +528,15 @@ async def record_recall_response(
         )
         
         if result.get("error"):
-            logger.error(f"Operation failed: {result.get('error', 'unknown')}")
+            logger.error("Operation failed")
             raise HTTPException(status_code=500, detail="Operation failed")
         
         return result
         
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(f"Operation failed: {e}")
+    except Exception:
+        logger.error("Operation failed")
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -564,6 +564,6 @@ async def trigger_process_recalls(
             "message": f"Processing up to {limit} pending recalls",
         }
         
-    except Exception as e:
-        logger.error(f"Operation failed: {e}")
+    except Exception:
+        logger.error("Operation failed")
         raise HTTPException(status_code=500, detail="Internal server error")

@@ -87,8 +87,8 @@ def get_clinic_recall_template(clinic_id: int, template_key: str) -> str:
                         return custom_templates[template_key]
                 except json.JSONDecodeError:
                     logger.warning(f"Invalid JSON in sms_templates for clinic {clinic_id}")
-    except Exception as e:
-        logger.error(f"Error loading clinic SMS template: {e}")
+    except Exception:
+        logger.error("Error loading clinic SMS template")
     
     return DEFAULT_RECALL_SMS_TEMPLATES.get(template_key, DEFAULT_RECALL_SMS_TEMPLATES["recall"])
 
@@ -100,8 +100,8 @@ def is_recall_enabled(clinic_id: int) -> bool:
             clinic = session.get(Client, clinic_id)
             if clinic:
                 return clinic.sms_recall_enabled
-    except Exception as e:
-        logger.error(f"Error checking recall enabled status: {e}")
+    except Exception:
+        logger.error("Error checking recall enabled status")
     return True  # Default to enabled
 
 
@@ -138,8 +138,8 @@ def get_clinic_info(clinic_id: int) -> Dict[str, str]:
                     "name": clinic.name,
                     "phone": clinic.phone_display or clinic.twilio_number or "our office",
                 }
-    except Exception as e:
-        logger.error(f"Error getting clinic info: {e}")
+    except Exception:
+        logger.error("Error getting clinic info")
     return {"name": "our clinic", "phone": "us"}
 
 
@@ -162,7 +162,7 @@ def send_recall_sms(self, recall_id: int, is_followup: bool = False, is_final: b
         is_followup: Whether this is a follow-up SMS
         is_final: Whether this is the final reminder
     """
-    logger.info(f"Sending recall SMS for recall_id={recall_id} (followup={is_followup}, final={is_final})")
+    logger.info(f"Sending recall SMS (followup={is_followup}, final={is_final})")
     
     try:
         with get_session() as session:
@@ -252,7 +252,7 @@ def send_recall_sms(self, recall_id: int, is_followup: bool = False, is_final: b
                 raise Exception(result.get("error", "SMS send failed"))
                 
     except Exception as exc:
-        logger.error(f"Error sending recall SMS for {recall_id}: {exc}")
+        logger.error("Error sending recall SMS")
         raise self.retry(exc=exc)
 
 
@@ -263,7 +263,7 @@ def schedule_recall_call(self, recall_id: int) -> Dict[str, Any]:
     
     This is the AI calling feature that Dentina.ai doesn't have!
     """
-    logger.info(f"Scheduling recall call for recall_id={recall_id}")
+    logger.info("Scheduling recall call")
     
     try:
         with get_session() as session:
@@ -337,7 +337,7 @@ def schedule_recall_call(self, recall_id: int) -> Dict[str, Any]:
                 raise Exception(result.get("error", "Call failed"))
                 
     except Exception as exc:
-        logger.error(f"Error scheduling recall call for {recall_id}: {exc}")
+        logger.error("Error scheduling recall call")
         raise self.retry(exc=exc)
 
 
@@ -351,7 +351,7 @@ def process_recall_response(self, recall_id: int, response_type: str, response_d
         response_type: "sms" or "call"
         response_data: Dict with response details
     """
-    logger.info(f"Processing recall response for recall_id={recall_id} type={response_type}")
+    logger.info("Processing recall response")
     
     try:
         with get_session() as session:
@@ -371,7 +371,7 @@ def process_recall_response(self, recall_id: int, response_type: str, response_d
                     recall.status = RecallStatus.BOOKED
                     recall.completed_at = datetime.utcnow()
                     # TODO: Create appointment or notify staff
-                    logger.info(f"Recall {recall_id}: patient wants to book")
+                    logger.info("Recall response indicates booking")
                     
                 elif any(word in response_lower for word in ["no", "stop", "cancel", "remove"]):
                     recall.status = RecallStatus.DECLINED
@@ -412,9 +412,9 @@ def process_recall_response(self, recall_id: int, response_type: str, response_d
                 "new_status": recall.status.value,
             }
             
-    except Exception as exc:
-        logger.error(f"Error processing recall response: {exc}")
-        return {"error": str(exc)}
+    except Exception:
+        logger.error("Error processing recall response")
+        return {"error": "Recall response processing failed"}
 
 
 @celery_app.task
@@ -540,9 +540,9 @@ def generate_recall_list(clinic_id: int, recall_type: RecallType, overdue_days: 
                 "candidates": recall_candidates,
             }
             
-    except Exception as exc:
-        logger.error(f"Error generating recall list: {exc}")
-        return {"error": str(exc), "candidates": []}
+    except Exception:
+        logger.error("Error generating recall list")
+        return {"error": "Failed to generate recall list", "candidates": []}
 
 
 @celery_app.task
@@ -635,9 +635,9 @@ def create_recall_campaign(
                 "estimated_revenue": campaign.estimated_revenue,
             }
             
-    except Exception as exc:
-        logger.error(f"Error creating recall campaign: {exc}")
-        return {"error": str(exc)}
+    except Exception:
+        logger.error("Error creating recall campaign")
+        return {"error": "Failed to create recall campaign"}
 
 
 @celery_app.task
@@ -680,9 +680,9 @@ def process_pending_recalls(clinic_id: Optional[int] = None, limit: int = 50) ->
                 "message": f"Scheduled {processed} recall SMS tasks",
             }
             
-    except Exception as exc:
-        logger.error(f"Error processing pending recalls: {exc}")
-        return {"error": str(exc)}
+    except Exception:
+        logger.error("Error processing pending recalls")
+        return {"error": "Failed to process pending recalls"}
 
 
 @celery_app.task
@@ -724,6 +724,6 @@ def cleanup_expired_recalls(days_old: int = 30) -> Dict[str, Any]:
                 "message": f"Marked {cleaned} recalls as no response",
             }
             
-    except Exception as exc:
-        logger.error(f"Error cleaning up recalls: {exc}")
-        return {"error": str(exc)}
+    except Exception:
+        logger.error("Error cleaning up recalls")
+        return {"error": "Failed to clean up recalls"}

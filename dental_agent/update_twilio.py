@@ -14,7 +14,6 @@ token = os.getenv('TWILIO_TOKEN')
 phone = os.getenv('TWILIO_NUMBER')
 
 print(f"Updating Twilio webhook...")
-print(f"Phone: ***{phone[-4:] if phone else 'N/A'}")
 print(f"Webhook: {webhook_url}")
 
 # Get phone number SID
@@ -24,7 +23,6 @@ r = requests.get(
     params={'PhoneNumber': phone}
 )
 phone_sid = r.json()['incoming_phone_numbers'][0]['sid']
-print(f"Phone SID: ***{phone_sid[-6:]}")
 
 # Update webhook
 r = requests.post(

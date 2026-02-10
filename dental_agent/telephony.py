@@ -311,8 +311,7 @@ def make_twilio_call(
     # Create the call
     call = client.calls.create(**call_params)
     
-    call_sid_suffix = f"***{call.sid[-6:]}" if call.sid else "***"
-    logger.info(f"Twilio call initiated: SID={call_sid_suffix}, to={mask_phone(to_number)}")
+    logger.info("Twilio call initiated")
     
     return {
         "call_sid": call.sid,
@@ -346,7 +345,7 @@ def make_call(
     """
     active_mode = (mode or TELEPHONY_MODE).upper()
     
-    logger.info(f"Making call: phone={mask_phone(phone_number)}, call_id={call_id}, mode={active_mode}")
+    logger.info(f"Making call: call_id={call_id}, mode={active_mode}")
     
     if active_mode == "SIMULATED":
         return make_simulated_call(phone_number, call_id, callback_url, **kwargs)

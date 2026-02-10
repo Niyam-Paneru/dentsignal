@@ -98,8 +98,7 @@ def make_call(
             machine_detection_timeout=5,
         )
         
-        call_sid_suffix = f"***{call.sid[-6:]}" if call.sid else "***"
-        logger.info(f"Call initiated: SID={call_sid_suffix}, To={mask_phone(to_number)}, Status={call.status}")
+        logger.info("Call initiated via Twilio")
         
         return {
             "success": True,
@@ -111,8 +110,8 @@ def make_call(
             "call_id": call_id,
         }
         
-    except Exception as e:
-        logger.error(f"Failed to initiate call to {mask_phone(to_number)}: {e}")
+    except Exception:
+        logger.error("Failed to initiate call")
         return {
             "success": False,
             "error": "Failed to initiate call",
@@ -329,8 +328,8 @@ def verify_twilio_credentials() -> dict:
             "twilio_number": mask_phone(TWILIO_NUMBER) if TWILIO_NUMBER else "N/A",
         }
         
-    except Exception as e:
-        logger.error(f"Twilio credential verification failed: {e}")
+    except Exception:
+        logger.error("Twilio credential verification failed")
         return {
             "success": False,
             "error": "Failed to verify Twilio credentials",
@@ -353,8 +352,8 @@ def get_call_status(call_sid: str) -> dict:
             "start_time": str(call.start_time) if call.start_time else None,
             "end_time": str(call.end_time) if call.end_time else None,
         }
-    except Exception as e:
-        logger.error(f"Failed to get call status for {call_sid}: {e}")
+    except Exception:
+        logger.error("Failed to get call status")
         return {"error": "Failed to retrieve call status"}
 
 
@@ -389,7 +388,7 @@ def send_sms(
             to=to_number,
         )
         
-        logger.info(f"SMS sent to {mask_phone(to_number)}: {sms.sid}")
+        logger.info("SMS sent via Twilio")
         
         return {
             "success": True,
@@ -398,8 +397,8 @@ def send_sms(
             "to": mask_phone(to_number),
         }
         
-    except Exception as e:
-        logger.error(f"Failed to send SMS to {mask_phone(to_number)}: {e}")
+    except Exception:
+        logger.error("Failed to send SMS")
         return {"success": False, "error": "SMS delivery failed"}
 
 
@@ -617,8 +616,8 @@ def list_available_numbers(
             }
             for n in numbers
         ]
-    except Exception as e:
-        logger.error(f"Error listing available numbers: {e}")
+    except Exception:
+        logger.error("Error listing available numbers")
         return {"error": "Failed to list available numbers"}
 
 
@@ -690,7 +689,7 @@ def provision_clinic_number(
         else:
             return {"success": False, "error": "Must provide area_code or phone_number"}
         
-        logger.info(f"Provisioned {mask_phone(number.phone_number)} for clinic {clinic_id}")
+        logger.info("Provisioned Twilio number for clinic")
         
         return {
             "success": True,
@@ -704,8 +703,8 @@ def provision_clinic_number(
             "message": "Number purchased and webhooks configured automatically!",
         }
         
-    except Exception as e:
-        logger.error(f"Error provisioning number for clinic {clinic_id}: {e}")
+    except Exception:
+        logger.error("Error provisioning number")
         return {"success": False, "error": "Failed to provision number"}
 
 
@@ -736,7 +735,7 @@ def update_number_webhooks(phone_sid: str) -> dict:
             sms_method="POST",
         )
         
-        logger.info(f"Updated webhooks for {mask_phone(number.phone_number)}")
+        logger.info("Updated number webhooks")
         
         return {
             "success": True,
@@ -746,8 +745,8 @@ def update_number_webhooks(phone_sid: str) -> dict:
                 "sms": sms_webhook,
             },
         }
-    except Exception as e:
-        logger.error(f"Error updating number: {type(e).__name__}")
+    except Exception:
+        logger.error("Error updating number")
         return {"success": False, "error": "Failed to update number webhooks"}
 
 
@@ -769,10 +768,10 @@ def release_number(phone_sid: str) -> dict:
     
     try:
         client.incoming_phone_numbers(phone_sid).delete()
-        logger.info(f"Released phone number (SID: ***{phone_sid[-6:]})")
-        return {"success": True, "message": f"Number {phone_sid} released"}
-    except Exception as e:
-        logger.error(f"Error releasing number (SID: ***{phone_sid[-6:]}): {e}")
+        logger.info("Released phone number")
+        return {"success": True, "message": "Number released"}
+    except Exception:
+        logger.error("Error releasing number")
         return {"success": False, "error": "Failed to release number"}
 
 
@@ -799,6 +798,6 @@ def list_clinic_numbers() -> list:
             }
             for n in numbers
         ]
-    except Exception as e:
-        logger.error(f"Error listing numbers: {e}")
+    except Exception:
+        logger.error("Error listing numbers")
         return {"error": "Failed to list numbers"}

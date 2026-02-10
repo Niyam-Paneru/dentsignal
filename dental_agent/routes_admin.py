@@ -375,7 +375,7 @@ async def assign_twilio_number(
         
         session.commit()
         
-        logger.info(f"Assigned {twilio_number} to clinic {clinic_id}")
+        logger.info("Assigned Twilio number to clinic")
         
         return APIResponse(
             success=True,
@@ -510,7 +510,7 @@ async def list_available_numbers(
     result = twilio_list_numbers(area_code=area_code, limit=limit)
     
     if isinstance(result, dict) and result.get("error"):
-        logger.error(f"Failed to list available numbers: {result.get('error')}")
+        logger.error("Failed to list available numbers")
         raise HTTPException(status_code=500, detail="Failed to list available numbers")
     
     return {
@@ -566,7 +566,7 @@ async def provision_phone_number(
     )
     
     if not result.get("success"):
-        logger.error(f"Failed to provision number: {result.get('error')}")
+        logger.error("Failed to provision number")
         raise HTTPException(status_code=500, detail="Failed to provision number")
     
     # Update clinic with new number
@@ -599,7 +599,7 @@ async def list_all_clinic_numbers():
     result = list_clinic_numbers()
     
     if isinstance(result, dict) and result.get("error"):
-        logger.error(f"Failed to list clinic numbers: {result.get('error')}")
+        logger.error("Failed to list clinic numbers")
         raise HTTPException(status_code=500, detail="Failed to list clinic numbers")
     
     return {
@@ -623,7 +623,7 @@ async def fix_number_webhooks(phone_sid: str):
     result = update_number_webhooks(phone_sid)
     
     if not result.get("success"):
-        logger.error(f"Failed to update webhooks: {result.get('error')}")
+        logger.error("Failed to update webhooks")
         raise HTTPException(status_code=500, detail="Failed to update webhooks")
     
     return result
@@ -647,7 +647,7 @@ async def release_phone_number(phone_sid: str, clinic_id: Optional[int] = None):
     result = release_number(phone_sid)
     
     if not result.get("success"):
-        logger.error(f"Failed to release number: {result.get('error')}")
+        logger.error("Failed to release number")
         raise HTTPException(status_code=500, detail="Failed to release number")
     
     # Clear from clinic record if provided
