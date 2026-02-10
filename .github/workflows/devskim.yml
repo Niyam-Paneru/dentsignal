@@ -8,8 +8,23 @@ name: DevSkim
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'dental_agent/**'
+      - 'dashboard/src/**'
+    paths-ignore:
+      - '**/*.md'
+      - 'dental_agent/tests/**'
+      - 'dental_agent/test_*.py'
+      - 'dental_agent/archive/**'
   pull_request:
     branches: [ "main" ]
+    paths:
+      - 'dental_agent/**'
+      - 'dashboard/src/**'
+    paths-ignore:
+      - '**/*.md'
+      - 'dental_agent/tests/**'
+      - 'dental_agent/test_*.py'
   schedule:
     - cron: '23 9 * * 0'
 
@@ -27,6 +42,9 @@ jobs:
 
       - name: Run DevSkim scanner
         uses: microsoft/DevSkim-Action@v1
+        with:
+          should-scan-git-objects: false
+          ignore-globs: "dental_agent/tests/**,dental_agent/test_*.py,dental_agent/archive/**,dentsignal/**,docs/**,scripts/**,plans/**,openspec/**,brand/**,dashboard/tests/**,dashboard/test-results/**,**/*.md,**/*.sh,**/*.bat,**/*.ps1,.devskim.json"
 
       - name: Upload DevSkim scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3

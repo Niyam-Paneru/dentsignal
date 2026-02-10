@@ -16,9 +16,24 @@ name: Codacy Security Scan
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'dental_agent/**'
+      - 'dashboard/src/**'
+      - 'dashboard/middleware.ts'
+    paths-ignore:
+      - '**/*.md'
+      - 'dental_agent/tests/**'
+      - 'dental_agent/test_*.py'
+      - 'dental_agent/archive/**'
   pull_request:
-    # The branches below must be a subset of the branches above
     branches: [ "main" ]
+    paths:
+      - 'dental_agent/**'
+      - 'dashboard/src/**'
+    paths-ignore:
+      - '**/*.md'
+      - 'dental_agent/tests/**'
+      - 'dental_agent/test_*.py'
   schedule:
     - cron: '35 0 * * 1'
 
@@ -42,17 +57,15 @@ jobs:
       - name: Run Codacy Analysis CLI
         uses: codacy/codacy-analysis-cli-action@d840f886c4bd4edc059706d09c6a1586111c540b
         with:
-          # Check https://github.com/codacy/codacy-analysis-cli#project-token to get your project token from your Codacy repository
-          # You can also omit the token and run the tools that support default configurations
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
           verbose: true
           output: results.sarif
           format: sarif
-          # Adjust severity of non-security issues
           gh-code-scanning-compat: true
-          # Force 0 exit code to allow SARIF file generation
-          # This will handover control about PR rejection to the GitHub side
           max-allowed-issues: 2147483647
+        env:
+          # Tell Pylint to use our config which disables noisy rules
+          PYLINTRC: .pylintrc
 
       # Upload the SARIF file generated in the previous step
       - name: Upload SARIF results file

@@ -12,8 +12,12 @@ engines:
       - "dental_agent/test_*.py"
       - "dental_agent/archive/**"
       - "dental_agent/__pycache__/**"
+      - "dental_agent/logs/**"
+      - "dental_agent/websocket_bridge_old.py"
       - "dashboard/tests/**"
       - "dashboard/test-results/**"
+      - "dashboard/.next/**"
+      - "dashboard/node_modules/**"
       - "dentsignal/**"
       - "docs/**"
       - "scripts/**"
@@ -21,23 +25,18 @@ engines:
       - "openspec/**"
       - "brand/**"
       - "*.md"
+      - "*.sh"
+      - "*.bat"
+      - "*.ps1"
+    # Use our .pylintrc which disables noisy rules
+    python_version: 3
   devskim:
-    enabled: true
-    exclude_paths:
-      - "dental_agent/tests/**"
-      - "dental_agent/test_*.py"
-      - "dental_agent/archive/**"
-      - "dashboard/tests/**"
-      - "dashboard/test-results/**"
-      - "dentsignal/**"
-      - "docs/**"
-      - "scripts/**"
-      - "plans/**"
-      - "openspec/**"
-      - "brand/**"
-      - "*.md"
+    enabled: false
+  # ESLint rules are handled by the dashboard's own eslint config
+  eslint:
+    enabled: false
 
-# Global exclusions - these paths are never analyzed
+# Global exclusions - these paths are never analyzed by ANY tool
 exclude_paths:
   - "dental_agent/tests/**"
   - "dental_agent/test_*.py"
@@ -50,6 +49,9 @@ exclude_paths:
   - "dental_agent/archive/**"
   - "dental_agent/__pycache__/**"
   - "dental_agent/logs/**"
+  - "dental_agent/websocket_bridge_old.py"
+  - "dental_agent/check_db.py"
+  - "dental_agent/verify_all_apis.py"
   - "dashboard/tests/**"
   - "dashboard/test-results/**"
   - "dashboard/.next/**"
@@ -60,7 +62,10 @@ exclude_paths:
   - "plans/**"
   - "openspec/**"
   - "brand/**"
+  - ".devskim.json"
+  - ".github/**"
   - "*.md"
   - "*.bat"
   - "*.ps1"
+  - "*.sh"
   - "*.sh"

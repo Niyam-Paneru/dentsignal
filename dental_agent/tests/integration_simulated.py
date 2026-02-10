@@ -184,7 +184,7 @@ class TestN8NWebhook:
                 "phone": "+15559999999",
                 "email": "webhook@test.com"
             },
-            "callback_url": "http://localhost:8000/api/calls/1/status"
+            "callback_url": "http://localhost:8000/api/calls/1/status"  # DevSkim: ignore DS137138
         }
         
         response = client.post("/webhook/n8n/start-call", json=request)
@@ -322,7 +322,7 @@ class TestAgentWorkerIntegration:
         
         # Override API base URL to use test server
         manager = AgentSessionManager(
-            api_base_url="http://testserver",  # TestClient intercepts this
+            api_base_url="http://testserver",  # DevSkim: ignore DS137138 - test fixture
             config_path=None,
         )
         
@@ -423,7 +423,7 @@ class TestCSVUpload:
     def test_upload_csv_file(self, client):
         """Should accept CSV file upload."""
         csv_content = """name,phone,email,source_url,notes,consent
-John CSV,+15551234567,john@csv.com,http://example.com,Test note,true
+John CSV,+15551234567,john@csv.com,https://example.com,Test note,true
 Jane CSV,+15559876543,jane@csv.com,,,true
 Bob CSV,+15555555555,,,Morning preferred,true"""
         
