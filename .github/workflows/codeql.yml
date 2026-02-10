@@ -76,11 +76,11 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # Add any setup steps before running the `github/codeql-action/init` action.
-    # This includes steps like installing compilers or runtimes (`actions/setup-node`
-    # or others). This is typically only required for manual builds.
-    # - name: Setup runtime (example)
-    #   uses: actions/setup-example@v1
+    - name: Setup Python
+      if: matrix.language == 'python'
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
@@ -89,6 +89,8 @@ jobs:
         languages: ${{ matrix.language }}
         build-mode: ${{ matrix.build-mode }}
         config-file: ./.github/codeql/codeql-config.yml
+      env:
+        CODEQL_EXTRACTOR_PYTHON_AUTOINSTALL_DEPENDENCIES: false
 
     # If the analyze step fails for one of the languages you are analyzing with
     # "We were unable to automatically build your code", modify the matrix above
