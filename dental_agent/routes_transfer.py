@@ -199,7 +199,7 @@ async def get_transfer_status(call_sid: str):
         logger.error(f"Failed to get transfer status: {e}")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Call not found: {call_sid}"
+            detail="Call not found"
         )
 
 

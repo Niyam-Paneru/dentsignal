@@ -331,15 +331,16 @@ async def test_pms_connection(
         return ConnectionTestResponse(**result)
         
     except Exception as e:
+        logger.error(f"PMS connection test failed: {e}")
         pms.last_connection_test = datetime.utcnow()
         pms.connection_status = "failed"
-        pms.connection_error = str(e)
+        pms.connection_error = "Connection failed"
         pms.updated_at = datetime.utcnow()
         session.commit()
         
         return ConnectionTestResponse(
             success=False,
-            message=f"Connection failed: {str(e)}",
+            message="Connection failed. Please verify credentials and network access.",
         )
 
 

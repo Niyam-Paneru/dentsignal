@@ -302,7 +302,8 @@ async def check_celery_health():
             }
     
     except Exception as e:
+        logger.error(f"Celery health check failed: {e}")
         return {
             "status": "error",
-            "message": str(e),
+            "message": "Health check failed",
         }

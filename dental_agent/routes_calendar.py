@@ -237,7 +237,7 @@ async def setup_calendar_integration(
             message = f"Connected! Found {len(slots)} available slots today."
         except Exception as e:
             is_connected = False
-            message = f"Connection failed: {str(e)}"
+            message = "Connection failed. Please verify credentials and try again."
             logger.error(f"Google Calendar connection failed: {e}")
     
     integration.is_active = is_connected

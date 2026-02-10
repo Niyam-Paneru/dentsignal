@@ -620,7 +620,8 @@ async def upload_leads(
                     "consent": row.get("consent", "").strip().lower() in ("true", "yes", "1"),
                 })
         except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Failed to parse CSV: {e}")
+            logger.error(f"Failed to parse CSV: {e}")
+            raise HTTPException(status_code=400, detail="Failed to parse CSV")
     
     # Or parse JSON body
     elif leads_json:

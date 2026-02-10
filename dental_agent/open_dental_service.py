@@ -397,7 +397,7 @@ class OpenDentalService:
             else:
                 return {
                     "success": False,
-                    "message": f"API error: {response.status_code} - {response.text}",
+                    "message": f"API error: {response.status_code}",
                 }
         except httpx.ConnectError:
             return {
@@ -405,9 +405,10 @@ class OpenDentalService:
                 "message": f"Cannot connect to {self.config.endpoint}. Check API mode and network.",
             }
         except Exception as e:
+            logger.error(f"Open Dental connection test failed: {e}")
             return {
                 "success": False,
-                "message": f"Connection test failed: {str(e)}",
+                "message": "Connection test failed. Please check credentials and network.",
             }
 
     # -------------------------------------------------------------------------
