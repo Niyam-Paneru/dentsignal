@@ -411,8 +411,8 @@ async def get_recall(recall_id: int):
             
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(f"Operation failed: {e}")
+    except Exception:
+        logger.error("Operation failed")
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -449,8 +449,8 @@ async def update_recall(
             
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(f"Operation failed: {e}")
+    except Exception:
+        logger.error("Operation failed")
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -479,8 +479,8 @@ async def trigger_recall_sms(
         
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(f"Operation failed: {e}")
+    except Exception:
+        logger.error("Operation failed")
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -505,8 +505,8 @@ async def trigger_recall_call(recall_id: int):
         
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(f"Operation failed: {e}")
+    except Exception:
+        logger.error("Operation failed")
         raise HTTPException(status_code=500, detail="Internal server error")
 
 

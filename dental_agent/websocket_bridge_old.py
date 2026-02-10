@@ -331,8 +331,8 @@ class VoiceAgentBridge:
             )
             logger.info(f"Connected to Deepgram Voice Agent for call {self.call_id}")
             return True
-        except Exception as e:
-            logger.error(f"Failed to connect to Deepgram: {e}")
+        except Exception:
+            logger.error("Failed to connect to Deepgram")
             return False
     
     async def send_agent_settings(self) -> None:
@@ -460,8 +460,8 @@ class VoiceAgentBridge:
             }
             await self.deepgram_ws.send(json.dumps(audio_msg))
             
-        except Exception as e:
-            logger.error(f"Error processing Twilio audio: {e}")
+        except Exception:
+            logger.error("Error processing Twilio audio")
     
     async def _deepgram_listener(self) -> None:
         """Listen for messages from Deepgram Voice Agent."""
@@ -487,8 +487,8 @@ class VoiceAgentBridge:
                     
         except websockets.exceptions.ConnectionClosed:
             logger.info(f"Deepgram connection closed for call {self.call_id}")
-        except Exception as e:
-            logger.error(f"Error in Deepgram listener: {e}")
+        except Exception:
+            logger.error("Error in Deepgram listener")
         finally:
             self.is_running = False
     
@@ -539,7 +539,7 @@ class VoiceAgentBridge:
             
         elif event_type == "Error":
             error_msg = event.get("message", "Unknown error")
-            logger.error(f"Deepgram error: {error_msg}")
+            logger.error("Deepgram error received")
     
     async def _handle_function_call(self, event: dict) -> None:
         """Handle function call request from Deepgram agent."""
@@ -624,8 +624,8 @@ class VoiceAgentBridge:
             
             await self.twilio_ws.send_json(message)
             
-        except Exception as e:
-            logger.error(f"Error sending audio to Twilio: {e}")
+        except Exception:
+            logger.error("Error sending audio to Twilio")
     
     async def _send_mark_to_twilio(self) -> None:
         """Send a mark message to Twilio for audio synchronization."""
@@ -645,8 +645,8 @@ class VoiceAgentBridge:
         
         try:
             await self.twilio_ws.send_json(message)
-        except Exception as e:
-            logger.error(f"Error sending mark to Twilio: {e}")
+        except Exception:
+            logger.error("Error sending mark to Twilio")
     
     async def _send_error_message_to_twilio(self, message_text: str) -> None:
         """
@@ -674,8 +674,8 @@ class VoiceAgentBridge:
                 "event": "clear",
                 "streamSid": self.stream_sid
             })
-        except Exception as e:
-            logger.error(f"Error sending clear to Twilio: {e}")
+        except Exception:
+            logger.error("Error sending clear to Twilio")
     
     async def run(self) -> dict:
         """
@@ -695,8 +695,8 @@ class VoiceAgentBridge:
                     if message.get("event") == "stop":
                         break
                         
-                except Exception as e:
-                    logger.error(f"Error receiving from Twilio: {e}")
+                except Exception:
+                    logger.error("Error receiving from Twilio")
                     break
                     
         finally:

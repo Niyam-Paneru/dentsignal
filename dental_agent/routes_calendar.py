@@ -235,10 +235,10 @@ async def setup_calendar_integration(
             # Test by getting today's slots
             slots = await service.get_available_slots(date.today())
             message = f"Connected! Found {len(slots)} available slots today."
-        except Exception as e:
+        except Exception:
             is_connected = False
             message = "Connection failed. Please verify credentials and try again."
-            logger.error(f"Google Calendar connection failed: {e}")
+            logger.error("Google Calendar connection failed")
     
     integration.is_active = is_connected
     
@@ -606,8 +606,8 @@ async def create_appointment(
             appointment.calendar_event_id = event_id
             appointment.calendar_provider = integration.provider
             
-        except Exception as e:
-            logger.error(f"Failed to sync to calendar: {e}")
+        except Exception:
+            logger.error("Failed to sync to calendar")
             # Continue without calendar sync
     
     db.add(appointment)
@@ -815,8 +815,8 @@ async def cancel_appointment(
                 )
                 service = CalendarService(config)
                 await service.cancel_appointment(appointment.calendar_event_id)
-            except Exception as e:
-                logger.error(f"Failed to cancel calendar event: {e}")
+            except Exception:
+                logger.error("Failed to cancel calendar event")
     
     db.commit()
     
@@ -881,8 +881,8 @@ async def mark_no_show(
                 )
                 service = CalendarService(config)
                 await service.mark_no_show(appointment.calendar_event_id)
-            except Exception as e:
-                logger.error(f"Failed to update calendar: {e}")
+            except Exception:
+                logger.error("Failed to update calendar")
     
     db.commit()
     
@@ -1065,11 +1065,11 @@ async def _send_appointment_confirmation(appointment: Appointment, db: Session):
             appointment.confirmation_sent = True
             db.commit()
             
-            logger.info(f"Sent confirmation SMS for appointment {appointment.id} (fallback mode)")
-        except Exception as e:
-            logger.error(f"Failed to send confirmation SMS: {e}")
-    except Exception as e:
-        logger.error(f"Failed to queue confirmation task: {e}")
+            logger.info("Sent confirmation SMS (fallback mode)")
+        except Exception:
+            logger.error("Failed to send confirmation SMS")
+    except Exception:
+        logger.error("Failed to queue confirmation task")
 
 
 async def _send_no_show_followup(appointment: Appointment, db: Session):
@@ -1093,7 +1093,7 @@ async def _send_no_show_followup(appointment: Appointment, db: Session):
             no_show.followup_sms_sent = True
             db.commit()
         
-        logger.info(f"Sent no-show follow-up SMS for appointment {appointment.id}")
+        logger.info("Sent no-show follow-up SMS")
         
-    except Exception as e:
-        logger.error(f"Failed to send no-show SMS: {e}")
+    except Exception:
+        logger.error("Failed to send no-show SMS")

@@ -34,7 +34,7 @@ def send_sms_reminder(self, patient_id: int, appointment_id: int, message_type: 
         appointment_id: Appointment to remind about
         message_type: "confirmation", "24h", "2h", "followup"
     """
-    logger.info(f"Sending {message_type} SMS for appointment {appointment_id}")
+    logger.info("Sending SMS reminder")
     
     try:
         patient = get_patient(patient_id)
@@ -52,7 +52,7 @@ def send_sms_reminder(self, patient_id: int, appointment_id: int, message_type: 
         return {"success": True, "sid": result.sid}
         
     except TwilioRestException as e:
-        logger.error(f"Twilio error: {e}")
+        logger.error("Twilio error during SMS send")
         raise self.retry(exc=e)
 
 

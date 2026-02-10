@@ -662,9 +662,9 @@ class VoiceAgentBridge:
             finally:
                 session.close()
                 
-        except Exception as e:
+        except Exception:
             # PMS loading failure should never block a call
-            logger.warning(f"Could not load PMS availability for call {self.call_id}: {e}")
+            logger.warning("Could not load PMS availability")
     
     async def send_agent_settings(self) -> None:
         """
@@ -833,8 +833,8 @@ class VoiceAgentBridge:
                 }
                 await self.deepgram_ws.send(json.dumps(audio_msg))
             
-        except Exception as e:
-            logger.error(f"Error processing Twilio audio: {e}")
+        except Exception:
+            logger.error("Error processing Twilio audio")
     
     async def _deepgram_listener(self) -> None:
         """Listen for messages from Deepgram Voice Agent."""
@@ -856,10 +856,10 @@ class VoiceAgentBridge:
                     if isinstance(message, bytes):
                         await self._send_audio_to_twilio(message)
                     
-        except websockets.exceptions.ConnectionClosed as e:
-            logger.info(f"Deepgram connection closed for call {self.call_id}: {e}")
-        except Exception as e:
-            logger.error(f"Error in Deepgram listener: {e}")
+        except websockets.exceptions.ConnectionClosed:
+            logger.info("Deepgram connection closed")
+        except Exception:
+            logger.error("Error in Deepgram listener")
         finally:
             self.is_running = False
     
@@ -938,7 +938,7 @@ class VoiceAgentBridge:
         elif event_type == "Error":
             error_msg = event.get("message", "Unknown error")
             error_code = event.get("code", "")
-            logger.error(f"Deepgram error [{error_code}]: {error_msg}")
+            logger.error("Deepgram error received")
             
         elif event_type == "Welcome":
             # Connection established - Deepgram is ready
@@ -1113,8 +1113,8 @@ class VoiceAgentBridge:
             
             await self.twilio_ws.send_json(message)
             
-        except Exception as e:
-            logger.error(f"Error sending audio to Twilio: {e}")
+        except Exception:
+            logger.error("Error sending audio to Twilio")
     
     async def _clear_twilio_audio(self) -> None:
         """Clear pending audio on Twilio side for barge-in handling."""
@@ -1129,8 +1129,8 @@ class VoiceAgentBridge:
             }
             await self.twilio_ws.send_json(message)
             logger.debug("Sent clear event to Twilio")
-        except Exception as e:
-            logger.error(f"Error clearing Twilio audio: {e}")
+        except Exception:
+            logger.error("Error clearing Twilio audio")
     
     async def _send_mark_to_twilio(self, mark_name: str = None) -> None:
         """Send a mark message to Twilio for audio synchronization."""
@@ -1153,8 +1153,8 @@ class VoiceAgentBridge:
         
         try:
             await self.twilio_ws.send_json(message)
-        except Exception as e:
-            logger.error(f"Error sending mark to Twilio: {e}")
+        except Exception:
+            logger.error("Error sending mark to Twilio")
     
     async def _send_error_message_to_twilio(self, message_text: str) -> None:
         """
@@ -1174,8 +1174,8 @@ class VoiceAgentBridge:
                 "event": "clear",
                 "streamSid": self.stream_sid
             })
-        except Exception as e:
-            logger.error(f"Error sending clear to Twilio: {e}")
+        except Exception:
+            logger.error("Error sending clear to Twilio")
     
     async def run(self) -> dict:
         """
@@ -1214,31 +1214,30 @@ class VoiceAgentBridge:
                         logger.error(f"Too many timeouts for call {self.call_id}, closing")
                         break
                         
-                except websockets.exceptions.ConnectionClosed as e:
-                    logger.info(f"Twilio connection closed for call {self.call_id}: {e.code}")
+                except websockets.exceptions.ConnectionClosed:
+                    logger.info("Twilio connection closed")
                     twilio_circuit.record_failure()
                     break
                     
-                except json.JSONDecodeError as e:
+                except json.JSONDecodeError:
                     # Bad message - log and continue
-                    logger.warning(f"Invalid JSON from Twilio: {e}")
+                    logger.warning("Invalid JSON from Twilio")
                     error_count += 1
                     continue
                     
-                except Exception as e:
-                    error_type = type(e).__name__
-                    logger.error(f"Error in main loop [{error_type}]: {e}")
+                except Exception:
+                    logger.error("Error in main loop")
                     error_count += 1
                     
                     if error_count >= max_consecutive_errors:
-                        logger.error(f"Too many errors ({error_count}) for call {self.call_id}, closing")
+                        logger.error("Too many consecutive errors, closing call")
                         break
                     
                     # Small delay before retry
                     await asyncio.sleep(0.1)
                     
-        except Exception as e:
-            logger.error(f"Fatal error in voice agent run loop: {e}")
+        except Exception:
+            logger.error("Fatal error in voice agent run loop")
             
         finally:
             # Flush any remaining audio buffer
@@ -1259,8 +1258,8 @@ class VoiceAgentBridge:
                     "audio_data": base64.b64encode(remaining).decode("utf-8")
                 }
                 await self.deepgram_ws.send(json.dumps(audio_msg))
-            except Exception as e:
-                logger.debug(f"Could not flush audio buffer: {e}")
+            except Exception:
+                logger.debug("Could not flush audio buffer")
     
     async def cleanup(self) -> None:
         """Clean up connections."""

@@ -124,8 +124,8 @@ def get_clinic_phone(clinic_id: int) -> str:
                 return clinic.phone_display
             if clinic and clinic.twilio_number:
                 return clinic.twilio_number
-    except Exception as e:
-        logger.error(f"Error getting clinic phone: {e}")
+    except Exception:
+        logger.error("Error getting clinic phone")
     return os.getenv("TWILIO_NUMBER", "your clinic")
 
 
@@ -136,8 +136,8 @@ def get_clinic_name(clinic_id: int) -> str:
             clinic = session.get(Client, clinic_id)
             if clinic:
                 return clinic.name
-    except Exception as e:
-        logger.error(f"Error getting clinic name: {e}")
+    except Exception:
+        logger.error("Error getting clinic name")
     return "our dental clinic"
 
 
@@ -152,7 +152,7 @@ def send_booking_confirmation(self, appointment_id: int) -> dict:
     
     Called right after appointment is created.
     """
-    logger.info(f"Sending booking confirmation for apt_id={appointment_id}")
+    logger.info("Sending booking confirmation")
     
     try:
         with get_session() as session:
@@ -203,7 +203,7 @@ def send_booking_confirmation(self, appointment_id: int) -> dict:
                         args=[appointment_id],
                         countdown=delay_seconds,
                     )
-                    logger.info(f"Scheduled 24h reminder for appointment {appointment_id} in {delay_seconds/3600:.1f} hours")
+                    logger.info("Scheduled 24h reminder in %.1f hours", delay_seconds / 3600)
                 
                 return {
                     "success": True,
@@ -215,7 +215,7 @@ def send_booking_confirmation(self, appointment_id: int) -> dict:
                 raise Exception(result.get("error", "SMS send failed"))
                 
     except Exception as exc:
-        logger.error(f"Error sending confirmation for {appointment_id}: {exc}")
+        logger.error("Error sending confirmation")
         raise self.retry(exc=exc)
 
 
@@ -224,7 +224,7 @@ def send_24h_reminder(self, appointment_id: int) -> dict:
     """
     Step 2: Send 24-hour reminder (day before appointment).
     """
-    logger.info(f"Sending 24h reminder for appointment {appointment_id}")
+    logger.info("Sending 24h reminder")
     
     try:
         with get_session() as session:
@@ -280,7 +280,7 @@ def send_24h_reminder(self, appointment_id: int) -> dict:
                         args=[appointment_id],
                         countdown=delay_seconds,
                     )
-                    logger.info(f"Scheduled 2h reminder for appointment {appointment_id}")
+                    logger.info("Scheduled 2h reminder")
                 
                 return {
                     "success": True,
@@ -292,7 +292,7 @@ def send_24h_reminder(self, appointment_id: int) -> dict:
                 raise Exception(result.get("error", "SMS send failed"))
                 
     except Exception as exc:
-        logger.error(f"Error sending 24h reminder for {appointment_id}: {exc}")
+        logger.error("Error sending 24h reminder")
         raise self.retry(exc=exc)
 
 
@@ -301,7 +301,7 @@ def send_2h_reminder(self, appointment_id: int) -> dict:
     """
     Step 3: Send 2-hour reminder (same day, final reminder).
     """
-    logger.info(f"Sending 2h reminder for appointment {appointment_id}")
+    logger.info("Sending 2h reminder")
     
     try:
         with get_session() as session:
@@ -366,7 +366,7 @@ def send_2h_reminder(self, appointment_id: int) -> dict:
                 raise Exception(result.get("error", "SMS send failed"))
                 
     except Exception as exc:
-        logger.error(f"Error sending 2h reminder for {appointment_id}: {exc}")
+        logger.error("Error sending 2h reminder")
         raise self.retry(exc=exc)
 
 
@@ -377,7 +377,7 @@ def escalation_check(self, appointment_id: int) -> dict:
     
     Runs if patient hasn't confirmed after all reminders.
     """
-    logger.info(f"Running escalation check for appointment {appointment_id}")
+    logger.info("Running escalation check")
     
     try:
         with get_session() as session:
@@ -418,7 +418,7 @@ def escalation_check(self, appointment_id: int) -> dict:
                 appointment.confirmation_status = "no_response"
                 session.commit()
                 
-                logger.warning(f"Escalation sent for appointment {appointment_id} - patient unconfirmed")
+                logger.warning("Escalation sent - patient unconfirmed")
                 
                 return {
                     "success": True,
@@ -431,7 +431,7 @@ def escalation_check(self, appointment_id: int) -> dict:
                 raise Exception(result.get("error", "SMS send failed"))
                 
     except Exception as exc:
-        logger.error(f"Error in escalation check for {appointment_id}: {exc}")
+        logger.error("Error in escalation check")
         raise self.retry(exc=exc)
 
 
@@ -467,8 +467,8 @@ def process_appointment_reminders() -> dict:
                 try:
                     send_24h_reminder.delay(apt.id)
                     reminders_sent["24h"] += 1
-                except Exception as e:
-                    logger.error(f"Error queuing 24h reminder for {apt.id}: {e}")
+                except Exception:
+                    logger.error("Error queuing 24h reminder")
                     reminders_sent["errors"] += 1
             
             # Find appointments in next 3 hours that haven't received 2h reminder
@@ -489,8 +489,8 @@ def process_appointment_reminders() -> dict:
                 try:
                     send_2h_reminder.delay(apt.id)
                     reminders_sent["2h"] += 1
-                except Exception as e:
-                    logger.error(f"Error queuing 2h reminder for {apt.id}: {e}")
+                except Exception:
+                    logger.error("Error queuing 2h reminder")
                     reminders_sent["errors"] += 1
             
             # Find unconfirmed appointments starting in next 45 minutes
@@ -511,15 +511,15 @@ def process_appointment_reminders() -> dict:
                 try:
                     escalation_check.delay(apt.id)
                     reminders_sent["escalation"] += 1
-                except Exception as e:
-                    logger.error(f"Error queuing escalation for {apt.id}: {e}")
+                except Exception:
+                    logger.error("Error queuing escalation")
                     reminders_sent["errors"] += 1
     
-    except Exception as e:
-        logger.error(f"Error in periodic reminder check: {e}")
+    except Exception:
+        logger.error("Error in periodic reminder check")
         reminders_sent["errors"] += 1
     
-    logger.info(f"Reminder check complete: {reminders_sent}")
+    logger.info("Reminder check complete: sent=%d errors=%d", reminders_sent.get('24h', 0) + reminders_sent.get('2h', 0), reminders_sent.get('errors', 0))
     return reminders_sent
 
 
@@ -534,11 +534,7 @@ def handle_patient_sms_response(
     
     Returns action taken and response to send.
     """
-    logger.info(
-        "Processing SMS response from %s (len=%d)",
-        mask_phone(from_number),
-        len(message_body or ""),
-    )
+    logger.info("Processing inbound SMS response")
     
     body_lower = message_body.strip().lower()
     
@@ -622,8 +618,8 @@ def handle_patient_sms_response(
                     "response": response_msg,
                 }
                 
-    except Exception as e:
-        logger.error(f"Error processing SMS response: {e}")
+    except Exception:
+        logger.error("Error processing SMS response")
         return {
             "error": "SMS processing failed",
             "response": "Sorry, we had trouble processing your message. Please call us directly.",

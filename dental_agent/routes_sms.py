@@ -406,7 +406,7 @@ async def inbound_sms_webhook(
             logger.error("Failed to send response SMS")
             result["response_sent"] = False
     
-    logger.info(f"Inbound SMS processed: {result.get('action', 'unknown')}")
+    logger.info("Inbound SMS processed")
     
     # Return TwiML response (empty is fine - we send response via API)
     return {
