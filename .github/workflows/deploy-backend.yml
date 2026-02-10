@@ -28,5 +28,5 @@ jobs:
             pip install -r dental_agent/requirements.txt --quiet
             systemctl restart dentsignal
             sleep 3
-            curl -s http://localhost:8000/health || echo "Health check failed"
+            curl -s http://localhost:8000/health || echo "Health check failed"  # localhost on the server itself
             echo "✅ Deployed successfully!"

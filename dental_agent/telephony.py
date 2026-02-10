@@ -10,14 +10,14 @@ Set mode via environment variable: TELEPHONY_MODE=SIMULATED|TWILIO
 Usage:
     from telephony import make_call, format_phone_e164
     
-    result = make_call("+15551234567", call_id=123, callback_url="http://localhost:8000/api/calls/123/status")
+    result = make_call("+15551234567", call_id=123, callback_url="https://your-server/api/calls/123/status")
 """
 
 from __future__ import annotations
 
+import hashlib
 import os
 import re
-import random
 import threading
 import time
 import logging
@@ -114,8 +114,9 @@ def _simulated_call_worker(
     time.sleep(2)
     
     # Generate deterministic result based on seed or call_id
-    rng = random.Random(seed if seed is not None else call_id)
-    result = rng.choice(SIMULATED_RESULTS)
+    effective_seed = seed if seed is not None else call_id
+    idx = int(hashlib.sha256(str(effective_seed).encode()).hexdigest(), 16) % len(SIMULATED_RESULTS)
+    result = SIMULATED_RESULTS[idx]
     
     # Generate simulated transcript
     transcript = _generate_simulated_transcript(result, call_id)

@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/inbound", tags=["Inbound Calls"])
 
 # Base URL for WebSocket connections (derived from API_BASE_URL)
-API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
+API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")  # DevSkim: ignore DS137138 - localhost fallback for dev only
 # Convert http(s) to ws(s) for WebSocket URL
 WS_BASE_URL = API_BASE_URL.replace("https://", "wss://").replace("http://", "ws://")
 

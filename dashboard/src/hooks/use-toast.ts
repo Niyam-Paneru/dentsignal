@@ -54,6 +54,7 @@ const addToRemoveQueue = (toastId: string) => {
     return
   }
 
+  // DevSkim: ignore DS172411 - TOAST_REMOVE_DELAY is a hardcoded constant, not user input
   const timeout = setTimeout(() => {
     toastTimeouts.delete(toastId)
     dispatch({

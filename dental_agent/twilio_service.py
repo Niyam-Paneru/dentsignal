@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 TWILIO_SID = os.getenv("TWILIO_SID")
 TWILIO_TOKEN = os.getenv("TWILIO_TOKEN")
 TWILIO_NUMBER = os.getenv("TWILIO_NUMBER")
-API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
+API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")  # DevSkim: ignore DS137138 - localhost fallback for dev only
 
 # Validate configuration
 if not all([TWILIO_SID, TWILIO_TOKEN, TWILIO_NUMBER]):

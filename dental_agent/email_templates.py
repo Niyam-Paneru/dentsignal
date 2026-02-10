@@ -362,9 +362,7 @@ def get_celebration_pair(
     revenue_recovered: float = 0
 ) -> dict:
     """Get a celebration subject/closing pair for the week."""
-    import random
-    
-    # Use week number to rotate through pairs (or randomize)
+    # Use week number to rotate through pairs deterministically
     pair = WEEKLY_EMAIL_CELEBRATIONS[(week_number - 1) % len(WEEKLY_EMAIL_CELEBRATIONS)]
     
     # Format the subject with actual values

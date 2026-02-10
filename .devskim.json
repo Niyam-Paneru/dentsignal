@@ -1,0 +1,35 @@
+[
+  {
+    "id": "DS137138",
+    "reason": "HTTP URLs used as localhost-only development defaults, overridden by env vars in production",
+    "paths": [
+      "dental_agent/test_*.py",
+      "dental_agent/tests/**",
+      "dental_agent/run_server.py",
+      "dashboard/tests/**",
+      "dashboard/playwright.config.ts",
+      "scripts/**"
+    ]
+  },
+  {
+    "id": "DS176209",
+    "reason": "Localhost references are for development defaults only, production uses env vars",
+    "paths": [
+      "dental_agent/test_*.py",
+      "dental_agent/tests/**",
+      "dental_agent/run_server.py",
+      "dashboard/tests/**",
+      "dashboard/playwright.config.ts",
+      "scripts/**"
+    ]
+  },
+  {
+    "id": "DS172411",
+    "reason": "setTimeout uses hardcoded constants, not user input",
+    "paths": [
+      "dashboard/src/hooks/**",
+      "dashboard/src/components/**",
+      "dashboard/tests/**"
+    ]
+  }
+]

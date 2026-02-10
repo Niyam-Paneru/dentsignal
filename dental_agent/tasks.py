@@ -37,7 +37,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 # Get API base URL for webhooks
-API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
+API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")  # DevSkim: ignore DS137138 - localhost fallback for dev only
 
 # =============================================================================
 # RETRY DELAYS (exponential backoff)

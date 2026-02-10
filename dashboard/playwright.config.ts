@@ -3,7 +3,7 @@ import type { PlaywrightTestConfig } from '@playwright/test';
 const config: PlaywrightTestConfig = {
   testDir: './tests',
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: 'http://localhost:3000', // DevSkim: ignore DS137138 - test config
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',

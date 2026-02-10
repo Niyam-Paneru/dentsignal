@@ -1,6 +1,7 @@
 #!/bin/bash
 # DentSignal Production Update Script
-# Run this on the DigitalOcean server (159.89.247.86)
+# Run this on the production server
+# Usage: SERVER_IP=your.server.ip bash update_production.sh
 
 set -e
 
@@ -27,12 +28,15 @@ echo "🗄️ Updating database configuration..."
 # Backup current .env
 cp .env .env.backup.$(date +%Y%m%d_%H%M%S)
 
-# Update DATABASE_URL in .env (URL-encoded password: DentSignal2026Prod)
-sed -i 's|DATABASE_URL=sqlite:///./prod.db|DATABASE_URL=postgresql://postgres.movpukmfuelqctixfbcz:DentSignal2026Prod@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres|' .env
+# SECURITY: Database credentials are read from environment variables or .env file.
+# Never hardcode credentials in scripts. Set DATABASE_URL in the server's .env file.
+# Example: DATABASE_URL=postgresql://postgres.PROJECT_REF:PASSWORD@pooler.supabase.com:6543/postgres
+echo "⚠️  Ensure DATABASE_URL is set in .env (do NOT hardcode credentials in scripts)"
 
-# Also update API_BASE_URL if needed
-sed -i 's|API_BASE_URL=.*|API_BASE_URL=http://159.89.247.86:8000|' .env
-sed -i 's|WS_BASE_URL=.*|WS_BASE_URL=ws://159.89.247.86:8000|' .env
+# Update API_BASE_URL from the SERVER_IP environment variable
+SERVER_IP="${SERVER_IP:?Set SERVER_IP environment variable}"
+sed -i "s|API_BASE_URL=.*|API_BASE_URL=https://${SERVER_IP}:8000|" .env  # DevSkim: ignore DS137138
+sed -i "s|WS_BASE_URL=.*|WS_BASE_URL=wss://${SERVER_IP}:8000|" .env
 
 echo "✅ Environment updated"
 
@@ -51,5 +55,5 @@ echo ""
 echo "✅ Update complete!"
 echo ""
 echo "Test commands:"
-echo "  curl http://159.89.247.86:8000/health"
+echo "  curl https://${SERVER_IP}:8000/health"
 echo "  journalctl -u dentsignal -f"

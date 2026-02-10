@@ -15,8 +15,8 @@ Authentication:
 
 API Modes:
     - Remote: https://api.opendental.com/api/v1/ (cloud, any internet)
-    - Service: http://{IP}:30223/api/v1/ (on-premise server)
-    - Local: http://localhost:30222/api/v1/ (workstation only)
+    - Service: http://{IP}:30223/api/v1/ (on-premise server)  # DevSkim: ignore DS137138
+    - Local: http://localhost:30222/api/v1/ (workstation only)  # DevSkim: ignore DS137138
 
 Pricing (per location/month):
     - Free: Read-only (1 req/5s throttle)
@@ -65,9 +65,9 @@ class OpenDentalConfig:
         if self.api_mode == OpenDentalApiMode.REMOTE:
             return "https://api.opendental.com/api/v1"
         elif self.api_mode == OpenDentalApiMode.SERVICE:
-            return "http://localhost:30223/api/v1"
+            return "http://localhost:30223/api/v1"  # DevSkim: ignore DS137138 - Open Dental on-premise API requires HTTP
         else:  # LOCAL
-            return "http://localhost:30222/api/v1"
+            return "http://localhost:30222/api/v1"  # DevSkim: ignore DS137138 - Open Dental local workstation API
     
     @property
     def auth_header(self) -> str:

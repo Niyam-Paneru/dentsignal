@@ -1140,7 +1140,7 @@ export default function SettingsPage() {
                               <div className="space-y-2">
                                 <Label className="text-sm">Server URL</Label>
                                 <Input
-                                  placeholder={pmsApiMode === 'service' ? 'http://server:30223' : 'http://localhost:30222'}
+                                  placeholder={pmsApiMode === 'service' ? 'http://server:30223' : 'http://localhost:30222'} // DevSkim: ignore DS137138 - Open Dental local API
                                   value={pmsBaseUrl}
                                   onChange={(e) => setPmsBaseUrl(e.target.value)}
                                   className="font-mono text-sm"

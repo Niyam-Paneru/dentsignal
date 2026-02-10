@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Use API_BASE_URL from .env (updated with current ngrok URL)
-public_url = os.getenv('API_BASE_URL', 'http://localhost:8000')
+public_url = os.getenv('API_BASE_URL', 'http://localhost:8000')  # DevSkim: ignore DS137138
 webhook_url = f'{public_url}/inbound/voice'
 
 sid = os.getenv('TWILIO_SID')

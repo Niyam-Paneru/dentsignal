@@ -107,7 +107,7 @@ app = FastAPI(
 # SECURITY: Never use allow_credentials=True with wildcard or dynamic origins
 import os
 
-_default_origins = "http://localhost:3000,http://localhost:5173"
+_default_origins = "http://localhost:3000,http://localhost:5173"  # DevSkim: ignore DS137138 - localhost CORS for dev only
 cors_origins_env = os.getenv("ALLOWED_ORIGINS", _default_origins)
 cors_origins = [origin.strip() for origin in cors_origins_env.split(",") if origin.strip()]
 
