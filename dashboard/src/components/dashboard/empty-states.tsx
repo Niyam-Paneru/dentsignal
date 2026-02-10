@@ -37,7 +37,7 @@ export function EmptyCallsState({ clinicName, aiName = 'Sarah', phoneNumber }: E
       </h3>
       
       <p className="text-sm text-gray-600 max-w-sm mb-4">
-        Forward your number to start receiving calls
+        Forward your number to start receiving calls for {clinicName || 'your practice'}
       </p>
       
       {phoneNumber && (
@@ -87,7 +87,7 @@ export function EmptyCalendarState() {
       </h3>
       
       <p className="text-gray-600 max-w-md mb-6">
-        When patients book appointments through your AI receptionist, they'll appear here automatically.
+        When patients book appointments through your AI receptionist, they&apos;ll appear here automatically.
       </p>
       
       <Button variant="outline" className="gap-2">
@@ -110,7 +110,7 @@ export function EmptyAnalyticsState() {
       </h3>
       
       <p className="text-gray-600 max-w-md mb-6">
-        Once you start receiving calls, you'll see insights like call volume, conversion rates, and revenue impact.
+        Once you start receiving calls, you&apos;ll see insights like call volume, conversion rates, and revenue impact.
       </p>
       
       <div className="grid grid-cols-2 gap-4 w-full max-w-sm opacity-50">
@@ -149,7 +149,7 @@ export function FirstCallCelebration({
           </h3>
           
           <p className="text-green-700 mb-4">
-            {aiName} just handled a call for {clinicName || 'your clinic'}. That's one less missed opportunity!
+            {aiName} just handled a call for {clinicName || 'your clinic'}. That&apos;s one less missed opportunity!
           </p>
           
           {onListen && (

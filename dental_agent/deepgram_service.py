@@ -109,7 +109,7 @@ def transcribe_audio(
                 transcript = alternatives[0].get("transcript", "")
                 confidence = alternatives[0].get("confidence", 0)
                 
-                logger.info(f"Transcribed: '{transcript}' (confidence: {confidence:.2f})")
+                logger.info("Transcribed speech (len=%d, confidence=%.2f)", len(transcript), confidence)
                 
                 return {
                     "success": True,
@@ -172,7 +172,7 @@ def text_to_speech(
             )
             response.raise_for_status()
             
-            logger.info(f"Generated TTS for: '{text[:50]}...'")
+            logger.info("Generated TTS (len=%d)", len(text))
             return response.content
             
     except Exception as e:

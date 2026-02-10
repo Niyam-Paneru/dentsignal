@@ -311,7 +311,8 @@ def make_twilio_call(
     # Create the call
     call = client.calls.create(**call_params)
     
-    logger.info(f"Twilio call initiated: SID={call.sid}, to={mask_phone(to_number)}")
+    call_sid_suffix = f"***{call.sid[-6:]}" if call.sid else "***"
+    logger.info(f"Twilio call initiated: SID={call_sid_suffix}, to={mask_phone(to_number)}")
     
     return {
         "call_sid": call.sid,

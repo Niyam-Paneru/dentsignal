@@ -32,7 +32,7 @@ from db import (
     record_usage, UsageType, get_clinic_by_twilio_number, is_using_postgres
 )
 from websocket_bridge import handle_voice_websocket
-from utils import notify_new_call, send_slack_notification_sync, send_slack_notification
+from utils import notify_new_call, send_slack_notification_sync, send_slack_notification, mask_phone
 
 logger = logging.getLogger(__name__)
 
@@ -169,7 +169,14 @@ async def incoming_voice_webhook(
     Returns:
         TwiML response with <Connect><Stream>
     """
-    logger.info(f"Incoming call: From={From}, To={To}, CallSid={CallSid}, clinic_id={clinic_id}")
+    call_sid_suffix = f"***{CallSid[-6:]}" if CallSid else "***"
+    logger.info(
+        "Incoming call: from=%s, to=%s, call_sid=%s, clinic_id=%s",
+        mask_phone(From),
+        mask_phone(To),
+        call_sid_suffix,
+        clinic_id,
+    )
     
     # Try to get clinic from explicit clinic_id parameter first (most reliable)
     clinic = None
@@ -188,7 +195,7 @@ async def incoming_voice_webhook(
         clinic = get_clinic_by_phone(To)
     
     if not clinic:
-        logger.warning(f"No clinic found for number {To}")
+        logger.warning(f"No clinic found for number {mask_phone(To)}")
         # Return a polite error message
         response = VoiceResponse()
         response.say(

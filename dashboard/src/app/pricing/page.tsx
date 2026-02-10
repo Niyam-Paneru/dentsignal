@@ -6,8 +6,7 @@ import { Button } from '@/components/ui/button'
 import { 
   ArrowLeft,
   ChevronDown,
-  Check,
-  X
+  Check
 } from 'lucide-react'
 import { MarketingHeader } from '@/components/landing/marketing-header'
 import { MarketingFooter } from '@/components/landing/marketing-footer'

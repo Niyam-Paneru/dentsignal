@@ -23,10 +23,12 @@ try:
     from dental_agent.celery_config import celery_app
     from dental_agent.db import get_session, Appointment, Client, AppointmentStatus
     from dental_agent.twilio_service import send_sms
+    from dental_agent.utils import mask_phone
 except ImportError:
     from celery_config import celery_app
     from db import get_session, Appointment, Client, AppointmentStatus
     from twilio_service import send_sms
+    from utils import mask_phone
 
 logger = logging.getLogger(__name__)
 
@@ -532,7 +534,11 @@ def handle_patient_sms_response(
     
     Returns action taken and response to send.
     """
-    logger.info(f"Processing SMS response from {from_number}: {message_body[:50]}")
+    logger.info(
+        "Processing SMS response from %s (len=%d)",
+        mask_phone(from_number),
+        len(message_body or ""),
+    )
     
     body_lower = message_body.strip().lower()
     

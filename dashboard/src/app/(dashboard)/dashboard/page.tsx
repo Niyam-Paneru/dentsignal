@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Phone, CalendarCheck, TrendingUp, PhoneMissed, ArrowUpRight, ArrowDownRight, Loader2, Building2, DollarSign, Clock, PhoneCall, PhoneForwarded } from 'lucide-react'
+import { Phone, CalendarCheck, TrendingUp, PhoneMissed, ArrowUpRight, ArrowDownRight, Building2, DollarSign, Clock, PhoneCall, PhoneForwarded } from 'lucide-react'
 import { RecentCallsTable } from '@/components/dashboard/recent-calls-table'
 import { CallsChart } from '@/components/dashboard/calls-chart'
 import { OnboardingProgress } from '@/components/dashboard/onboarding-progress'

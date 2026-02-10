@@ -248,8 +248,9 @@ function StepCard({
 }) {
   return (
     <div className="text-center p-4 bg-slate-50 rounded-xl border border-slate-200">
-      <div className="w-12 h-12 bg-cyan-500 rounded-full flex items-center justify-center mx-auto mb-3 text-white font-bold text-lg shadow-lg shadow-cyan-500/30">
-        {step}
+      <div className="w-12 h-12 bg-cyan-500 rounded-full flex flex-col items-center justify-center mx-auto mb-3 text-white font-bold text-lg shadow-lg shadow-cyan-500/30">
+        <span>{step}</span>
+        <Icon className="h-4 w-4" />
       </div>
       <h3 className="font-bold text-slate-900 mb-1">{title}</h3>
       <p className="text-xs text-slate-500">{desc}</p>

@@ -57,6 +57,7 @@ from utils import (
     is_valid_phone,
     mask_phone,
     mask_email,
+    mask_name,
     sanitize_string,
     sanitize_filename,
     validate_csv_upload,
@@ -466,7 +467,7 @@ def login(request: LoginRequest, session: Session = Depends(get_db)):
     }
     token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
     
-    logger.info(f"User logged in: {user.email}")
+    logger.info(f"User logged in: {mask_email(user.email)}")
     return LoginResponse(token=token)
 
 
@@ -731,7 +732,7 @@ def start_call_webhook(
     session.commit()
     session.refresh(call)
     
-    logger.info(f"Created call {call.id} for lead {lead.name} via n8n webhook")
+    logger.info(f"Created call {call.id} for lead {mask_name(lead.name)} via n8n webhook")
     
     return StartCallResponse(call_id=call.id)
 

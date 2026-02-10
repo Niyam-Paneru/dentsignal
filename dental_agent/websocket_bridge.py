@@ -911,10 +911,14 @@ class VoiceAgentBridge:
                 if role == "user":
                     is_interruption = self.tracker.agent_is_speaking
                     self.tracker.add_user_turn(content, is_interruption=is_interruption)
-                    logger.info(f"Caller: {content}" + (" [interrupted]" if is_interruption else ""))
+                    logger.info(
+                        "Caller utterance received (len=%d)%s",
+                        len(content),
+                        " [interrupted]" if is_interruption else "",
+                    )
                 elif role == "assistant":
                     self.tracker.add_agent_turn(content)
-                    logger.info(f"Agent: {content}")
+                    logger.info("Agent response generated (len=%d)", len(content))
         
         elif event_type == "ConversationFunctionCall":
             # Agent wants to call a function (new format)
@@ -950,7 +954,8 @@ class VoiceAgentBridge:
         function_id = event.get("function_call_id")
         arguments = event.get("input") or event.get("function_arguments") or {}
         
-        logger.info(f"Function call: {function_name}({json.dumps(arguments, default=str)[:200]})")
+        arg_keys = list(arguments.keys()) if isinstance(arguments, dict) else []
+        logger.info("Function call: %s keys=%s", function_name, arg_keys)
         
         result = {}
         

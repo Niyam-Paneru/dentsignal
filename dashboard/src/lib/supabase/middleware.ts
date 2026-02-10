@@ -86,7 +86,6 @@ export async function updateSession(request: NextRequest) {
 
       const now = new Date()
       const expiresAt = clinic.subscription_expires_at ? new Date(clinic.subscription_expires_at) : null
-      const isTrial = clinic.subscription_status === 'trial'
       const isCancelled = clinic.subscription_status === 'cancelled'
 
       // Trial/active with valid expiry — allow access

@@ -114,7 +114,6 @@ export default function SettingsPage() {
   
   // PMS Integration state
   const [pmsConfig, setPmsConfig] = useState<PMSConfig | null>(null)
-  const [pmsLoading, setPmsLoading] = useState(false)
   const [pmsConnecting, setPmsConnecting] = useState(false)
   const [pmsTesting, setPmsTesting] = useState(false)
   const [pmsTestResult, setPmsTestResult] = useState<ConnectionTestResult | null>(null)

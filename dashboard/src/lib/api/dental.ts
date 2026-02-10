@@ -947,7 +947,6 @@ export async function updateSmsSettings(settings: SmsSettings): Promise<boolean>
 }
 
 export async function sendTestSms(phone: string, templateKey: string): Promise<{ success: boolean; error?: string }> {
-  const supabase = createClient()
   const clinicId = await getUserClinicId()
   
   if (!clinicId) {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense, useRef } from 'react'
+import { useState, Suspense, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -19,7 +19,6 @@ function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
   const [captchaError, setCaptchaError] = useState(false)
   const [slowAuth, setSlowAuth] = useState(false)
@@ -28,13 +27,9 @@ function LoginForm() {
   const hardTimerRef = useRef<number | null>(null)
   const searchParams = useSearchParams()
   
-  // Check for messages from signup
-  useEffect(() => {
-    const message = searchParams.get('message')
-    if (message === 'check-email') {
-      setSuccessMessage('Account created! Please check your email to confirm your account, then sign in.')
-    }
-  }, [searchParams])
+  const successMessage = searchParams.get('message') === 'check-email'
+    ? 'Account created! Please check your email to confirm your account, then sign in.'
+    : null
   
   // Rate limiting state
   const [attempts, setAttempts] = useState(0)

@@ -16,8 +16,10 @@ from pydantic import BaseModel
 # Import auth dependency
 try:
     from dental_agent.auth import require_auth
+    from dental_agent.utils import mask_phone
 except ImportError:
     from auth import require_auth
+    from utils import mask_phone
 
 try:
     from twilio.rest import Client as TwilioClient
@@ -135,7 +137,12 @@ async def initiate_transfer(
         # Update the active call with new TwiML
         call = client.calls(request.call_sid).update(twiml=twiml)
         
-        logger.info(f"Transfer initiated: call_sid={request.call_sid}, to={owner_phone}")
+        call_sid_suffix = f"***{request.call_sid[-6:]}" if request.call_sid else "***"
+        logger.info(
+            "Transfer initiated: call_sid=%s, to=%s",
+            call_sid_suffix,
+            mask_phone(owner_phone),
+        )
         
         return TransferResponse(
             success=True,

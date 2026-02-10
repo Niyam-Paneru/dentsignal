@@ -98,7 +98,8 @@ def make_call(
             machine_detection_timeout=5,
         )
         
-        logger.info(f"Call initiated: SID={call.sid}, To={mask_phone(to_number)}, Status={call.status}")
+        call_sid_suffix = f"***{call.sid[-6:]}" if call.sid else "***"
+        logger.info(f"Call initiated: SID={call_sid_suffix}, To={mask_phone(to_number)}, Status={call.status}")
         
         return {
             "success": True,

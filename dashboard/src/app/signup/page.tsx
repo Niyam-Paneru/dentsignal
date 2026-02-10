@@ -327,6 +327,12 @@ export default function SignupPage() {
       return
     }
     
+    // If email confirmation is required, defer clinic setup until first login
+    if (authData.user && !authData.session) {
+      router.push('/login?message=check-email')
+      return
+    }
+
     // Create clinic record with retry logic
     // The auth session may not be immediately available for RLS policies
     if (authData.user) {
@@ -433,13 +439,6 @@ export default function SignupPage() {
           }
         })
       }).catch(() => {}) // Silently ignore errors
-    }
-    
-    // Check if email confirmation is required
-    if (authData.user && !authData.session) {
-      // Email confirmation required - redirect to login with message
-      router.push('/login?message=check-email')
-      return
     }
     
     router.push('/dashboard')

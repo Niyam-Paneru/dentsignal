@@ -27,10 +27,12 @@ try:
     from dental_agent.celery_config import celery_app
     from dental_agent.db import get_session, Lead, Call, CallResult, CallStatus, CallResultType
     from dental_agent.twilio_service import make_call, verify_twilio_credentials
+    from dental_agent.utils import mask_phone
 except ImportError:
     from celery_config import celery_app
     from db import get_session, Lead, Call, CallResult, CallStatus, CallResultType
     from twilio_service import make_call, verify_twilio_credentials
+    from utils import mask_phone
 
 logger = logging.getLogger(__name__)
 
@@ -92,7 +94,7 @@ def get_call_by_id(call_id: int) -> Optional[dict]:
 
 def initiate_call(lead: dict, call_id: int) -> dict:
     """Trigger a call via Twilio."""
-    logger.info(f"Initiating Twilio call to {lead['phone']} for lead {lead['id']}")
+    logger.info(f"Initiating Twilio call to {mask_phone(lead['phone'])} for lead {lead['id']}")
     
     result = make_call(
         to_number=lead["phone"],

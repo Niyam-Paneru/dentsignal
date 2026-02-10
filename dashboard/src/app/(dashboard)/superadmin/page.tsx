@@ -409,6 +409,21 @@ function SubscriptionManagement({ userEmail }: { userEmail: string | null }) {
 
   return (
     <div className="space-y-6">
+      {/* Toast Notifications */}
+      {activationError && (
+        <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>{activationError}</span>
+          <button onClick={() => setActivationError(null)} className="ml-auto text-red-500 hover:text-red-700">✕</button>
+        </div>
+      )}
+      {activationSuccess && (
+        <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+          <CheckCircle2 className="h-4 w-4 shrink-0" />
+          <span>{activationSuccess}</span>
+          <button onClick={() => setActivationSuccess(null)} className="ml-auto text-green-500 hover:text-green-700">✕</button>
+        </div>
+      )}
       {/* Quick Stats */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
@@ -807,21 +822,6 @@ export default function SuperAdminPage() {
 
   return (
     <div className="flex-1 space-y-6 p-6">
-      {/* Toast Notifications */}
-      {activationError && (
-        <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          <span>{activationError}</span>
-          <button onClick={() => setActivationError(null)} className="ml-auto text-red-500 hover:text-red-700">✕</button>
-        </div>
-      )}
-      {activationSuccess && (
-        <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-          <CheckCircle2 className="h-4 w-4 shrink-0" />
-          <span>{activationSuccess}</span>
-          <button onClick={() => setActivationSuccess(null)} className="ml-auto text-green-500 hover:text-green-700">✕</button>
-        </div>
-      )}
 
       {/* Header */}
       <div className="flex items-center justify-between">

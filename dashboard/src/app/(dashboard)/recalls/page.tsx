@@ -250,11 +250,13 @@ export default function RecallsPage() {
     setIsCreatingCampaign(false)
   }
 
-  const handleSendSms = async (_recallId: number) => {
+  const handleSendSms = async (recallId: number) => {
+    void recallId
     // TODO: Call API to trigger SMS when backend SMS service is ready
   }
 
-  const handleScheduleCall = async (_recallId: number) => {
+  const handleScheduleCall = async (recallId: number) => {
+    void recallId
     // TODO: Call API to schedule AI call when backend is ready
   }
 
