@@ -22,6 +22,11 @@ from db import (
     MonthlyUsageSummary,
 )
 
+try:
+    from dental_agent.auth import require_auth
+except ImportError:
+    from auth import require_auth
+
 
 router = APIRouter(prefix="/api/usage", tags=["Usage Tracking"])
 
@@ -106,6 +111,7 @@ class UsageStatsResponse(BaseModel):
 def get_usage_summary(
     clinic_id: int,
     month: Optional[str] = Query(None, description="Month in YYYY-MM format"),
+    user: dict = Depends(require_auth),
 ):
     """
     Get usage summary for a clinic for a specific month.
@@ -162,7 +168,7 @@ def get_usage_summary(
 
 
 @router.get("/{clinic_id}/stats", response_model=UsageStatsResponse)
-def get_usage_stats(clinic_id: int):
+def get_usage_stats(clinic_id: int, user: dict = Depends(require_auth)):
     """
     Get quick usage stats for dashboard display.
     
@@ -217,6 +223,7 @@ def get_clinic_usage_records(
     month: Optional[str] = Query(None, description="Month in YYYY-MM format"),
     usage_type: Optional[str] = Query(None, description="Filter by usage type"),
     limit: int = Query(100, ge=1, le=1000),
+    user: dict = Depends(require_auth),
 ):
     """
     Get detailed usage records for a clinic.
@@ -262,6 +269,7 @@ def get_clinic_usage_records(
 def record_clinic_usage(
     clinic_id: int,
     request: RecordUsageRequest,
+    user: dict = Depends(require_auth),
 ):
     """
     Record a usage event for a clinic.
@@ -305,6 +313,7 @@ def record_clinic_usage(
 def finalize_month_billing(
     clinic_id: int,
     month: str,
+    user: dict = Depends(require_auth),
 ):
     """
     Finalize billing for a specific month.
@@ -334,6 +343,7 @@ def finalize_month_billing(
 def get_usage_history(
     clinic_id: int,
     months: int = Query(6, ge=1, le=24, description="Number of months to fetch"),
+    user: dict = Depends(require_auth),
 ):
     """
     Get usage history for the past N months.

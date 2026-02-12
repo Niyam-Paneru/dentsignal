@@ -13,7 +13,7 @@ import { OnboardingProgress } from '@/components/dashboard/onboarding-progress'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { getDashboardStats, getRecentCalls, getCallTrends, getClinic, getClinicSettings, getActiveCalls } from '@/lib/api/dental'
 import type { DashboardStats, RecentCall, CallTrendData, Clinic } from '@/types/database'
-import { createClient } from '@/lib/supabase/client'
+import { requireClient } from '@/lib/supabase/client'
 import { useCelebration } from '@/hooks/use-celebration'
 
 interface ActiveCall {
@@ -102,7 +102,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!clinic?.id) return
 
-    const supabase = createClient()
+    const supabase = requireClient()
     
     // Subscribe to call status changes
     const channel = supabase

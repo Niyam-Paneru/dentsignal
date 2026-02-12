@@ -44,15 +44,17 @@ export function ExitIntentPopup() {
     e.preventDefault()
     if (!email) return
 
-    // Save lead to Supabase
+    // Save lead to Supabase (fail silently if unavailable)
     try {
       const supabase = createClient()
-      await supabase
-        .from('dental_leads')
-        .upsert(
-          { email, source: 'exit-intent' },
-          { onConflict: 'email,source' }
-        )
+      if (supabase) {
+        await supabase
+          .from('dental_leads')
+          .upsert(
+            { email, source: 'exit-intent' },
+            { onConflict: 'email,source' }
+          )
+      }
     } catch {
       // Silently fail — don't block the user experience
     }

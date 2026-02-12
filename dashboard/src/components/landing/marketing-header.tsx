@@ -25,15 +25,20 @@ export function MarketingHeader({ className }: { className?: string }) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const supabase = createClient();
 
   useEffect(() => {
     async function checkAuth() {
-      const { data: { user } } = await supabase.auth.getUser()
-      setIsLoggedIn(!!user)
+      try {
+        const supabase = createClient()
+        if (!supabase) return // env vars missing — stay as guest
+        const { data: { user } } = await supabase.auth.getUser()
+        setIsLoggedIn(!!user)
+      } catch {
+        // Supabase unreachable — degrade to guest nav
+      }
     }
     checkAuth()
-  }, [supabase])
+  }, [])
 
   const navLinks = isLoggedIn ? authNavLinks : guestNavLinks;
 

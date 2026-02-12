@@ -1,0 +1,311 @@
+{
+  "_purpose": "TEST FAILURES, TESTS TO WRITE, AND CI/CD GATES — Everything needed to fix the test suite and set up security automation.",
+
+  "current_test_failures": {
+    "summary": "The test suite is broken. 14+ integration test failures, 3+ errors, and security scripts fail on startup. Root causes are fixture issues, not code bugs.",
+    "failures": [
+      {
+        "file": "dental_agent/tests/test_consent.py",
+        "issue": "JWT_SECRET fixture value is too short/weak — gets rejected by security hardening validation",
+        "fix": "Change fixture to use compliant secret: JWT_SECRET=AuditTestSecretKey_2026_Minimum32Chars! (or similar 32+ char mixed value)"
+      },
+      {
+        "file": "dental_agent/tests/integration_simulated.py",
+        "issue": "14 failures, 3 errors: (1) Same JWT_SECRET fixture issue, (2) DB tables not initialized in test setup, (3) /api/auth/login returns 422 because seed email admin@dental.local fails EmailStr validation",
+        "fix_steps": [
+          "Update JWT_SECRET fixture to compliant value",
+          "Add DB table creation in test conftest.py setup (create_all on test engine)",
+          "Change seed email from admin@dental.local to admin@dental.test",
+          "Update login test payloads to match current API contract"
+        ]
+      },
+      {
+        "file": "dental_agent/tests/test_security.sh",
+        "issue": "Fails immediately because .env file is missing",
+        "fix": "Either: (a) script should read from env vars with fallback, or (b) create test-specific .env.test and source it"
+      },
+      {
+        "file": "dental_agent/api_main.py (startup)",
+        "issue": "Demo user seed can fail due to bcrypt password length >72 bytes if random password is too long",
+        "fix": "Bound generated demo passwords to <=72 bytes before hashing"
+      }
+    ]
+  },
+
+  "tests_to_write": {
+    "priority_1_auth": {
+      "file": "dental_agent/tests/test_auth_enforcement.py",
+      "description": "Verify all sensitive routes reject unauthenticated requests",
+      "test_cases": [
+        {
+          "name": "test_leads_endpoint_requires_auth",
+          "target": "POST /api/clients/{client_id}/leads",
+          "assert": "401 without Authorization header"
+        },
+        {
+          "name": "test_uploads_endpoint_requires_auth",
+          "target": "POST /api/clients/{client_id}/uploads",
+          "assert": "401 without Authorization header"
+        },
+        {
+          "name": "test_call_status_endpoint_requires_auth",
+          "target": "POST /api/calls/{call_id}/status",
+          "assert": "401 without Authorization header"
+        },
+        {
+          "name": "test_batch_calls_endpoint_requires_auth",
+          "target": "GET /api/clients/{client_id}/batches/{batch_id}/calls",
+          "assert": "401 without Authorization header"
+        },
+        {
+          "name": "test_twilio_api_webhook_requires_signature",
+          "target": "POST /api/twilio/webhook",
+          "assert": "403 without valid X-Twilio-Signature"
+        },
+        {
+          "name": "test_cross_tenant_access_denied",
+          "target": "All client routes",
+          "assert": "Authenticate as clinic A, request clinic B resources -> 403"
+        }
+      ]
+    },
+
+    "priority_2_twilio_sig": {
+      "file": "dental_agent/tests/test_inbound_signature.py",
+      "description": "Verify inbound Twilio routes validate request signatures",
+      "test_cases": [
+        {
+          "name": "test_inbound_voice_requires_twilio_signature",
+          "target": "POST /inbound/voice",
+          "assert": "403 without X-Twilio-Signature"
+        },
+        {
+          "name": "test_inbound_voice_accepts_valid_signature",
+          "target": "POST /inbound/voice",
+          "assert": "200 with correctly computed signature"
+        },
+        {
+          "name": "test_inbound_status_requires_twilio_signature",
+          "target": "POST /inbound/status/{call_id}",
+          "assert": "403 without signature"
+        },
+        {
+          "name": "test_inbound_voicemail_requires_twilio_signature",
+          "target": "POST /inbound/voicemail/{call_id}",
+          "assert": "403 without signature"
+        }
+      ]
+    },
+
+    "priority_3_consent": {
+      "file": "dental_agent/tests/test_consent_enforcement.py",
+      "description": "Verify consent is enforced across ALL enqueue paths",
+      "test_cases": [
+        {
+          "name": "test_allow_no_consent_blocked_in_twilio_production",
+          "target": "POST /api/clients/{id}/uploads?allow_no_consent=true",
+          "setup": "TELEPHONY_MODE=TWILIO",
+          "assert": "allow_no_consent parameter rejected or ignored, consent=false leads filtered"
+        },
+        {
+          "name": "test_enqueue_blocks_no_consent_when_twilio",
+          "target": "enqueue_calls_for_batch()",
+          "setup": "Insert Lead(consent=False), TELEPHONY_MODE=TWILIO",
+          "assert": "No QUEUED call row created for that lead"
+        },
+        {
+          "name": "test_simulated_mode_allows_no_consent",
+          "target": "POST /api/clients/{id}/uploads?allow_no_consent=true",
+          "setup": "TELEPHONY_MODE=SIMULATED",
+          "assert": "Consent bypass allowed in simulation mode"
+        }
+      ]
+    },
+
+    "priority_4_xss": {
+      "file": "dental_agent/tests/test_xss_sanitization.py",
+      "description": "Verify HTML/JS payloads are sanitized in transcript and notes fields",
+      "test_cases": [
+        {
+          "name": "test_xss_payload_sanitized_in_transcript",
+          "target": "POST /api/calls/{call_id}/status",
+          "payload": "{\"transcript\":\"<img src=x onerror=alert(1)>\"}",
+          "assert": "Stored value has HTML stripped or encoded"
+        },
+        {
+          "name": "test_script_tag_sanitized_in_notes",
+          "payload": "{\"notes\":\"<script>document.cookie</script>\"}",
+          "assert": "Script tags removed"
+        }
+      ]
+    },
+
+    "priority_5_encryption": {
+      "file": "dental_agent/tests/test_field_encryption.py",
+      "description": "Verify PHI fields are encrypted at rest",
+      "test_cases": [
+        {
+          "name": "test_lead_phone_encrypted_at_rest",
+          "setup": "Create Lead with known phone number",
+          "assert": "Raw DB column value != plaintext phone number"
+        },
+        {
+          "name": "test_decrypt_round_trip",
+          "setup": "Encrypt then decrypt a value",
+          "assert": "Output matches original input"
+        },
+        {
+          "name": "test_phone_lookup_uses_hash_index",
+          "setup": "Look up lead by phone",
+          "assert": "Query uses hashed token column, not plaintext search"
+        }
+      ]
+    },
+
+    "priority_6_dnc": {
+      "file": "dental_agent/tests/test_dnc_enforcement.py",
+      "description": "Verify DNC numbers are blocked at all call creation points",
+      "test_cases": [
+        {
+          "name": "test_dnc_number_blocked_at_upload",
+          "setup": "Add number to DNC registry, try to upload as lead",
+          "assert": "Lead rejected or flagged as DNC"
+        },
+        {
+          "name": "test_dnc_number_blocked_at_enqueue",
+          "setup": "DNC lead in DB, call enqueue_calls_for_batch",
+          "assert": "No QUEUED call created"
+        },
+        {
+          "name": "test_dnc_number_blocked_at_dial",
+          "setup": "DNC lead somehow queued, start_call task runs",
+          "assert": "Call aborted before Twilio dial"
+        }
+      ]
+    }
+  },
+
+  "cicd_security_gates": {
+    "github_actions": {
+      "filename": ".github/workflows/security-gates.yml",
+      "content": "name: security-gates\non: [push, pull_request]\njobs:\n  backend-tests:\n    runs-on: ubuntu-latest\n    env:\n      JWT_SECRET: SecurityGateTestSecret_2026_LongEnough!\n      ENCRYPTION_KEY: test-encryption-key-32-chars-min!\n      SESSION_SECRET: test-session-secret-32-chars-min!\n      DATABASE_URL: sqlite:///./test_security.db\n      TELEPHONY_MODE: SIMULATED\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-python@v5\n        with:\n          python-version: '3.11'\n      - run: pip install -r dental_agent/requirements.txt pip-audit\n      - name: Unit tests\n        run: cd dental_agent && pytest -q\n      - name: Auth enforcement tests\n        run: cd dental_agent && pytest -q tests/test_auth_enforcement.py\n      - name: Consent enforcement tests\n        run: cd dental_agent && pytest -q tests/test_consent_enforcement.py\n      - name: Security validation\n        run: cd dental_agent && python tests/security_validation.py\n      - name: Dependency audit\n        run: pip-audit -r dental_agent/requirements.txt --strict\n\n  frontend-audit:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: '20'\n      - run: cd dashboard && npm ci\n      - run: cd dashboard && npm audit --audit-level=high\n"
+    },
+    "branch_protection_rules": [
+      "Require security-gates workflow to pass before merge",
+      "Require at least 1 review approval",
+      "Block force-pushes to main"
+    ]
+  },
+
+  "fix_execution_order": {
+    "description": "Recommended order to fix everything without breaking anything",
+    "steps": [
+      {
+        "step": 1,
+        "task": "Fix test infrastructure first",
+        "details": "Fix JWT_SECRET fixtures, seed email, bcrypt bounds, DB init in tests. Without this, you can't validate any fix.",
+        "vuln_refs": ["VULN-011"],
+        "hours": 4
+      },
+      {
+        "step": 2,
+        "task": "Add auth to api_main.py critical routes",
+        "details": "Add Depends(require_auth) + assert_client_access to the 5 confirmed-unauthenticated routes. Write test_auth_enforcement.py.",
+        "vuln_refs": ["VULN-001"],
+        "hours": 6
+      },
+      {
+        "step": 3,
+        "task": "Remove dead n8n webhook route from api_main.py",
+        "details": "Delete the /webhook/n8n/start-call endpoint (line ~683) and related n8n references in db.py. n8n was never used.",
+        "vuln_refs": ["REMOVED"],
+        "hours": 1
+      },
+      {
+        "step": 4,
+        "task": "Add Twilio signature validation to inbound routes",
+        "details": "Copy pattern from routes_twilio.py to routes_inbound.py. Write signature tests.",
+        "vuln_refs": ["VULN-004"],
+        "hours": 3
+      },
+      {
+        "step": 5,
+        "task": "Centralize consent enforcement",
+        "details": "Create enforce_consent() guard, wire into uploads/webhook/enqueue/tasks. Disable allow_no_consent in prod. Write consent tests.",
+        "vuln_refs": ["VULN-003"],
+        "hours": 4
+      },
+      {
+        "step": 6,
+        "task": "Sanitize transcript/notes input",
+        "details": "Add HTML sanitization before DB write in call status endpoint. Write XSS tests.",
+        "vuln_refs": ["VULN-005"],
+        "hours": 3
+      },
+      {
+        "step": 7,
+        "task": "Verify NEEDS_CHECK routes across all route files",
+        "details": "Inspect all 95 NEEDS_CHECK routes in SECURITY_ROUTES_MAP.json. Add auth where missing (most router files likely have router-level deps but must verify).",
+        "vuln_refs": ["VULN-001"],
+        "hours": 8
+      },
+      {
+        "step": 8,
+        "task": "Harden CSP and CORS",
+        "details": "Remove unsafe-inline/unsafe-eval from CSP. Restrict CORS to known origins.",
+        "vuln_refs": ["VULN-007", "VULN-008"],
+        "hours": 4
+      },
+      {
+        "step": 9,
+        "task": "Wire field-level encryption for PHI",
+        "details": "Integrate encryption.py into models, add hash columns for lookup, migration script, backfill.",
+        "vuln_refs": ["VULN-006"],
+        "hours": 16
+      },
+      {
+        "step": 10,
+        "task": "Add DNC registry and enforcement",
+        "details": "Create DNC table, add checks in upload/enqueue/dial paths. Write DNC tests.",
+        "vuln_refs": ["VULN-009"],
+        "hours": 8
+      },
+      {
+        "step": 11,
+        "task": "Add brute-force protection to login",
+        "details": "Redis-backed per-account lockout + per-IP throttle on /api/auth/login.",
+        "vuln_refs": ["VULN-012"],
+        "hours": 3
+      },
+      {
+        "step": 12,
+        "task": "Fix compliance claims and add evidence scaffolding",
+        "details": "Update HIPAA text to 'HIPAA-ready'. Add BAA table, retention scheduler scaffold, deletion API scaffold.",
+        "vuln_refs": ["VULN-010"],
+        "hours": 12
+      },
+      {
+        "step": 13,
+        "task": "Set up CI/CD security gates",
+        "details": "Deploy .github/workflows/security-gates.yml with all test suites and dependency scanning.",
+        "hours": 3
+      }
+    ],
+    "total_estimated_hours": 75,
+    "note": "This is implementation time with me (Copilot) doing the coding. Add 20-30% for review/testing iterations."
+  },
+
+  "files_to_delete_after_consolidation": {
+    "note": "These original audit files can be removed since this consolidated set replaces them all",
+    "files": [
+      "audit_full security.json",
+      "security_audit_report.json",
+      "security_full audit.2.json",
+      "last_audit-artifacts.json",
+      "report_security.json",
+      "audit_artifacts.json",
+      "audit_routes.txt",
+      "security_audit.md"
+    ]
+  }
+}

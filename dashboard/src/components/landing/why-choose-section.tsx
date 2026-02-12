@@ -24,7 +24,7 @@ const comparisons: ComparisonItem[] = [
   },
   {
     old: "Sensitive patient data handled by random call centers",
-    new: "HIPAA-compliant AI with encrypted, secure handling",
+    new: "HIPAA-ready AI with encrypted, secure handling",
     icon: ShieldCheck,
     highlight: "Enterprise security",
   },

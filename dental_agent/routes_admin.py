@@ -26,6 +26,7 @@ from sqlmodel import select
 from db import get_session, Client, InboundCall
 from models import ClinicCreate, ClinicUpdate, ClinicResponse, APIResponse
 from prompt_builder import get_available_voices
+from utils import sanitize_text_fields, TEXT_FIELDS_CLINIC
 
 logger = logging.getLogger(__name__)
 
@@ -228,8 +229,9 @@ async def update_clinic(
         if not clinic:
             raise HTTPException(status_code=404, detail="Clinic not found")
         
-        # Apply updates
+        # Apply updates — sanitize text fields to prevent stored XSS (AG-5)
         update_data = updates.model_dump(exclude_unset=True)
+        sanitize_text_fields(update_data, TEXT_FIELDS_CLINIC)
         for key, value in update_data.items():
             if hasattr(clinic, key):
                 setattr(clinic, key, value)
@@ -588,7 +590,7 @@ async def provision_phone_number(
 
 
 @router.get("/admin/clinic-numbers")
-async def list_all_clinic_numbers():
+async def list_all_clinic_numbers(user: dict = Depends(verify_admin_token)):
     """
     List all phone numbers in your Twilio account.
     
@@ -609,7 +611,7 @@ async def list_all_clinic_numbers():
 
 
 @router.post("/admin/fix-webhooks/{phone_sid}")
-async def fix_number_webhooks(phone_sid: str):
+async def fix_number_webhooks(phone_sid: str, user: dict = Depends(verify_admin_token)):
     """
     Update webhooks for an existing Twilio number.
     
@@ -630,7 +632,7 @@ async def fix_number_webhooks(phone_sid: str):
 
 
 @router.delete("/admin/release-number/{phone_sid}")
-async def release_phone_number(phone_sid: str, clinic_id: Optional[int] = None):
+async def release_phone_number(phone_sid: str, clinic_id: Optional[int] = None, user: dict = Depends(verify_admin_token)):
     """
     Release (delete) a Twilio phone number.
     

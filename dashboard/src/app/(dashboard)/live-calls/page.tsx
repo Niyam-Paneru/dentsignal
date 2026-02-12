@@ -23,7 +23,7 @@ import {
   Info
 } from 'lucide-react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
+import { requireClient } from '@/lib/supabase/client'
 import type { Call } from '@/types/database'
 
 interface LiveCall extends Call {
@@ -39,7 +39,7 @@ interface ClinicSettings {
 
 // Get user's clinic ID and settings
 async function getUserClinicData(): Promise<{ clinicId: string | null; settings: ClinicSettings }> {
-  const supabase = createClient()
+  const supabase = requireClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { clinicId: null, settings: {} }
   
@@ -135,7 +135,7 @@ export default function LiveCallsPage() {
   const [transferringCallId, setTransferringCallId] = useState<string | null>(null)
   const [transferError, setTransferError] = useState<string | null>(null)
   
-  const supabase = createClient()
+  const supabase = requireClient()
 
   const fetchCalls = useCallback(async () => {
     const { clinicId, settings } = await getUserClinicData()

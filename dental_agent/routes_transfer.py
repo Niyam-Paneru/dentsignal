@@ -17,9 +17,11 @@ from pydantic import BaseModel
 try:
     from dental_agent.auth import require_auth
     from dental_agent.utils import mask_phone
+    from dental_agent.routes_twilio import require_twilio_auth
 except ImportError:
     from auth import require_auth
     from utils import mask_phone
+    from routes_twilio import require_twilio_auth
 
 try:
     from twilio.rest import Client as TwilioClient
@@ -161,7 +163,7 @@ async def initiate_transfer(
 
 
 @router.post("/dial-complete")
-async def dial_complete_webhook():
+async def dial_complete_webhook(_twilio_auth=Depends(require_twilio_auth)):
     """
     Webhook called by Twilio after the dial attempt completes.
     Used for logging and analytics.
@@ -172,7 +174,7 @@ async def dial_complete_webhook():
 
 
 @router.get("/status/{call_sid}", response_model=TransferStatusResponse)
-async def get_transfer_status(call_sid: str):
+async def get_transfer_status(call_sid: str, user: dict = Depends(require_auth)):
     """
     Check the status of a transfer.
     
@@ -204,7 +206,7 @@ async def get_transfer_status(call_sid: str):
 
 
 @router.get("/can-transfer/{call_sid}")
-async def can_transfer(call_sid: str):
+async def can_transfer(call_sid: str, user: dict = Depends(require_auth)):
     """
     Check if a call can be transferred.
     

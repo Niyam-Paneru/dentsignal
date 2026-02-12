@@ -30,6 +30,7 @@ from db import (
     AppointmentStatus,
     AppointmentType,
 )
+from encryption import phi_hash
 from calendar_service import (
     CalendarService,
     CalendarConfig,
@@ -40,6 +41,12 @@ from calendar_service import (
     parse_appointment_type_from_text,
     APPOINTMENT_DURATIONS,
 )
+from utils import sanitize_html
+
+try:
+    from dental_agent.auth import require_auth
+except ImportError:
+    from auth import require_auth
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/calendar", tags=["Calendar & Appointments"])
@@ -175,7 +182,8 @@ class NoShowStatsResponse(BaseModel):
 async def setup_calendar_integration(
     clinic_id: int,
     request: CalendarSetupRequest,
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    user: dict = Depends(require_auth),
 ):
     """
     Set up or update calendar integration for a clinic.
@@ -257,7 +265,8 @@ async def setup_calendar_integration(
 @router.get("/integration/{clinic_id}")
 async def get_calendar_integration(
     clinic_id: int,
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    user: dict = Depends(require_auth),
 ):
     """Get calendar integration settings for a clinic."""
     integration = db.exec(
@@ -292,7 +301,8 @@ async def get_availability(
     target_date: str = Query(..., description="Date in YYYY-MM-DD format"),
     appointment_type: Optional[str] = None,
     duration_minutes: Optional[int] = None,
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    user: dict = Depends(require_auth),
 ):
     """
     Get available time slots for a specific date.
@@ -370,7 +380,8 @@ async def get_next_available(
     clinic_id: int,
     appointment_type: str = "checkup",
     max_days: int = Query(14, ge=1, le=60),
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    user: dict = Depends(require_auth),
 ):
     """
     Find the next available slot for an appointment type.
@@ -487,7 +498,8 @@ async def create_appointment(
     clinic_id: int,
     request: AppointmentCreateRequest,
     background_tasks: BackgroundTasks,
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    user: dict = Depends(require_auth),
 ):
     """
     Create a new appointment.
@@ -533,7 +545,7 @@ async def create_appointment(
     patient = db.exec(
         select(Patient)
         .where(Patient.clinic_id == clinic_id)
-        .where(Patient.phone == request.patient_phone)
+        .where(Patient.phone_hash == phi_hash(request.patient_phone))
     ).first()
     
     if not patient:
@@ -569,7 +581,7 @@ async def create_appointment(
         patient_email=request.patient_email,
         is_new_patient=request.is_new_patient,
         reason=request.reason,
-        notes=request.notes
+        notes=sanitize_html(request.notes) if request.notes else request.notes
     )
     
     # Sync to external calendar
@@ -639,7 +651,8 @@ async def list_appointments(
     end_date: Optional[str] = None,
     status: Optional[str] = None,
     limit: int = Query(50, ge=1, le=200),
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    user: dict = Depends(require_auth),
 ):
     """List appointments for a clinic with optional filters."""
     query = select(Appointment).where(Appointment.clinic_id == clinic_id)
@@ -683,7 +696,8 @@ async def list_appointments(
 async def get_appointment(
     clinic_id: int,
     appointment_id: int,
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    user: dict = Depends(require_auth),
 ):
     """Get appointment details."""
     appointment = db.exec(
@@ -724,7 +738,8 @@ async def update_appointment(
     clinic_id: int,
     appointment_id: int,
     request: AppointmentUpdateRequest,
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    user: dict = Depends(require_auth),
 ):
     """Update an appointment."""
     appointment = db.exec(
@@ -769,7 +784,7 @@ async def update_appointment(
             raise HTTPException(status_code=400, detail="Invalid status")
     
     if request.notes is not None:
-        appointment.notes = request.notes
+        appointment.notes = sanitize_html(request.notes)
     
     if request.provider_name is not None:
         appointment.provider_name = request.provider_name
@@ -784,7 +799,8 @@ async def update_appointment(
 async def cancel_appointment(
     clinic_id: int,
     appointment_id: int,
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    user: dict = Depends(require_auth),
 ):
     """Cancel an appointment."""
     appointment = db.exec(
@@ -833,7 +849,8 @@ async def mark_no_show(
     appointment_id: int,
     request: NoShowMarkRequest,
     background_tasks: BackgroundTasks,
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    user: dict = Depends(require_auth),
 ):
     """Mark an appointment as no-show and create follow-up record."""
     appointment = db.exec(
@@ -856,7 +873,7 @@ async def mark_no_show(
         clinic_id=clinic_id,
         scheduled_time=appointment.scheduled_time,
         appointment_type=appointment.appointment_type,
-        followup_notes=request.notes
+        followup_notes=sanitize_html(request.notes) if request.notes else request.notes
     )
     db.add(no_show)
     
@@ -898,7 +915,8 @@ async def list_no_shows(
     clinic_id: int,
     pending_only: bool = Query(False, description="Only show pending follow-ups"),
     limit: int = Query(50, ge=1, le=200),
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    user: dict = Depends(require_auth),
 ):
     """List no-show records for a clinic."""
     query = (
@@ -931,7 +949,8 @@ async def list_no_shows(
 @router.get("/no-shows/{clinic_id}/stats", response_model=NoShowStatsResponse)
 async def get_no_show_stats(
     clinic_id: int,
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    user: dict = Depends(require_auth),
 ):
     """Get no-show statistics for a clinic."""
     from sqlmodel import func
@@ -998,7 +1017,8 @@ async def mark_followed_up(
     no_show_id: int,
     notes: Optional[str] = None,
     rescheduled_appointment_id: Optional[int] = None,
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    user: dict = Depends(require_auth),
 ):
     """Mark a no-show as followed up."""
     no_show = db.exec(
@@ -1014,7 +1034,7 @@ async def mark_followed_up(
     no_show.followed_up_at = datetime.utcnow()
     
     if notes:
-        no_show.followup_notes = notes
+        no_show.followup_notes = sanitize_html(notes)
     
     if rescheduled_appointment_id:
         no_show.rescheduled_appointment_id = rescheduled_appointment_id

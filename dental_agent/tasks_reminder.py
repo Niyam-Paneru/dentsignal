@@ -24,11 +24,13 @@ try:
     from dental_agent.db import get_session, Appointment, Client, AppointmentStatus
     from dental_agent.twilio_service import send_sms
     from dental_agent.utils import mask_phone
+    from dental_agent.encryption import phi_hash
 except ImportError:
     from celery_config import celery_app
     from db import get_session, Appointment, Client, AppointmentStatus
     from twilio_service import send_sms
     from utils import mask_phone
+    from encryption import phi_hash
 
 logger = logging.getLogger(__name__)
 
@@ -553,7 +555,7 @@ def handle_patient_sms_response(
             # Find the most recent appointment for this phone number
             appointment = session.exec(
                 select(Appointment).where(
-                    Appointment.patient_phone == from_number,
+                    Appointment.patient_phone_hash == phi_hash(from_number),
                     Appointment.status.in_([AppointmentStatus.SCHEDULED, AppointmentStatus.CONFIRMED]),
                     Appointment.scheduled_time > datetime.utcnow(),
                 ).order_by(Appointment.scheduled_time)

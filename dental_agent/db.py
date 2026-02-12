@@ -17,7 +17,14 @@ from typing import Optional, Generator, Union
 
 from sqlmodel import Field, SQLModel, Session, create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import Column, String
+from sqlalchemy.pool import StaticPool
+from sqlalchemy import Column, String, event as sa_event
+
+# PHI field-level encryption (AG-8)
+try:
+    from dental_agent.encryption import EncryptedType, phi_hash
+except ImportError:
+    from encryption import EncryptedType, phi_hash
 
 # Password hashing with bcrypt
 try:
@@ -165,7 +172,7 @@ class UploadBatch(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     client_id: int = Field(foreign_key="clients.id", index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    source: str = Field(default="csv")  # csv, json, api, n8n
+    source: str = Field(default="csv")  # csv, json, api
 
     def __repr__(self) -> str:
         return f"<UploadBatch id={self.id} client_id={self.client_id} source={self.source}>"
@@ -177,13 +184,17 @@ class Lead(SQLModel, table=True):
     
     id: Optional[int] = Field(default=None, primary_key=True)
     batch_id: int = Field(foreign_key="upload_batches.id", index=True)
-    name: str
-    phone: str = Field(index=True)
-    email: Optional[str] = None
+    # PHI fields — encrypted at rest (AG-8)
+    name: str = Field(sa_column=Column("name", EncryptedType(), nullable=False))
+    phone: str = Field(sa_column=Column("phone", EncryptedType(), nullable=False))
+    email: Optional[str] = Field(default=None, sa_column=Column("email", EncryptedType(), nullable=True))
     source_url: Optional[str] = None
     notes: Optional[str] = None
     consent: bool = Field(default=False)  # TCPA consent for PSTN calls
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    # Deterministic hashes for indexed lookups on encrypted fields (AG-8)
+    phone_hash: str = Field(default="", index=True)
+    email_hash: Optional[str] = Field(default=None, index=True)
 
     def __repr__(self) -> str:
         return f"<Lead id={self.id} name={self.name} phone={self.phone}>"
@@ -358,9 +369,9 @@ class InboundCall(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     clinic_id: int = Field(foreign_key="clients.id", index=True)
     
-    # Call identifiers
-    from_number: str = Field(index=True)  # Caller's phone number
-    to_number: str  # Twilio number that was called
+    # Call identifiers — from_number encrypted (PHI, AG-8)
+    from_number: str = Field(sa_column=Column("from_number", EncryptedType(), nullable=False))
+    to_number: str  # Twilio number that was called (not PHI)
     twilio_call_sid: str = Field(unique=True, index=True)
     stream_sid: Optional[str] = None  # Twilio Media Stream SID
     
@@ -373,8 +384,8 @@ class InboundCall(SQLModel, table=True):
     transcript: Optional[str] = None  # Full conversation transcript
     summary: Optional[str] = None  # AI-generated summary
     
-    # Extracted info from conversation
-    caller_name: Optional[str] = None
+    # Extracted info from conversation — caller_name encrypted (PHI, AG-8)
+    caller_name: Optional[str] = Field(default=None, sa_column=Column("caller_name", EncryptedType(), nullable=True))
     is_new_patient: Optional[bool] = None
     reason_for_call: Optional[str] = None
     booked_appointment: Optional[datetime] = None
@@ -385,6 +396,9 @@ class InboundCall(SQLModel, table=True):
     
     # Extra data
     extra_data: Optional[str] = None  # JSON string for additional data
+
+    # Deterministic hash for phone lookups (AG-8)
+    from_number_hash: str = Field(default="", index=True)
 
     def __repr__(self) -> str:
         return f"<InboundCall id={self.id} clinic_id={self.clinic_id} from={self.from_number} status={self.status}>"
@@ -426,16 +440,16 @@ class Patient(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     clinic_id: int = Field(foreign_key="clients.id", index=True)
     
-    # Personal info
-    first_name: str
-    last_name: str
-    phone: str = Field(index=True)
-    email: Optional[str] = None
+    # Personal info — encrypted at rest (AG-8)
+    first_name: str = Field(sa_column=Column("first_name", EncryptedType(), nullable=False))
+    last_name: str = Field(sa_column=Column("last_name", EncryptedType(), nullable=False))
+    phone: str = Field(sa_column=Column("phone", EncryptedType(), nullable=False))
+    email: Optional[str] = Field(default=None, sa_column=Column("email", EncryptedType(), nullable=True))
     date_of_birth: Optional[datetime] = None
     
     # Dental info
     insurance_provider: Optional[str] = None
-    insurance_id: Optional[str] = None
+    insurance_id: Optional[str] = Field(default=None, sa_column=Column("insurance_id", EncryptedType(), nullable=True))
     is_new_patient: bool = Field(default=True)
     
     # History
@@ -446,6 +460,10 @@ class Patient(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     last_visit: Optional[datetime] = None
+    
+    # Deterministic hashes for indexed lookups on encrypted fields (AG-8)
+    phone_hash: str = Field(default="", index=True)
+    email_hash: Optional[str] = Field(default=None, index=True)
     
     def __repr__(self) -> str:
         return f"<Patient id={self.id} name={self.first_name} {self.last_name}>"
@@ -478,10 +496,10 @@ class Appointment(SQLModel, table=True):
     source: str = Field(default="phone")  # "phone", "website", "walk-in", "ai"
     inbound_call_id: Optional[int] = Field(default=None, foreign_key="inbound_calls.id")
     
-    # Patient info (for quick access without join)
-    patient_name: Optional[str] = None
-    patient_phone: Optional[str] = None
-    patient_email: Optional[str] = None
+    # Patient info — encrypted at rest (AG-8)
+    patient_name: Optional[str] = Field(default=None, sa_column=Column("patient_name", EncryptedType(), nullable=True))
+    patient_phone: Optional[str] = Field(default=None, sa_column=Column("patient_phone", EncryptedType(), nullable=True))
+    patient_email: Optional[str] = Field(default=None, sa_column=Column("patient_email", EncryptedType(), nullable=True))
     is_new_patient: bool = Field(default=False)
     
     # Notes
@@ -506,6 +524,9 @@ class Appointment(SQLModel, table=True):
     confirmed_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
     cancelled_at: Optional[datetime] = None
+    
+    # Deterministic hash for phone lookups (AG-8)
+    patient_phone_hash: Optional[str] = Field(default=None, index=True)
     
     def __repr__(self) -> str:
         return f"<Appointment id={self.id} patient={self.patient_name} time={self.scheduled_time} status={self.status}>"
@@ -669,10 +690,10 @@ class PatientRecall(SQLModel, table=True):
     clinic_id: int = Field(foreign_key="clients.id", index=True)
     patient_id: Optional[int] = Field(default=None, foreign_key="patients.id", index=True)
     
-    # Patient info (cached for quick access)
-    patient_name: str
-    patient_phone: str = Field(index=True)
-    patient_email: Optional[str] = None
+    # Patient info — encrypted at rest (AG-8)
+    patient_name: str = Field(sa_column=Column("patient_name", EncryptedType(), nullable=False))
+    patient_phone: str = Field(sa_column=Column("patient_phone", EncryptedType(), nullable=False))
+    patient_email: Optional[str] = Field(default=None, sa_column=Column("patient_email", EncryptedType(), nullable=True))
     
     # Recall details
     recall_type: RecallType = Field(default=RecallType.CLEANING)
@@ -714,6 +735,9 @@ class PatientRecall(SQLModel, table=True):
     
     # Notes
     notes: Optional[str] = None
+    
+    # Deterministic hash for phone lookups (AG-8)
+    patient_phone_hash: str = Field(default="", index=True)
     
     def __repr__(self) -> str:
         return f"<PatientRecall id={self.id} patient={self.patient_name} type={self.recall_type} status={self.status}>"
@@ -766,6 +790,186 @@ class RecallCampaign(SQLModel, table=True):
 
 
 # -----------------------------------------------------------------------------
+# Do-Not-Call Registry (AG-9)
+# -----------------------------------------------------------------------------
+
+class DNCReason(str, enum.Enum):
+    """Reason a number was added to the Do-Not-Call list."""
+    PATIENT_REQUEST = "patient_request"
+    COMPLAINT = "complaint"
+    LEGAL = "legal"
+    WRONG_NUMBER = "wrong_number"
+    ADMIN = "admin"
+    UPLOAD_FILTER = "upload_filter"
+
+
+class DoNotCall(SQLModel, table=True):
+    """
+    Do-Not-Call registry entry.
+
+    Any phone number in this table MUST NOT be contacted via outbound
+    calls, SMS, or added to lead/recall queues.  Checked at:
+      • lead upload (JSON + CSV)
+      • call enqueue (``enqueue_calls_for_batch``)
+      • call dial   (``start_call`` Celery task)
+    """
+    __tablename__ = "do_not_call"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    clinic_id: Optional[int] = Field(default=None, foreign_key="clients.id", index=True)
+
+    # The normalised E.164 phone number — encrypted at rest (AG-8)
+    phone: str = Field(sa_column=Column("phone", EncryptedType(), nullable=False))
+    # Deterministic hash for fast indexed lookups
+    phone_hash: str = Field(default="", index=True)
+
+    reason: DNCReason = Field(default=DNCReason.ADMIN)
+    notes: Optional[str] = None
+    added_by: Optional[str] = None  # email or "system"
+
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    removed_at: Optional[datetime] = None  # soft-delete — set if un-DNC'd
+    is_active: bool = Field(default=True)
+
+    def __repr__(self) -> str:
+        return f"<DoNotCall id={self.id} phone_hash={self.phone_hash[:12]}... active={self.is_active}>"
+
+
+# -----------------------------------------------------------------------------
+# Compliance Models (AG-11)
+# -----------------------------------------------------------------------------
+
+class BAAStatus(str, enum.Enum):
+    """Status of a Business Associate Agreement."""
+    PENDING = "pending"
+    SIGNED = "signed"
+    EXPIRED = "expired"
+    REVOKED = "revoked"
+
+
+class VendorType(str, enum.Enum):
+    """Type of sub-processor / vendor."""
+    TELEPHONY = "telephony"
+    DATABASE = "database"
+    AI_PROVIDER = "ai_provider"
+    CLOUD_HOSTING = "cloud_hosting"
+    ANALYTICS = "analytics"
+    OTHER = "other"
+
+
+class BusinessAssociateAgreement(SQLModel, table=True):
+    """
+    Tracks BAAs with sub-processors that handle PHI.
+    Required for HIPAA compliance — each vendor touching patient data
+    must have a signed BAA on file.
+    """
+    __tablename__ = "business_associate_agreements"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    clinic_id: str = Field(index=True)
+    vendor_name: str = Field(max_length=255)
+    vendor_type: VendorType = Field(default=VendorType.OTHER)
+    baa_status: BAAStatus = Field(default=BAAStatus.PENDING, index=True)
+    signed_date: Optional[datetime] = None
+    expiry_date: Optional[datetime] = None
+    document_url: Optional[str] = None
+    notes: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    def __repr__(self) -> str:
+        return f"<BAA id={self.id} vendor={self.vendor_name} status={self.baa_status}>"
+
+
+class RetentionPolicy(SQLModel, table=True):
+    """
+    Per-clinic data retention policy configuration.
+    Defines how long different data types are kept before auto-deletion.
+    """
+    __tablename__ = "retention_policies"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    clinic_id: str = Field(unique=True, index=True)
+    call_recording_days: int = Field(default=90)
+    call_transcript_days: int = Field(default=365)
+    patient_data_days: int = Field(default=2555)       # ~7 years (HIPAA minimum)
+    audit_log_days: int = Field(default=2555)           # ~7 years
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    def __repr__(self) -> str:
+        return f"<RetentionPolicy clinic={self.clinic_id} recordings={self.call_recording_days}d>"
+
+
+class DataDeletionRequest(SQLModel, table=True):
+    """
+    Tracks patient data deletion requests (HIPAA right of access / deletion).
+    """
+    __tablename__ = "data_deletion_requests"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    clinic_id: str = Field(index=True)
+    patient_identifier: str = Field(max_length=255)     # phone or email hash
+    requested_by: str = Field(max_length=255)           # admin email
+    reason: Optional[str] = None
+    status: str = Field(default="pending")              # pending | processing | completed | failed
+    data_types_deleted: Optional[str] = None            # JSON list of deleted data categories
+    completed_at: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    def __repr__(self) -> str:
+        return f"<DeletionRequest id={self.id} status={self.status}>"
+
+
+# -----------------------------------------------------------------------------
+# PHI Hash Auto-Computation Event Listeners (AG-8)
+# -----------------------------------------------------------------------------
+
+def _lead_phi_hashes(mapper, connection, target):
+    """Auto-compute hash columns for Lead before insert/update."""
+    target.phone_hash = phi_hash(target.phone) if target.phone else ""
+    target.email_hash = phi_hash(target.email) if target.email else None
+
+
+def _patient_phi_hashes(mapper, connection, target):
+    """Auto-compute hash columns for Patient before insert/update."""
+    target.phone_hash = phi_hash(target.phone) if target.phone else ""
+    target.email_hash = phi_hash(target.email) if target.email else None
+
+
+def _inbound_call_phi_hashes(mapper, connection, target):
+    """Auto-compute hash columns for InboundCall before insert/update."""
+    target.from_number_hash = phi_hash(target.from_number) if target.from_number else ""
+
+
+def _appointment_phi_hashes(mapper, connection, target):
+    """Auto-compute hash columns for Appointment before insert/update."""
+    target.patient_phone_hash = phi_hash(target.patient_phone) if target.patient_phone else None
+
+
+def _recall_phi_hashes(mapper, connection, target):
+    """Auto-compute hash columns for PatientRecall before insert/update."""
+    target.patient_phone_hash = phi_hash(target.patient_phone) if target.patient_phone else ""
+
+
+def _dnc_phi_hashes(mapper, connection, target):
+    """Auto-compute hash column for DoNotCall before insert/update."""
+    target.phone_hash = phi_hash(target.phone) if target.phone else ""
+
+
+for _model, _handler in [
+    (Lead, _lead_phi_hashes),
+    (Patient, _patient_phi_hashes),
+    (InboundCall, _inbound_call_phi_hashes),
+    (Appointment, _appointment_phi_hashes),
+    (PatientRecall, _recall_phi_hashes),
+    (DoNotCall, _dnc_phi_hashes),
+]:
+    sa_event.listen(_model, "before_insert", _handler)
+    sa_event.listen(_model, "before_update", _handler)
+
+
+# -----------------------------------------------------------------------------
 # Engine and Session Management
 # -----------------------------------------------------------------------------
 
@@ -805,7 +1009,14 @@ def create_db(engine_url: str = None) -> None:
     
     # Create engine with appropriate settings
     if "sqlite" in engine_url:
-        _engine = create_engine(engine_url, echo=False, connect_args=connect_args)
+        # In-memory SQLite needs StaticPool so all sessions share one connection
+        if ":memory:" in engine_url:
+            _engine = create_engine(
+                engine_url, echo=False, connect_args=connect_args,
+                poolclass=StaticPool,
+            )
+        else:
+            _engine = create_engine(engine_url, echo=False, connect_args=connect_args)
     else:
         # PostgreSQL with connection pool settings for Supabase
         _engine = create_engine(
@@ -915,6 +1126,10 @@ def enqueue_calls_for_batch(session: Session, batch_id: int, client_id: int) -> 
     """
     Create Call rows for all leads in a batch with status 'queued'.
     
+    In TWILIO mode, leads without consent are silently skipped here as a
+    defense-in-depth measure (the upload endpoints already filter, but
+    manual DB inserts could bypass that).
+    
     Args:
         session: Database session
         batch_id: The batch ID to process
@@ -925,12 +1140,32 @@ def enqueue_calls_for_batch(session: Session, batch_id: int, client_id: int) -> 
     """
     from sqlmodel import select
     
+    # Import consent guard (AG-4)
+    try:
+        from dental_agent.utils import requires_consent
+    except ImportError:
+        from utils import requires_consent
+    
+    consent_required = requires_consent()
+    
     # Get all leads in this batch
     statement = select(Lead).where(Lead.batch_id == batch_id)
     leads = session.exec(statement).all()
     
     count = 0
     for lead in leads:
+        # Defense-in-depth: skip leads without consent in TWILIO mode
+        if consent_required and not lead.consent:
+            continue
+        
+        # Defense-in-depth: skip DNC numbers (AG-9)
+        try:
+            from dnc_service import is_dnc
+        except ImportError:
+            from dental_agent.dnc_service import is_dnc
+        if is_dnc(session, lead.phone, clinic_id=client_id):
+            continue
+        
         call = Call(
             lead_id=lead.id,
             batch_id=batch_id,

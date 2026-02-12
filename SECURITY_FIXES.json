@@ -1,0 +1,335 @@
+{
+  "_purpose": "CONSOLIDATED SECURITY VULNERABILITY REFERENCE — Deduplicated from 6 audit reports + 1 summary. This is the single source of truth for all security fixes needed.",
+  "_source_files_merged": [
+    "audit_full security.json",
+    "security_audit_report.json",
+    "security_full audit.2.json",
+    "last_audit-artifacts.json",
+    "report_security.json",
+    "audit_artifacts.json",
+    "security_audit.md"
+  ],
+  "_audit_context": {
+    "repo_commit": "d00d1b3380addccbfaf545d8bcacdce3c816ed01",
+    "site": "https://dentsignal.me",
+    "audit_date": "2026-02-11",
+    "limitations": [
+      "Live-site external scanning blocked (proxy 403). Only repo static analysis + local runtime PoCs were performed.",
+      "No production credentials available for authenticated scans.",
+      "Dependency CVE scanning (pip-audit, npm audit) could not reach advisory feeds.",
+      "OWASP ZAP/Nikto not available in audit environment."
+    ]
+  },
+
+  "vulnerabilities": [
+    {
+      "id": "VULN-001",
+      "title": "Unauthenticated access to sensitive API endpoints",
+      "severity": "CRITICAL",
+      "owasp": ["A01:2021-Broken Access Control", "A04:2021-Insecure Design"],
+      "original_ids": ["DS-SEC-001", "DS-001", "DS-002"],
+      "description": "Core API endpoints in api_main.py have NO authentication. Anonymous users can: create leads, upload batches, read call logs, update call status/transcripts, and view batch call lists. This is confirmed via FastAPI TestClient PoC — not theoretical.",
+      "affected_routes": [
+        {"method": "POST", "path": "/api/clients/{client_id}/leads", "file": "dental_agent/api_main.py", "line": 475},
+        {"method": "POST", "path": "/api/clients/{client_id}/uploads", "file": "dental_agent/api_main.py", "line": 545},
+        {"method": "POST", "path": "/api/calls/{call_id}/status", "file": "dental_agent/api_main.py", "line": 742},
+        {"method": "GET",  "path": "/api/clients/{client_id}/batches/{batch_id}/calls", "file": "dental_agent/api_main.py", "line": 799},
+        {"method": "POST", "path": "/api/twilio/webhook", "file": "dental_agent/api_main.py", "line": 879}
+      ],
+      "poc": "POST /api/calls/1/status {\"result\":\"booked\",\"transcript\":\"<img src=x onerror=alert(1)>\"} — no auth header, returns 200, mutation persists.",
+      "fix": {
+        "steps": [
+          "Add Depends(require_auth) to ALL 5 routes listed above in api_main.py",
+          "Create assert_client_access(user, client_id) ownership helper — verify JWT subject owns the client_id",
+          "Call assert_client_access before every DB read/write in those routes",
+          "For /api/twilio/webhook: add Twilio X-Twilio-Signature validation (like routes_twilio.py already does)",
+          "For /api/calls/{call_id}/status: add signed service-to-service HMAC header OR require_auth + call ownership check"
+        ],
+        "tests_to_write": [
+          "test_api_requires_auth_for_sensitive_routes — hit all 5 routes without Authorization header, assert 401",
+          "test_cross_tenant_access_denied — authenticate as clinic A, try to access clinic B resources, assert 403",
+          "test_webhook_twilio_signature_required — POST to /api/twilio/webhook without X-Twilio-Signature, assert 403"
+        ],
+        "estimated_hours": 8
+      }
+    },
+
+
+    {
+      "id": "VULN-003",
+      "title": "Consent enforcement bypass via allow_no_consent query param and enqueue layer gap",
+      "severity": "HIGH",
+      "owasp": ["A04:2021-Insecure Design", "A01:2021-Broken Access Control"],
+      "original_ids": ["DS-004 (report_security)", "DS-001 (audit_artifacts)", "DS-002 (audit_full)"],
+      "description": "Two bypass vectors: (1) allow_no_consent=true query parameter on upload endpoints disables consent filtering even in TWILIO production mode. (2) enqueue_calls_for_batch() in db.py queues ALL leads regardless of consent — if leads with consent=false get into the DB via any path, they get queued for calling. The n8n webhook route has been removed entirely.",
+      "affected_routes": [
+        {"method": "POST", "path": "/api/clients/{client_id}/uploads?allow_no_consent=true", "file": "dental_agent/api_main.py", "line": 545},
+        {"function": "enqueue_calls_for_batch()", "file": "dental_agent/db.py", "note": "Does not re-check consent before queueing"}
+      ],
+      "poc": "POST /api/clients/1/uploads?allow_no_consent=true with {\"leads\":[{\"name\":\"No Consent\",\"phone\":\"+15551234567\",\"consent\":false}]} — leads accepted and enqueued in TWILIO mode",
+      "fix": {
+        "steps": [
+          "Create centralized enforce_consent(lead, telephony_mode) validator in a shared service module",
+          "Call enforce_consent in: upload routes, enqueue_calls_for_batch, and start_call task",
+          "Disable allow_no_consent parameter in production (only allow in SIMULATED mode or with explicit admin auth)",
+          "Add consent re-validation in enqueue_calls_for_batch when TELEPHONY_MODE=TWILIO — skip/reject consent=false leads",
+          "Log audit events when consent bypass is attempted"
+        ],
+        "tests_to_write": [
+          "test_allow_no_consent_blocked_in_twilio_production — assert parameter rejected when TELEPHONY_MODE=TWILIO",
+          "test_enqueue_blocks_no_consent_when_twilio — create consent=false lead, call enqueue, assert no QUEUED call created",
+          "test_simulated_mode_allows_no_consent — verify bypass only works in SIMULATED mode"
+        ],
+        "estimated_hours": 5
+      }
+    },
+
+    {
+      "id": "VULN-004",
+      "title": "Inbound Twilio webhook endpoints lack signature validation",
+      "severity": "HIGH",
+      "owasp": ["A07:2021-Identification and Authentication Failures", "A08:2021-Software and Data Integrity Failures"],
+      "original_ids": ["DS-003 (report_security)", "DS-001 (audit_full)"],
+      "description": "routes_inbound.py endpoints accept raw form POSTs without Twilio X-Twilio-Signature verification. Attackers can forge CallSid/From/To and create fake inbound call records. Note: routes_twilio.py DOES validate signatures — routes_inbound.py does NOT.",
+      "affected_routes": [
+        {"method": "POST", "path": "/inbound/voice", "file": "dental_agent/routes_inbound.py", "line": 140},
+        {"method": "POST", "path": "/inbound/stream-failed/{call_id}", "file": "dental_agent/routes_inbound.py", "line": 349},
+        {"method": "POST", "path": "/inbound/voicemail/{call_id}", "file": "dental_agent/routes_inbound.py", "line": 409},
+        {"method": "POST", "path": "/inbound/status/{call_id}", "file": "dental_agent/routes_inbound.py", "line": 446}
+      ],
+      "poc": "POST /inbound/voice with forged CallSid=CA_FAKE&From=+15550001111&To=+15550002222 — accepted without signature check",
+      "fix": {
+        "steps": [
+          "Add Twilio request signature validation dependency (same pattern used in routes_twilio.py) to ALL inbound routes",
+          "Reject requests with missing/invalid X-Twilio-Signature with 403",
+          "Log rejected requests with fingerprint for monitoring"
+        ],
+        "tests_to_write": [
+          "test_inbound_voice_requires_twilio_signature — POST without signature, assert 403",
+          "test_inbound_voice_accepts_valid_signature — POST with correctly signed request, assert 200",
+          "test_inbound_status_requires_twilio_signature — same pattern for status callback"
+        ],
+        "estimated_hours": 4
+      }
+    },
+
+    {
+      "id": "VULN-005",
+      "title": "Stored XSS via unsanitized transcript/notes fields",
+      "severity": "HIGH",
+      "owasp": ["A03:2021-Injection"],
+      "original_ids": ["DS-SEC-002 (last_audit)"],
+      "description": "/api/calls/{call_id}/status stores transcript and notes content verbatim — no sanitization. If dashboard renders these unsafely (dangerouslySetInnerHTML or non-escaped), attacker-controlled JS executes in admin sessions.",
+      "affected_routes": [
+        {"method": "POST", "path": "/api/calls/{call_id}/status", "file": "dental_agent/api_main.py", "line": 742}
+      ],
+      "poc": "POST /api/calls/1/status {\"transcript\":\"<img src=x onerror=alert(1)>\"} — payload persisted verbatim in call_result.transcript",
+      "fix": {
+        "steps": [
+          "Sanitize transcript/notes at INPUT boundary before DB persistence (strip HTML tags or use bleach/html-sanitize)",
+          "Verify dashboard frontend NEVER uses dangerouslySetInnerHTML for transcript/notes rendering",
+          "Ensure React's default escaping is used for all user-generated content display",
+          "Add output encoding as defense-in-depth"
+        ],
+        "tests_to_write": [
+          "test_xss_payload_sanitized_in_transcript — submit XSS payload, retrieve, verify HTML stripped",
+          "test_xss_payload_sanitized_in_notes — same for notes field"
+        ],
+        "estimated_hours": 4
+      }
+    },
+
+    {
+      "id": "VULN-006",
+      "title": "PII/PHI stored in plaintext — encryption helpers exist but are never used",
+      "severity": "HIGH",
+      "owasp": ["A02:2021-Cryptographic Failures"],
+      "original_ids": ["DS-SEC-003", "DS-003 (all reports)", "DS-005", "DS-2026-005"],
+      "description": "Lead.phone, Lead.email, CallResult.transcript, InboundCall.from_number, InboundCall.transcript, Appointment.patient_phone, Appointment.patient_email are ALL stored as plain text columns. encryption.py has Fernet helpers that are NEVER imported or called by any model or persistence path.",
+      "affected_files": [
+        {"file": "dental_agent/db.py", "note": "All SQLModel definitions — Lead, CallResult, InboundCall, Appointment"},
+        {"file": "dental_agent/encryption.py", "note": "Has encrypt_field/decrypt_field helpers — completely unused"}
+      ],
+      "pii_fields": [
+        "Lead.phone",
+        "Lead.email",
+        "CallResult.transcript",
+        "InboundCall.from_number",
+        "InboundCall.transcript",
+        "Appointment.patient_phone",
+        "Appointment.patient_email"
+      ],
+      "fix": {
+        "steps": [
+          "Wire encryption.py into model persistence: encrypt on write, decrypt on read for all 7 fields above",
+          "Add deterministic hash/token columns for phone/email to enable indexed lookups without decrypting",
+          "Implement key management: versioned keys, rotation support, no hardcoded fallback salts in prod",
+          "Create migration script to backfill-encrypt existing plaintext records with verification checksums",
+          "Add DB migration for new encrypted columns alongside old ones (then drop old after verification)"
+        ],
+        "tests_to_write": [
+          "test_sensitive_fields_encrypted_at_rest — write Lead, read raw DB column, verify not plaintext",
+          "test_decrypt_round_trip — encrypt then decrypt, verify data integrity",
+          "test_search_uses_hashed_index_not_plaintext — phone lookup uses token column"
+        ],
+        "estimated_hours": 16
+      }
+    },
+
+    {
+      "id": "VULN-007",
+      "title": "CSP allows unsafe-inline and unsafe-eval",
+      "severity": "MEDIUM",
+      "owasp": ["A03:2021-Injection"],
+      "original_ids": ["DS-004 (audit_artifacts)", "DS-2026-002"],
+      "description": "SecurityHeadersMiddleware in api_main.py sets CSP with 'unsafe-inline' and 'unsafe-eval' in script-src and style-src. This widens XSS blast radius if any injection sink exists.",
+      "affected_files": [
+        {"file": "dental_agent/api_main.py", "note": "SecurityHeadersMiddleware CSP configuration"}
+      ],
+      "fix": {
+        "steps": [
+          "Switch to nonce-based CSP for scripts (generate per-request nonce)",
+          "Remove 'unsafe-inline' from script-src — move all inline scripts to external files with nonces",
+          "Remove 'unsafe-eval' — refactor any eval() usage",
+          "Use strict-dynamic where possible"
+        ],
+        "tests_to_write": [
+          "test_csp_header_no_unsafe_inline — verify response CSP doesn't contain unsafe-inline",
+          "test_csp_header_no_unsafe_eval — verify response CSP doesn't contain unsafe-eval"
+        ],
+        "estimated_hours": 6
+      }
+    },
+
+    {
+      "id": "VULN-008",
+      "title": "CORS Access-Control-Allow-Origin: * on all endpoints",
+      "severity": "MEDIUM",
+      "owasp": ["A05:2021-Security Misconfiguration"],
+      "original_ids": ["DS-005 (audit_artifacts)"],
+      "description": "Wildcard ACAO on all responses enables cross-origin reads from any domain. While browsers block credentialed requests with wildcard ACAO, this still widens attack surface.",
+      "affected_files": [
+        {"file": "dental_agent/api_main.py", "note": "CORS middleware configuration"}
+      ],
+      "fix": {
+        "steps": [
+          "Restrict ACAO to known origins: dashboard domain, localhost dev",
+          "Use allow_credentials=True with specific origin list instead of wildcard"
+        ],
+        "estimated_hours": 2
+      }
+    },
+
+    {
+      "id": "VULN-009",
+      "title": "No DNC (Do-Not-Call) registry enforcement",
+      "severity": "HIGH",
+      "owasp": ["A04:2021-Insecure Design"],
+      "original_ids": ["DS-2026-004"],
+      "description": "DNC compliance mentioned only in AI agent prompt text — no technical enforcement. No DNC suppression table, no sync job, no hard-block in call enqueue or dial paths. A lead with consent=true but a DNC-listed number would still be called.",
+      "affected_files": [
+        {"file": "dental_agent/db.py", "note": "No DNC table defined"},
+        {"file": "dental_agent/tasks.py", "note": "start_call task does not check DNC"},
+        {"file": "dental_agent/api_main.py", "note": "Upload/enqueue paths do not check DNC"}
+      ],
+      "fix": {
+        "steps": [
+          "Create dnc_registry table: phone_hash, source, reason, expires_at, created_at",
+          "Add DNC check in upload route (reject/flag DNC numbers at ingestion)",
+          "Add DNC check in enqueue_calls_for_batch (hard-block DNC numbers)",
+          "Add DNC check in start_call task (final safety net before dialing)",
+          "Add nightly sync job scaffold for external DNC list import"
+        ],
+        "tests_to_write": [
+          "test_dnc_number_blocked_at_upload — upload lead with DNC number, assert rejected",
+          "test_dnc_number_blocked_at_enqueue — DNC lead in DB, assert not queued",
+          "test_dnc_number_blocked_at_dial — DNC lead queued somehow, assert dial blocked"
+        ],
+        "estimated_hours": 10
+      }
+    },
+
+    {
+      "id": "VULN-010",
+      "title": "HIPAA/BAA compliance claims not backed by technical controls",
+      "severity": "MEDIUM",
+      "owasp": ["A04:2021-Insecure Design", "A09:2021-Security Logging and Monitoring Failures"],
+      "original_ids": ["DS-SEC-004", "DS-004 (audit_full)", "DS-2026-003", "DS-SEC-005 (last_audit)", "DS-007"],
+      "description": "Marketing/legal pages claim HIPAA-ready + BAA availability. Repository has: (1) no BAA state table or enforcement, (2) no automated retention/deletion jobs despite privacy policy promises, (3) no audit evidence export, (4) encryption helpers unused. Claims are legally risky without controls.",
+      "fix": {
+        "steps": [
+          "IMMEDIATE: Change 'HIPAA compliant' text to 'HIPAA-ready' on marketing/legal pages until controls exist",
+          "Add clinic/provider BAA state table with signed-at timestamp",
+          "Add BAA gate middleware: block PHI-processing routes if clinic has no active BAA",
+          "Implement automated retention scheduler (configurable per-clinic retention periods)",
+          "Implement data deletion API + job (honor deletion requests within compliance window)",
+          "Add audit evidence export endpoint (BAA records, PHI access logs, retention proof)"
+        ],
+        "estimated_hours": 16
+      }
+    },
+
+    {
+      "id": "VULN-011",
+      "title": "Broken test suite masks security regressions",
+      "severity": "HIGH",
+      "owasp": ["A05:2021-Security Misconfiguration", "A09:2021-Security Logging and Monitoring Failures"],
+      "original_ids": ["DS-2026-001", "DS-SEC-005"],
+      "description": "Integration tests fail with 14+ failures and 3+ errors. Root causes: (1) test fixtures use weak JWT_SECRET that gets rejected by security validation, (2) demo seed user uses admin@dental.local which fails EmailStr validation, (3) bcrypt password length edge cases. Security regressions ship undetected.",
+      "affected_files": [
+        {"file": "dental_agent/tests/integration_simulated.py", "note": "14 failures, 3 errors"},
+        {"file": "dental_agent/tests/test_consent.py", "note": "JWT_SECRET fixture too short"},
+        {"file": "dental_agent/tests/test_security.sh", "note": "Fails immediately — missing .env"}
+      ],
+      "fix": {
+        "steps": [
+          "Update test fixtures to generate compliant JWT_SECRET (32+ chars, mixed case + numbers)",
+          "Change seed email from admin@dental.local to admin@dental.test (valid for EmailStr)",
+          "Bound generated passwords to <=72 bytes for bcrypt compatibility",
+          "Fix test_security.sh to not require .env (use env vars or test-specific config)",
+          "Fix integration test DB initialization (tables not created in test setup)",
+          "Gate all merges on passing test suite in branch protection"
+        ],
+        "estimated_hours": 6
+      }
+    },
+
+    {
+      "id": "VULN-012",
+      "title": "No account lockout/brute-force protection on login",
+      "severity": "MEDIUM",
+      "owasp": ["A07:2021-Identification and Authentication Failures"],
+      "original_ids": ["DS-006"],
+      "description": "/api/auth/login returns 401 for bad credentials but has no per-account lockout or progressive backoff. In-memory IP rate limiter may not survive distributed attacks.",
+      "affected_routes": [
+        {"method": "POST", "path": "/api/auth/login", "file": "dental_agent/api_main.py", "line": 447}
+      ],
+      "fix": {
+        "steps": [
+          "Add per-account failed attempt counter (Redis-backed)",
+          "Lock account after N failures for configurable cooldown period",
+          "Add per-IP throttle for login attempts (stricter than general rate limit)",
+          "Return generic error message (don't reveal if account exists)"
+        ],
+        "estimated_hours": 4
+      }
+    }
+  ],
+
+  "priority_order": [
+    {"id": "VULN-001", "reason": "Wide-open API — anyone can read/write call data RIGHT NOW", "do_first": true},
+    {"id": "VULN-004", "reason": "Fake inbound calls can be injected", "do_first": true},
+    {"id": "VULN-003", "reason": "Consent bypass enables TCPA lawsuits"},
+    {"id": "VULN-005", "reason": "Stored XSS can compromise admin sessions"},
+    {"id": "VULN-009", "reason": "DNC violations carry heavy fines"},
+    {"id": "VULN-011", "reason": "Broken tests mean you can't safely validate any fix"},
+    {"id": "VULN-006", "reason": "PHI plaintext = breach liability"},
+    {"id": "VULN-010", "reason": "Legal claims not backed by code"},
+    {"id": "VULN-007", "reason": "CSP hardening (defense-in-depth)"},
+    {"id": "VULN-008", "reason": "CORS restriction (defense-in-depth)"},
+    {"id": "VULN-012", "reason": "Brute-force protection (defense-in-depth)"}
+  ],
+
+  "total_estimated_hours": 81,
+  "realistic_with_testing": "100-120 hours"
+}

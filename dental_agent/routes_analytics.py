@@ -13,8 +13,13 @@ import logging
 from datetime import datetime, timedelta
 from typing import Optional, List
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
+
+try:
+    from dental_agent.auth import require_auth
+except ImportError:
+    from auth import require_auth
 
 from call_analytics import (
     analyze_call_transcript,
@@ -101,7 +106,7 @@ class DashboardStats(BaseModel):
 # =============================================================================
 
 @router.post("/analyze", response_model=CallAnalysisResponse)
-async def analyze_call(request: AnalyzeCallRequest):
+async def analyze_call(request: AnalyzeCallRequest, user: dict = Depends(require_auth)):
     """
     Analyze a call transcript for sentiment, quality, and insights.
     
@@ -138,7 +143,7 @@ async def analyze_call(request: AnalyzeCallRequest):
 
 
 @router.post("/extract-appointment")
-async def extract_appointment(transcript: str = Query(..., min_length=10)):
+async def extract_appointment(transcript: str = Query(..., min_length=10), user: dict = Depends(require_auth)):
     """
     Extract appointment details from a transcript.
     
@@ -162,6 +167,7 @@ async def extract_appointment(transcript: str = Query(..., min_length=10)):
 async def get_quality_report(
     period: str = Query("week", enum=["day", "week", "month"]),
     clinic_id: Optional[int] = None,
+    user: dict = Depends(require_auth),
 ):
     """
     Get aggregate quality report for a time period.
@@ -201,7 +207,7 @@ async def get_quality_report(
 
 
 @router.get("/dashboard-stats", response_model=DashboardStats)
-async def get_dashboard_stats(clinic_id: Optional[int] = None):
+async def get_dashboard_stats(clinic_id: Optional[int] = None, user: dict = Depends(require_auth)):
     """
     Get high-level dashboard statistics.
     
@@ -238,6 +244,7 @@ async def get_common_questions(
     period: str = Query("month", enum=["week", "month", "all"]),
     limit: int = Query(20, ge=1, le=100),
     clinic_id: Optional[int] = None,
+    user: dict = Depends(require_auth),
 ):
     """
     Get the most common patient questions.
@@ -274,6 +281,7 @@ async def get_common_questions(
 async def get_sentiment_trends(
     days: int = Query(30, ge=7, le=90),
     clinic_id: Optional[int] = None,
+    user: dict = Depends(require_auth),
 ):
     """
     Get sentiment trends over time.
@@ -294,6 +302,7 @@ async def get_sentiment_trends(
 async def get_conversion_funnel(
     period: str = Query("month", enum=["week", "month"]),
     clinic_id: Optional[int] = None,
+    user: dict = Depends(require_auth),
 ):
     """
     Get call-to-appointment conversion funnel.
@@ -326,6 +335,7 @@ async def generate_report_email(
     clinic_name: str,
     period: str = Query("today", enum=["today", "week", "month"]),
     send_to: Optional[str] = None,
+    user: dict = Depends(require_auth),
 ):
     """
     Generate and optionally send a summary report email.
@@ -353,6 +363,7 @@ async def generate_report_email(
 async def get_peak_hours(
     period: str = Query("month", enum=["week", "month"]),
     clinic_id: Optional[int] = None,
+    user: dict = Depends(require_auth),
 ):
     """
     Get peak calling hours analysis.
@@ -405,7 +416,7 @@ class QualityScoreResponse(BaseModel):
 
 
 @router.post("/quality-score/{call_id}", response_model=QualityScoreResponse)
-async def score_call_quality(call_id: str, request: QualityScoreRequest):
+async def score_call_quality(call_id: str, request: QualityScoreRequest, user: dict = Depends(require_auth)):
     """
     AI-powered call quality scoring using Gemini 2.0-flash.
     
@@ -518,7 +529,7 @@ class ReceptionistPerformanceResponse(BaseModel):
 
 
 @router.get("/receptionist-performance", response_model=ReceptionistPerformanceResponse)
-async def get_receptionist_performance(clinic_id: Optional[int] = None):
+async def get_receptionist_performance(clinic_id: Optional[int] = None, user: dict = Depends(require_auth)):
     """
     Get receptionist performance metrics for the dashboard.
     

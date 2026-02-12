@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Loader2, Check, AlertCircle, ArrowLeft, ArrowRight, Phone, Building2, User } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { requireClient } from '@/lib/supabase/client'
 import { Turnstile } from '@/components/turnstile'
 import { MarketingHeader } from '@/components/landing/marketing-header'
 import { MarketingFooter } from '@/components/landing/marketing-footer'
@@ -147,7 +147,7 @@ export default function SignupPage() {
   const hardTimerRef = useRef<number | null>(null)
   
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = requireClient()
   
   // Handle CAPTCHA errors - log but don't block signup
   const handleCaptchaError = () => {

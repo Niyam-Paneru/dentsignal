@@ -183,7 +183,7 @@ Call your Twilio number from any phone. The AI receptionist will answer!
 
 API available at:
 - Swagger docs: `http://localhost:8000/docs`
-- Demo login: `admin@dental.local` / `admin123`
+- Demo login: `admin@dental-demo.com` / (set via `DEMO_USER_PASSWORD` env var, or random on first startup)
 
 ## Testing
 

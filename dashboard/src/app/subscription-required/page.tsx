@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertCircle, CreditCard, Mail, CheckCircle2, Zap, Phone, Star, Shield } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { requireClient } from '@/lib/supabase/client'
 import { MarketingHeader } from '@/components/landing/marketing-header'
 import { MarketingFooter } from '@/components/landing/marketing-footer'
 
@@ -20,7 +20,7 @@ export default function SubscriptionRequiredPage() {
   const [clinic, setClinic] = useState<ClinicSubscription | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedPlan, setSelectedPlan] = useState<'starter_149' | 'pro_199'>('starter_149')
-  const supabase = createClient()
+  const supabase = requireClient()
 
   useEffect(() => {
     async function fetchClinic() {
@@ -268,7 +268,7 @@ Thank you!`)
           <div className="grid grid-cols-3 gap-4 text-center mb-6">
             <div className="flex flex-col items-center">
               <Shield className="h-8 w-8 text-green-600 mb-2" />
-              <span className="text-sm text-gray-600">HIPAA Compliant</span>
+              <span className="text-sm text-gray-600">HIPAA-Ready</span>
             </div>
             <div className="flex flex-col items-center">
               <Zap className="h-8 w-8 text-blue-600 mb-2" />

@@ -26,6 +26,8 @@ Usage:
 
 import os
 import base64
+import hashlib
+import hmac
 import logging
 from typing import Optional, Union
 from cryptography.fernet import Fernet
@@ -312,6 +314,87 @@ def decrypt_dict_values(data: dict, encrypted_fields: list) -> dict:
         if field in result and result[field]:
             result[field] = decrypt_field(result[field])
     return result
+
+
+# =============================================================================
+# SQLALCHEMY TYPE DECORATOR — TRANSPARENT FIELD ENCRYPTION (AG-8)
+# =============================================================================
+
+try:
+    from sqlalchemy import Text
+    from sqlalchemy.types import TypeDecorator
+    _HAS_SQLALCHEMY = True
+except ImportError:
+    _HAS_SQLALCHEMY = False
+    TypeDecorator = None  # type: ignore[misc,assignment]
+
+
+if _HAS_SQLALCHEMY:
+    class EncryptedType(TypeDecorator):
+        """
+        SQLAlchemy type that transparently encrypts on write and decrypts on read.
+
+        Usage with SQLModel::
+
+            phone: str = Field(sa_column=Column("phone", EncryptedType()))
+
+        Behaviour:
+        - INSERT/UPDATE: plaintext → Fernet ciphertext
+        - SELECT: ciphertext → plaintext
+        - NULL values pass through unchanged
+        - When ENCRYPTION_KEY is not configured → passthrough (dev mode)
+        - Pre-migration plaintext rows → returned as-is (graceful fallback)
+        """
+        impl = Text
+        cache_ok = True
+
+        def process_bind_param(self, value, dialect):
+            """Encrypt value before writing to DB."""
+            if value is None:
+                return None
+            if not is_encryption_configured():
+                return value
+            try:
+                return encrypt_field(str(value))
+            except EncryptionError:
+                logger.warning("PHI encrypt failed — storing plaintext")
+                return value
+
+        def process_result_value(self, value, dialect):
+            """Decrypt value after reading from DB."""
+            if value is None:
+                return None
+            if not is_encryption_configured():
+                return value
+            try:
+                return decrypt_field(value)
+            except (EncryptionError, Exception):
+                # Pre-migration plaintext — return as-is
+                return value
+
+
+def phi_hash(value: Optional[str]) -> str:
+    """
+    Deterministic HMAC-SHA256 hash for encrypted PHI field lookups.
+
+    Produces a 64-char hex digest keyed with ENCRYPTION_KEY so hashes
+    cannot be rainbow-tabled without the key.
+
+    Normalises input (strip + lowercase) for consistent matching.
+
+    Args:
+        value: Plaintext PHI value (phone, email, etc.)
+
+    Returns:
+        64-char hex HMAC-SHA256 digest, or empty string if value is None/empty
+    """
+    if not value:
+        return ""
+    normalized = value.strip().lower()
+    if not normalized:
+        return ""
+    key = (ENCRYPTION_KEY or "default-dev-hash-key").encode()
+    return hmac.new(key, normalized.encode(), hashlib.sha256).hexdigest()
 
 
 # =============================================================================

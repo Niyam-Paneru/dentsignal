@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { requireClient } from '@/lib/supabase/client'
 
 export interface SubscriptionInfo {
   status: 'trial' | 'active' | 'expired' | 'cancelled'
@@ -18,7 +18,7 @@ export function useSubscription() {
 
   useEffect(() => {
     async function fetchSubscription() {
-      const supabase = createClient()
+      const supabase = requireClient()
       const { data: { user } } = await supabase.auth.getUser()
 
       if (!user) {

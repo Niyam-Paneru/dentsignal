@@ -20,7 +20,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { useState, useEffect, useCallback } from 'react'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { createClient } from '@/lib/supabase/client'
+import { requireClient } from '@/lib/supabase/client'
 import { Badge } from '@/components/ui/badge'
 
 // Super Admin emails - only platform owner(s)
@@ -138,7 +138,7 @@ export function Sidebar() {
 
   // Fetch active call count
   const fetchActiveCallCount = useCallback(async (clinicId: string) => {
-    const supabase = createClient()
+    const supabase = requireClient()
     const { count } = await supabase
       .from('dental_calls')
       .select('*', { count: 'exact', head: true })
@@ -151,7 +151,7 @@ export function Sidebar() {
   // Check if user is a super admin and get user/clinic info
   useEffect(() => {
     const loadUserData = async () => {
-      const supabase = createClient()
+      const supabase = requireClient()
       const { data: { user } } = await supabase.auth.getUser()
       
       if (user?.email) {
@@ -189,7 +189,7 @@ export function Sidebar() {
   useEffect(() => {
     if (!userInfo.clinicId) return
 
-    const supabase = createClient()
+    const supabase = requireClient()
     
     // Subscribe to call status changes
     const channel = supabase

@@ -1,0 +1,212 @@
+{
+  "_purpose": "COMPLETE ROUTE SECURITY MAP — Every backend route with auth status, risk level, and required fix. Use this to systematically apply auth to all routes.",
+  "_total_routes": 118,
+
+  "routes_by_file": {
+    "dental_agent/api_main.py": {
+      "prefix": "",
+      "routes": [
+        {"line": 447, "method": "POST", "path": "/api/auth/login", "has_auth": true, "risk": "MEDIUM", "fix": "VULN-012: Add brute-force lockout"},
+        {"line": 475, "method": "POST", "path": "/api/clients/{client_id}/leads", "has_auth": false, "risk": "CRITICAL", "fix": "VULN-001: Add Depends(require_auth) + assert_client_access"},
+        {"line": 545, "method": "POST", "path": "/api/clients/{client_id}/uploads", "has_auth": false, "risk": "CRITICAL", "fix": "VULN-001: Add Depends(require_auth) + assert_client_access. VULN-003: Remove allow_no_consent in prod"},
+        {"line": 742, "method": "POST", "path": "/api/calls/{call_id}/status", "has_auth": false, "risk": "CRITICAL", "fix": "VULN-001: Add signed auth (HMAC or JWT) + call ownership. VULN-005: Sanitize transcript/notes input"},
+        {"line": 799, "method": "GET",  "path": "/api/clients/{client_id}/batches/{batch_id}/calls", "has_auth": false, "risk": "CRITICAL", "fix": "VULN-001: Add Depends(require_auth) + assert_client_access"},
+        {"line": 879, "method": "POST", "path": "/api/twilio/webhook", "has_auth": false, "risk": "HIGH", "fix": "VULN-001: Add Twilio signature validation"},
+        {"line": 896, "method": "GET",  "path": "/health", "has_auth": false, "risk": "NONE", "fix": "OK — health check should be public"},
+        {"line": 902, "method": "GET",  "path": "/", "has_auth": false, "risk": "NONE", "fix": "OK — root info endpoint"}
+      ]
+    },
+
+    "dental_agent/routes_inbound.py": {
+      "prefix": "/inbound",
+      "routes": [
+        {"line": 140, "method": "POST", "path": "/inbound/voice", "has_auth": false, "risk": "HIGH", "fix": "VULN-004: Add Twilio X-Twilio-Signature validation"},
+        {"line": 349, "method": "POST", "path": "/inbound/stream-failed/{call_id}", "has_auth": false, "risk": "HIGH", "fix": "VULN-004: Add Twilio signature validation"},
+        {"line": 409, "method": "POST", "path": "/inbound/voicemail/{call_id}", "has_auth": false, "risk": "HIGH", "fix": "VULN-004: Add Twilio signature validation"},
+        {"line": 446, "method": "POST", "path": "/inbound/status/{call_id}", "has_auth": false, "risk": "HIGH", "fix": "VULN-004: Add Twilio signature validation"},
+        {"line": 523, "method": "GET",  "path": "/inbound/calls/{call_id}", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM", "fix": "Verify auth dependency present; add if missing"},
+        {"line": 549, "method": "GET",  "path": "/inbound/calls", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM", "fix": "Verify auth dependency present; add if missing + clinic filter"}
+      ]
+    },
+
+    "dental_agent/routes_twilio.py": {
+      "prefix": "/twilio",
+      "note": "These routes DO have signature validation — use as reference pattern for routes_inbound.py",
+      "routes": [
+        {"line": 175, "method": "POST", "path": "/twilio/voice/{call_id}", "has_auth": "TWILIO_SIG", "risk": "LOW", "fix": "Already has signature validation"},
+        {"line": 228, "method": "POST", "path": "/twilio/gather/{call_id}", "has_auth": "TWILIO_SIG", "risk": "LOW", "fix": "Already has signature validation"},
+        {"line": 312, "method": "POST", "path": "/twilio/status/{call_id}", "has_auth": "TWILIO_SIG", "risk": "LOW", "fix": "Already has signature validation"},
+        {"line": 380, "method": "POST", "path": "/twilio/recording/{call_id}", "has_auth": "TWILIO_SIG", "risk": "LOW", "fix": "Already has signature validation"},
+        {"line": 407, "method": "GET",  "path": "/twilio/verify", "has_auth": "TWILIO_SIG", "risk": "LOW", "fix": "OK"}
+      ]
+    },
+
+    "dental_agent/routes_calls.py": {
+      "prefix": "",
+      "routes": [
+        {"line": 126, "method": "POST", "path": "/batches", "has_auth": "NEEDS_CHECK", "risk": "HIGH", "fix": "Verify auth + clinic ownership"},
+        {"line": 160, "method": "POST", "path": "/calls/{call_id}/result", "has_auth": "NEEDS_CHECK", "risk": "HIGH", "fix": "Verify auth or service-to-service signing"},
+        {"line": 194, "method": "POST", "path": "/twilio/webhook", "has_auth": "NEEDS_CHECK", "risk": "HIGH", "fix": "Add Twilio sig validation if not present"},
+        {"line": 277, "method": "GET",  "path": "/health/celery", "has_auth": false, "risk": "LOW", "fix": "Consider restricting to internal network"}
+      ]
+    },
+
+    "dental_agent/routes_admin.py": {
+      "prefix": "/api",
+      "routes": [
+        {"line": 70,  "method": "POST",   "path": "/api/clinics", "has_auth": "NEEDS_CHECK", "risk": "HIGH", "fix": "Must require admin auth"},
+        {"line": 129, "method": "GET",    "path": "/api/clinics", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM", "fix": "Require auth + filter by user's clinics"},
+        {"line": 171, "method": "GET",    "path": "/api/clinics/{clinic_id}", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM", "fix": "Require auth + ownership"},
+        {"line": 218, "method": "PATCH",  "path": "/api/clinics/{clinic_id}", "has_auth": "NEEDS_CHECK", "risk": "HIGH", "fix": "Require auth + ownership"},
+        {"line": 251, "method": "DELETE", "path": "/api/clinics/{clinic_id}", "has_auth": "NEEDS_CHECK", "risk": "CRITICAL", "fix": "Require admin auth + ownership"},
+        {"line": 292, "method": "GET",    "path": "/api/clinics/{clinic_id}/calls", "has_auth": "NEEDS_CHECK", "risk": "HIGH", "fix": "Require auth + ownership"},
+        {"line": 341, "method": "POST",   "path": "/api/clinics/{clinic_id}/assign-number", "has_auth": "NEEDS_CHECK", "risk": "HIGH", "fix": "Require admin auth"},
+        {"line": 394, "method": "GET",    "path": "/api/voices", "has_auth": "NEEDS_CHECK", "risk": "LOW", "fix": "Verify auth present"},
+        {"line": 412, "method": "POST",   "path": "/api/clinics/{clinic_id}/test-prompt", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM", "fix": "Require auth + ownership"},
+        {"line": 445, "method": "GET",    "path": "/api/dashboard/stats", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM", "fix": "Require auth + clinic filter"},
+        {"line": 497, "method": "GET",    "path": "/api/admin/available-numbers", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM", "fix": "Require superadmin auth"},
+        {"line": 522, "method": "POST",   "path": "/api/admin/provision-number", "has_auth": "NEEDS_CHECK", "risk": "HIGH", "fix": "Require superadmin auth"},
+        {"line": 590, "method": "GET",    "path": "/api/admin/clinic-numbers", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM", "fix": "Require superadmin auth"},
+        {"line": 611, "method": "POST",   "path": "/api/admin/fix-webhooks/{phone_sid}", "has_auth": "NEEDS_CHECK", "risk": "HIGH", "fix": "Require superadmin auth"},
+        {"line": 632, "method": "DELETE", "path": "/api/admin/release-number/{phone_sid}", "has_auth": "NEEDS_CHECK", "risk": "HIGH", "fix": "Require superadmin auth"}
+      ]
+    },
+
+    "dental_agent/routes_superadmin.py": {
+      "prefix": "/api/superadmin",
+      "note": "These should all require superadmin auth check",
+      "routes": [
+        {"line": 187, "method": "GET", "path": "/api/superadmin/check", "has_auth": "NEEDS_CHECK", "risk": "LOW"},
+        {"line": 210, "method": "GET", "path": "/api/superadmin/api-usage", "has_auth": "NEEDS_CHECK", "risk": "HIGH"},
+        {"line": 407, "method": "GET", "path": "/api/superadmin/clinics", "has_auth": "NEEDS_CHECK", "risk": "HIGH"},
+        {"line": 500, "method": "GET", "path": "/api/superadmin/clinics/{clinic_id}/details", "has_auth": "NEEDS_CHECK", "risk": "HIGH"},
+        {"line": 581, "method": "GET", "path": "/api/superadmin/calls/summaries", "has_auth": "NEEDS_CHECK", "risk": "HIGH"},
+        {"line": 665, "method": "GET", "path": "/api/superadmin/calls/{call_id}/details", "has_auth": "NEEDS_CHECK", "risk": "HIGH"},
+        {"line": 714, "method": "GET", "path": "/api/superadmin/health", "has_auth": "NEEDS_CHECK", "risk": "LOW"},
+        {"line": 793, "method": "GET", "path": "/api/superadmin/analytics/overview", "has_auth": "NEEDS_CHECK", "risk": "HIGH"},
+        {"line": 854, "method": "GET", "path": "/api/superadmin/analytics/common-issues", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"}
+      ]
+    },
+
+    "dental_agent/routes_analytics.py": {
+      "prefix": "/api/analytics",
+      "routes": [
+        {"line": 103, "method": "POST", "path": "/api/analytics/analyze", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"},
+        {"line": 140, "method": "POST", "path": "/api/analytics/extract-appointment", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"},
+        {"line": 161, "method": "GET",  "path": "/api/analytics/quality-report", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"},
+        {"line": 203, "method": "GET",  "path": "/api/analytics/dashboard-stats", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"},
+        {"line": 236, "method": "GET",  "path": "/api/analytics/common-questions", "has_auth": "NEEDS_CHECK", "risk": "LOW"},
+        {"line": 273, "method": "GET",  "path": "/api/analytics/sentiment-trends", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"},
+        {"line": 293, "method": "GET",  "path": "/api/analytics/conversion-funnel", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"},
+        {"line": 324, "method": "POST", "path": "/api/analytics/generate-report-email", "has_auth": "NEEDS_CHECK", "risk": "HIGH"},
+        {"line": 352, "method": "GET",  "path": "/api/analytics/peak-hours", "has_auth": "NEEDS_CHECK", "risk": "LOW"},
+        {"line": 407, "method": "POST", "path": "/api/analytics/quality-score/{call_id}", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"},
+        {"line": 520, "method": "GET",  "path": "/api/analytics/receptionist-performance", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"}
+      ]
+    },
+
+    "dental_agent/routes_calendar.py": {
+      "prefix": "/api/calendar",
+      "routes": [
+        {"line": 174, "method": "POST",   "path": "/api/calendar/setup", "has_auth": "NEEDS_CHECK", "risk": "HIGH"},
+        {"line": 257, "method": "GET",    "path": "/api/calendar/integration/{clinic_id}", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"},
+        {"line": 289, "method": "GET",    "path": "/api/calendar/availability/{clinic_id}", "has_auth": "NEEDS_CHECK", "risk": "LOW"},
+        {"line": 368, "method": "GET",    "path": "/api/calendar/next-available/{clinic_id}", "has_auth": "NEEDS_CHECK", "risk": "LOW"},
+        {"line": 485, "method": "POST",   "path": "/api/calendar/appointments/{clinic_id}", "has_auth": "NEEDS_CHECK", "risk": "HIGH"},
+        {"line": 635, "method": "GET",    "path": "/api/calendar/appointments/{clinic_id}", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"},
+        {"line": 682, "method": "GET",    "path": "/api/calendar/appointments/{clinic_id}/{appt_id}", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"},
+        {"line": 722, "method": "PATCH",  "path": "/api/calendar/appointments/{clinic_id}/{appt_id}", "has_auth": "NEEDS_CHECK", "risk": "HIGH"},
+        {"line": 783, "method": "DELETE", "path": "/api/calendar/appointments/{clinic_id}/{appt_id}", "has_auth": "NEEDS_CHECK", "risk": "HIGH"},
+        {"line": 830, "method": "POST",   "path": "/api/calendar/appointments/{clinic_id}/{appt_id}/no-show", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"},
+        {"line": 896, "method": "GET",    "path": "/api/calendar/no-shows/{clinic_id}", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"},
+        {"line": 931, "method": "GET",    "path": "/api/calendar/no-shows/{clinic_id}/stats", "has_auth": "NEEDS_CHECK", "risk": "LOW"},
+        {"line": 995, "method": "POST",   "path": "/api/calendar/no-shows/{clinic_id}/{no_show_id}/follow-up", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"}
+      ]
+    },
+
+    "dental_agent/routes_sms.py": {
+      "prefix": "/api/sms",
+      "routes": [
+        {"line": 106, "method": "POST", "path": "/api/sms/send", "has_auth": "NEEDS_CHECK", "risk": "HIGH"},
+        {"line": 118, "method": "POST", "path": "/api/sms/confirmation", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"},
+        {"line": 138, "method": "POST", "path": "/api/sms/reminder", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"},
+        {"line": 160, "method": "POST", "path": "/api/sms/followup", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"},
+        {"line": 181, "method": "POST", "path": "/api/sms/recall", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"},
+        {"line": 202, "method": "POST", "path": "/api/sms/review-request", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"},
+        {"line": 236, "method": "POST", "path": "/api/sms/bulk/recall", "has_auth": "NEEDS_CHECK", "risk": "HIGH"},
+        {"line": 339, "method": "GET",  "path": "/api/sms/templates", "has_auth": "NEEDS_CHECK", "risk": "LOW"},
+        {"line": 358, "method": "POST", "path": "/api/sms/inbound", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM", "fix": "Should validate Twilio signature for inbound SMS"},
+        {"line": 425, "method": "GET",  "path": "/api/sms/appointments/{appt_id}/confirmation-status", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"}
+      ]
+    },
+
+    "dental_agent/routes_pms.py": {
+      "prefix": "/api/pms",
+      "routes": [
+        {"line": 178, "method": "GET",    "path": "/api/pms/config", "has_auth": "NEEDS_CHECK", "risk": "HIGH"},
+        {"line": 239, "method": "POST",   "path": "/api/pms/config", "has_auth": "NEEDS_CHECK", "risk": "HIGH"},
+        {"line": 294, "method": "POST",   "path": "/api/pms/test-connection", "has_auth": "NEEDS_CHECK", "risk": "HIGH"},
+        {"line": 347, "method": "PUT",    "path": "/api/pms/settings", "has_auth": "NEEDS_CHECK", "risk": "HIGH"},
+        {"line": 378, "method": "DELETE", "path": "/api/pms/config", "has_auth": "NEEDS_CHECK", "risk": "HIGH"},
+        {"line": 407, "method": "GET",    "path": "/api/pms/providers", "has_auth": "NEEDS_CHECK", "risk": "LOW"},
+        {"line": 433, "method": "GET",    "path": "/api/pms/operatories", "has_auth": "NEEDS_CHECK", "risk": "LOW"},
+        {"line": 461, "method": "POST",   "path": "/api/pms/check-availability", "has_auth": "NEEDS_CHECK", "risk": "LOW"},
+        {"line": 487, "method": "POST",   "path": "/api/pms/book-appointment", "has_auth": "NEEDS_CHECK", "risk": "HIGH"},
+        {"line": 517, "method": "POST",   "path": "/api/pms/cancel-appointment", "has_auth": "NEEDS_CHECK", "risk": "HIGH"},
+        {"line": 539, "method": "POST",   "path": "/api/pms/lookup-patient", "has_auth": "NEEDS_CHECK", "risk": "HIGH"},
+        {"line": 560, "method": "GET",    "path": "/api/pms/appointments", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"},
+        {"line": 614, "method": "GET",    "path": "/api/pms/slots", "has_auth": "NEEDS_CHECK", "risk": "LOW"},
+        {"line": 664, "method": "GET",    "path": "/api/pms/status", "has_auth": "NEEDS_CHECK", "risk": "LOW"}
+      ]
+    },
+
+    "dental_agent/routes_transfer.py": {
+      "prefix": "/api/transfer",
+      "routes": [
+        {"line": 83,  "method": "POST", "path": "/api/transfer/initiate", "has_auth": "NEEDS_CHECK", "risk": "HIGH"},
+        {"line": 163, "method": "POST", "path": "/api/transfer/dial-complete", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"},
+        {"line": 174, "method": "GET",  "path": "/api/transfer/status/{call_sid}", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"},
+        {"line": 206, "method": "GET",  "path": "/api/transfer/can-transfer/{call_sid}", "has_auth": "NEEDS_CHECK", "risk": "LOW"}
+      ]
+    },
+
+    "dental_agent/routes_recall.py": {
+      "prefix": "/api/v1/recalls",
+      "routes": [
+        {"line": 103, "method": "GET",   "path": "/api/v1/recalls/candidates", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"},
+        {"line": 130, "method": "GET",   "path": "/api/v1/recalls/list", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"},
+        {"line": 201, "method": "GET",   "path": "/api/v1/recalls/stats", "has_auth": "NEEDS_CHECK", "risk": "LOW"},
+        {"line": 255, "method": "POST",  "path": "/api/v1/recalls/campaigns", "has_auth": "NEEDS_CHECK", "risk": "HIGH"},
+        {"line": 289, "method": "GET",   "path": "/api/v1/recalls/campaigns", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"},
+        {"line": 331, "method": "GET",   "path": "/api/v1/recalls/campaigns/{campaign_id}", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"},
+        {"line": 382, "method": "GET",   "path": "/api/v1/recalls/{recall_id}", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"},
+        {"line": 419, "method": "PATCH", "path": "/api/v1/recalls/{recall_id}", "has_auth": "NEEDS_CHECK", "risk": "HIGH"},
+        {"line": 457, "method": "POST",  "path": "/api/v1/recalls/{recall_id}/send-sms", "has_auth": "NEEDS_CHECK", "risk": "HIGH"},
+        {"line": 487, "method": "POST",  "path": "/api/v1/recalls/{recall_id}/call", "has_auth": "NEEDS_CHECK", "risk": "HIGH"},
+        {"line": 513, "method": "POST",  "path": "/api/v1/recalls/{recall_id}/response", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"},
+        {"line": 547, "method": "POST",  "path": "/api/v1/recalls/process", "has_auth": "NEEDS_CHECK", "risk": "HIGH"}
+      ]
+    },
+
+    "dental_agent/routes_usage.py": {
+      "prefix": "/api/usage",
+      "routes": [
+        {"line": 105, "method": "GET",  "path": "/api/usage/{clinic_id}/summary", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"},
+        {"line": 164, "method": "GET",  "path": "/api/usage/{clinic_id}/stats", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"},
+        {"line": 214, "method": "GET",  "path": "/api/usage/{clinic_id}/records", "has_auth": "NEEDS_CHECK", "risk": "MEDIUM"},
+        {"line": 261, "method": "POST", "path": "/api/usage/{clinic_id}/record", "has_auth": "NEEDS_CHECK", "risk": "HIGH"},
+        {"line": 304, "method": "POST", "path": "/api/usage/{clinic_id}/finalize/{month}", "has_auth": "NEEDS_CHECK", "risk": "HIGH"},
+        {"line": 333, "method": "GET",  "path": "/api/usage/{clinic_id}/history", "has_auth": "NEEDS_CHECK", "risk": "LOW"}
+      ]
+    }
+  },
+
+  "summary": {
+    "confirmed_no_auth": 9,
+    "needs_auth_check": 95,
+    "has_twilio_sig": 5,
+    "public_ok": 2,
+    "total": 119,
+    "note": "NEEDS_CHECK routes must be inspected when fixing — many may already have auth via router-level dependencies, but this must be verified per-route during implementation."
+  }
+}

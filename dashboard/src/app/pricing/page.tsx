@@ -14,15 +14,20 @@ import { createClient } from '@/lib/supabase/client'
 
 export default function PricingPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const supabase = createClient()
 
   useEffect(() => {
     async function checkAuth() {
-      const { data: { user } } = await supabase.auth.getUser()
-      setIsLoggedIn(!!user)
+      try {
+        const supabase = createClient()
+        if (!supabase) return
+        const { data: { user } } = await supabase.auth.getUser()
+        setIsLoggedIn(!!user)
+      } catch {
+        // Supabase unavailable — stay as guest
+      }
     }
     checkAuth()
-  }, [supabase])
+  }, [])
 
   return (
     <div className="flex min-h-screen flex-col bg-[#F8F9FA]">

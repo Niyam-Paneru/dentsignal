@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/client'
+import { requireClient } from '@/lib/supabase/client'
 import type { 
   Call, 
   Appointment, 
@@ -9,7 +9,7 @@ import type {
 
 // Get the user's clinic ID dynamically
 async function getUserClinicId(): Promise<string | null> {
-  const supabase = createClient()
+  const supabase = requireClient()
   const { data: { user } } = await supabase.auth.getUser()
   
   if (!user) return null
@@ -24,7 +24,7 @@ async function getUserClinicId(): Promise<string | null> {
 }
 
 export async function getDashboardStats(days: number = 7): Promise<DashboardStats> {
-  const supabase = createClient()
+  const supabase = requireClient()
   const clinicId = await getUserClinicId()
   
   if (!clinicId) {
@@ -93,7 +93,7 @@ export async function getDashboardStats(days: number = 7): Promise<DashboardStat
 }
 
 export async function getRecentCalls(limit: number = 5): Promise<RecentCall[]> {
-  const supabase = createClient()
+  const supabase = requireClient()
   const clinicId = await getUserClinicId()
   
   if (!clinicId) {
@@ -136,7 +136,7 @@ export interface ActiveCall {
 }
 
 export async function getActiveCalls(): Promise<ActiveCall[]> {
-  const supabase = createClient()
+  const supabase = requireClient()
   const clinicId = await getUserClinicId()
   
   if (!clinicId) {
@@ -166,7 +166,7 @@ export async function getActiveCalls(): Promise<ActiveCall[]> {
 }
 
 export async function getCallTrends(days: number = 7): Promise<CallTrendData[]> {
-  const supabase = createClient()
+  const supabase = requireClient()
   const clinicId = await getUserClinicId()
   
   if (!clinicId) {
@@ -209,7 +209,7 @@ export async function getCallTrends(days: number = 7): Promise<CallTrendData[]> 
 }
 
 export async function getAllCalls(): Promise<Call[]> {
-  const supabase = createClient()
+  const supabase = requireClient()
   const clinicId = await getUserClinicId()
   
   if (!clinicId) {
@@ -231,7 +231,7 @@ export async function getAllCalls(): Promise<Call[]> {
 }
 
 export async function getAppointments(startDate?: Date, endDate?: Date): Promise<Appointment[]> {
-  const supabase = createClient()
+  const supabase = requireClient()
   const clinicId = await getUserClinicId()
   
   if (!clinicId) {
@@ -263,7 +263,7 @@ export async function getAppointments(startDate?: Date, endDate?: Date): Promise
 }
 
 export async function getAppointmentsForDate(date: Date): Promise<Appointment[]> {
-  const supabase = createClient()
+  const supabase = requireClient()
   const clinicId = await getUserClinicId()
   
   if (!clinicId) {
@@ -288,7 +288,7 @@ export async function getAppointmentsForDate(date: Date): Promise<Appointment[]>
 }
 
 export async function getWeekAppointmentCounts(): Promise<{ date: number; day: string; count: number; capacity: number }[]> {
-  const supabase = createClient()
+  const supabase = requireClient()
   const clinicId = await getUserClinicId()
   
   if (!clinicId) {
@@ -325,7 +325,7 @@ export async function getWeekAppointmentCounts(): Promise<{ date: number; day: s
 }
 
 export async function getOutcomeDistribution(): Promise<{ name: string; value: number; color: string }[]> {
-  const supabase = createClient()
+  const supabase = requireClient()
   const clinicId = await getUserClinicId()
   
   if (!clinicId) {
@@ -367,7 +367,7 @@ export async function getOutcomeDistribution(): Promise<{ name: string; value: n
 }
 
 export async function getServiceTypeStats(): Promise<{ name: string; count: number; percentage: number }[]> {
-  const supabase = createClient()
+  const supabase = requireClient()
   const clinicId = await getUserClinicId()
   
   if (!clinicId) {
@@ -408,7 +408,7 @@ function formatDuration(seconds: number): string {
 
 // Settings functions
 export async function getClinicSettings() {
-  const supabase = createClient()
+  const supabase = requireClient()
   const clinicId = await getUserClinicId()
   
   if (!clinicId) {
@@ -430,7 +430,7 @@ export async function getClinicSettings() {
 }
 
 export async function getClinic() {
-  const supabase = createClient()
+  const supabase = requireClient()
   const clinicId = await getUserClinicId()
   
   if (!clinicId) {
@@ -460,7 +460,7 @@ export async function updateClinicSettings(settings: {
   max_call_duration?: number
   transfer_keywords?: string[]
 }) {
-  const supabase = createClient()
+  const supabase = requireClient()
   const clinicId = await getUserClinicId()
   
   if (!clinicId) {
@@ -490,7 +490,7 @@ export async function updateClinicInfo(info: {
   transfer_timeout_seconds?: number
   transfer_fallback?: string
 }) {
-  const supabase = createClient()
+  const supabase = requireClient()
   const clinicId = await getUserClinicId()
   
   if (!clinicId) {
@@ -512,7 +512,7 @@ export async function updateClinicInfo(info: {
 
 // Analytics functions
 export async function getWeeklyCallStats(): Promise<{ day: string; calls: number; booked: number; transferred: number; missed: number }[]> {
-  const supabase = createClient()
+  const supabase = requireClient()
   const clinicId = await getUserClinicId()
   
   if (!clinicId) {
@@ -552,7 +552,7 @@ export async function getWeeklyCallStats(): Promise<{ day: string; calls: number
 }
 
 export async function getMonthlyTrend(): Promise<{ week: string; calls: number; bookingRate: number }[]> {
-  const supabase = createClient()
+  const supabase = requireClient()
   const clinicId = await getUserClinicId()
   
   if (!clinicId) {
@@ -596,7 +596,7 @@ export async function getMonthlyTrend(): Promise<{ week: string; calls: number; 
 }
 
 export async function getPeakHours(): Promise<{ hour: string; calls: number }[]> {
-  const supabase = createClient()
+  const supabase = requireClient()
   const clinicId = await getUserClinicId()
   
   if (!clinicId) {
@@ -642,7 +642,7 @@ export async function getAnalyticsSummary(): Promise<{
   callsTrend: number
   bookingTrend: number
 }> {
-  const supabase = createClient()
+  const supabase = requireClient()
   const clinicId = await getUserClinicId()
   
   if (!clinicId) {
@@ -713,7 +713,7 @@ export interface RevenueAttribution {
 }
 
 export async function getRevenueAttribution(days: number = 30): Promise<RevenueAttribution> {
-  const supabase = createClient()
+  const supabase = requireClient()
   const clinicId = await getUserClinicId()
   
   const emptyResult: RevenueAttribution = {
@@ -880,7 +880,7 @@ export interface SmsSettings {
 }
 
 export async function getSmsSettings(): Promise<SmsSettings | null> {
-  const supabase = createClient()
+  const supabase = requireClient()
   const clinicId = await getUserClinicId()
   
   if (!clinicId) {
@@ -908,7 +908,7 @@ export async function getSmsSettings(): Promise<SmsSettings | null> {
 }
 
 export async function updateSmsSettings(settings: SmsSettings): Promise<boolean> {
-  const supabase = createClient()
+  const supabase = requireClient()
   const clinicId = await getUserClinicId()
   
   if (!clinicId) {

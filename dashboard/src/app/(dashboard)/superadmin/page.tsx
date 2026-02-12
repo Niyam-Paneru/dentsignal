@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { createClient } from "@/lib/supabase/client";
+import { requireClient } from "@/lib/supabase/client";
 import {
   Activity,
   AlertCircle,
@@ -251,7 +251,7 @@ function SubscriptionManagement({ userEmail }: { userEmail: string | null }) {
   const [activationDays, setActivationDays] = useState('30');
   const [activationError, setActivationError] = useState<string | null>(null);
   const [activationSuccess, setActivationSuccess] = useState<string | null>(null);
-  const supabase = createClient();
+  const supabase = requireClient();
 
   // Auto-dismiss toast messages after 4 seconds
   useEffect(() => {
@@ -689,7 +689,7 @@ export default function SuperAdminPage() {
   // Check if user is a super admin
   useEffect(() => {
     const checkAuth = async () => {
-      const supabase = createClient();
+      const supabase = requireClient();
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {

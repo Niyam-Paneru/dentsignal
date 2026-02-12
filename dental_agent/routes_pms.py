@@ -22,6 +22,12 @@ from pydantic import BaseModel, Field
 from sqlmodel import Session, select
 
 from db import get_session, Client, PMSIntegration
+
+try:
+    from dental_agent.auth import require_auth
+except ImportError:
+    from auth import require_auth
+
 from open_dental_service import (
     OpenDentalService,
     OpenDentalConfig,
@@ -179,6 +185,7 @@ async def _get_pms_and_service(
 async def get_pms_config(
     clinic_id: Optional[int] = Query(None),
     session: Session = Depends(get_session),
+    user: dict = Depends(require_auth),
 ):
     """Get current PMS integration configuration for a clinic."""
     cid = _get_clinic_id(clinic_id)
@@ -241,6 +248,7 @@ async def save_pms_config(
     request: PMSConfigRequest,
     clinic_id: Optional[int] = Query(None),
     session: Session = Depends(get_session),
+    user: dict = Depends(require_auth),
 ):
     """Save or update PMS integration configuration."""
     cid = _get_clinic_id(clinic_id)
@@ -295,6 +303,7 @@ async def save_pms_config(
 async def test_pms_connection(
     clinic_id: Optional[int] = Query(None),
     session: Session = Depends(get_session),
+    user: dict = Depends(require_auth),
 ):
     """Test the PMS connection with saved credentials."""
     cid = _get_clinic_id(clinic_id)
@@ -351,6 +360,7 @@ async def update_pms_settings(
     auto_create_patients: Optional[bool] = None,
     clinic_id: Optional[int] = Query(None),
     session: Session = Depends(get_session),
+    user: dict = Depends(require_auth),
 ):
     """Update PMS sync settings."""
     cid = _get_clinic_id(clinic_id)
@@ -379,6 +389,7 @@ async def update_pms_settings(
 async def remove_pms_config(
     clinic_id: Optional[int] = Query(None),
     session: Session = Depends(get_session),
+    user: dict = Depends(require_auth),
 ):
     """Remove PMS integration (disconnect)."""
     cid = _get_clinic_id(clinic_id)
@@ -408,6 +419,7 @@ async def remove_pms_config(
 async def get_pms_providers(
     clinic_id: Optional[int] = Query(None),
     session: Session = Depends(get_session),
+    user: dict = Depends(require_auth),
 ):
     """Get providers (dentists & hygienists) from PMS."""
     cid = _get_clinic_id(clinic_id)
@@ -434,6 +446,7 @@ async def get_pms_providers(
 async def get_pms_operatories(
     clinic_id: Optional[int] = Query(None),
     session: Session = Depends(get_session),
+    user: dict = Depends(require_auth),
 ):
     """Get operatories (treatment rooms) from PMS."""
     cid = _get_clinic_id(clinic_id)
@@ -463,6 +476,7 @@ async def check_pms_availability(
     request: AvailabilityRequest,
     clinic_id: Optional[int] = Query(None),
     session: Session = Depends(get_session),
+    user: dict = Depends(require_auth),
 ):
     """
     Check appointment availability via PMS.
@@ -489,6 +503,7 @@ async def book_pms_appointment(
     request: BookAppointmentRequest,
     clinic_id: Optional[int] = Query(None),
     session: Session = Depends(get_session),
+    user: dict = Depends(require_auth),
 ):
     """
     Book an appointment via PMS.
@@ -519,6 +534,7 @@ async def cancel_pms_appointment(
     request: CancelAppointmentRequest,
     clinic_id: Optional[int] = Query(None),
     session: Session = Depends(get_session),
+    user: dict = Depends(require_auth),
 ):
     """Cancel an appointment via PMS."""
     cid = _get_clinic_id(clinic_id)
@@ -541,6 +557,7 @@ async def lookup_pms_patient(
     request: PatientLookupRequest,
     clinic_id: Optional[int] = Query(None),
     session: Session = Depends(get_session),
+    user: dict = Depends(require_auth),
 ):
     """Look up a patient in the PMS."""
     cid = _get_clinic_id(clinic_id)
@@ -566,6 +583,7 @@ async def get_pms_appointments(
     status: Optional[str] = Query(None),
     clinic_id: Optional[int] = Query(None),
     session: Session = Depends(get_session),
+    user: dict = Depends(require_auth),
 ):
     """Get appointments from PMS with optional filters."""
     cid = _get_clinic_id(clinic_id)
@@ -619,6 +637,7 @@ async def get_pms_slots(
     provider_num: Optional[int] = Query(None),
     clinic_id: Optional[int] = Query(None),
     session: Session = Depends(get_session),
+    user: dict = Depends(require_auth),
 ):
     """
     Get available appointment slots from PMS.
@@ -665,6 +684,7 @@ async def get_pms_slots(
 async def get_pms_status(
     clinic_id: Optional[int] = Query(None),
     session: Session = Depends(get_session),
+    user: dict = Depends(require_auth),
 ):
     """Get current PMS integration status summary."""
     cid = _get_clinic_id(clinic_id)

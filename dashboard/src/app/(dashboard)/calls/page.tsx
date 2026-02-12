@@ -352,7 +352,7 @@ export default function CallsPage() {
                             Your browser does not support the audio element.
                           </audio>
                           <p className="text-xs text-muted-foreground">
-                            Recordings are stored securely and encrypted. HIPAA compliant.
+                            Recordings are stored securely and encrypted. HIPAA-ready infrastructure.
                           </p>
                         </div>
                       ) : (

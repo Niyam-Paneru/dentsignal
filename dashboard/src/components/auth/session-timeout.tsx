@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useCallback, useRef, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { requireClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import {
   AlertDialog,
@@ -50,7 +50,7 @@ export function SessionTimeout() {
 
   // Logout function
   const handleLogout = useCallback(async () => {
-    const supabase = createClient()
+    const supabase = requireClient()
     await supabase.auth.signOut()
     
     // Clear any stored data

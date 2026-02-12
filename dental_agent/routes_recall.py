@@ -13,7 +13,7 @@ Features:
 import logging
 from datetime import datetime, timedelta
 from typing import Optional, List
-from fastapi import APIRouter, HTTPException, Query, Body
+from fastapi import APIRouter, Depends, HTTPException, Query, Body
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
@@ -29,6 +29,7 @@ try:
         generate_recall_list, create_recall_campaign, process_pending_recalls,
         send_recall_sms, schedule_recall_call, process_recall_response
     )
+    from dental_agent.auth import require_auth
 except ImportError:
     from db import (
         get_session, Client, Patient, PatientRecall, RecallCampaign,
@@ -38,8 +39,15 @@ except ImportError:
         generate_recall_list, create_recall_campaign, process_pending_recalls,
         send_recall_sms, schedule_recall_call, process_recall_response
     )
+    from auth import require_auth
 
 router = APIRouter(prefix="/api/v1/recalls", tags=["recalls"])
+
+# Import sanitize_html here to avoid circular import issues
+try:
+    from dental_agent.utils import sanitize_html
+except ImportError:
+    from utils import sanitize_html
 
 
 # =============================================================================
@@ -105,6 +113,7 @@ async def get_recall_candidates(
     clinic_id: int,
     recall_type: str = "cleaning",
     overdue_days: int = 30,
+    user: dict = Depends(require_auth),
 ):
     """
     Get list of patients who are due for recalls.
@@ -135,6 +144,7 @@ async def get_recalls(
     campaign_id: Optional[int] = None,
     limit: int = 50,
     offset: int = 0,
+    user: dict = Depends(require_auth),
 ):
     """Get list of recalls for a clinic with optional filters."""
     try:
@@ -203,6 +213,7 @@ async def get_recall_stats(
     clinic_id: int,
     days: int = 30,
     campaign_id: Optional[int] = None,
+    user: dict = Depends(require_auth),
 ):
     """Get recall statistics for a clinic."""
     try:
@@ -256,6 +267,7 @@ async def get_recall_stats(
 async def create_campaign(
     clinic_id: int,
     campaign: RecallCampaignCreate,
+    user: dict = Depends(require_auth),
 ):
     """
     Create a new recall campaign.
@@ -291,6 +303,7 @@ async def get_campaigns(
     clinic_id: int,
     active_only: bool = False,
     limit: int = 20,
+    user: dict = Depends(require_auth),
 ):
     """Get list of recall campaigns for a clinic."""
     try:
@@ -329,7 +342,7 @@ async def get_campaigns(
 
 
 @router.get("/campaigns/{campaign_id}")
-async def get_campaign(campaign_id: int):
+async def get_campaign(campaign_id: int, user: dict = Depends(require_auth)):
     """Get details of a specific campaign."""
     try:
         with get_session() as session:
@@ -380,7 +393,7 @@ async def get_campaign(campaign_id: int):
 # =============================================================================
 
 @router.get("/{recall_id}")
-async def get_recall(recall_id: int):
+async def get_recall(recall_id: int, user: dict = Depends(require_auth)):
     """Get details of a specific recall."""
     try:
         with get_session() as session:
@@ -420,6 +433,7 @@ async def get_recall(recall_id: int):
 async def update_recall(
     recall_id: int,
     update: RecallUpdate,
+    user: dict = Depends(require_auth),
 ):
     """Update a recall's status or notes."""
     try:
@@ -437,7 +451,7 @@ async def update_recall(
                     raise HTTPException(status_code=400, detail=f"Invalid status: {update.status}")
             
             if update.notes is not None:
-                recall.notes = update.notes
+                recall.notes = sanitize_html(update.notes)
             
             if update.next_outreach_at:
                 recall.next_outreach_at = update.next_outreach_at
@@ -459,6 +473,7 @@ async def trigger_recall_sms(
     recall_id: int,
     is_followup: bool = False,
     is_final: bool = False,
+    user: dict = Depends(require_auth),
 ):
     """Manually trigger SMS for a recall."""
     try:
@@ -485,7 +500,7 @@ async def trigger_recall_sms(
 
 
 @router.post("/{recall_id}/call")
-async def trigger_recall_call(recall_id: int):
+async def trigger_recall_call(recall_id: int, user: dict = Depends(require_auth)):
     """Manually trigger AI call for a recall."""
     try:
         with get_session() as session:
@@ -514,6 +529,7 @@ async def trigger_recall_call(recall_id: int):
 async def record_recall_response(
     recall_id: int,
     response: RecallResponse,
+    user: dict = Depends(require_auth),
 ):
     """Record a patient's response to a recall (SMS or call outcome)."""
     try:
@@ -548,6 +564,7 @@ async def record_recall_response(
 async def trigger_process_recalls(
     clinic_id: Optional[int] = None,
     limit: int = 50,
+    user: dict = Depends(require_auth),
 ):
     """
     Process pending recalls.

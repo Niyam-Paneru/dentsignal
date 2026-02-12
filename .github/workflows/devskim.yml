@@ -1,0 +1,44 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+name: DevSkim
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'dental_agent/**.py'
+      - 'dashboard/src/**'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'dental_agent/**.py'
+      - 'dashboard/src/**'
+  schedule:
+    - cron: '23 9 * * 0'
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: DevSkim
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run DevSkim scanner
+        uses: microsoft/DevSkim-Action@v1
+        with:
+          should-scan-git-objects: false
+          ignore-globs: "dental_agent/tests/**,dental_agent/test_*.py,dental_agent/archive/**,dentsignal/**,docs/**,scripts/**,plans/**,openspec/**,brand/**,dashboard/tests/**,dashboard/test-results/**,**/*.md,**/*.sh,**/*.bat,**/*.ps1,.devskim.json"
+
+      - name: Upload DevSkim scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: devskim-results.sarif

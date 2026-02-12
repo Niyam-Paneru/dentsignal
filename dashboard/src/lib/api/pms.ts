@@ -1,10 +1,10 @@
-import { createClient } from '@/lib/supabase/client'
+import { requireClient } from '@/lib/supabase/client'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000' // DevSkim: ignore DS137138
 
 // Get the user's clinic ID dynamically
 async function getUserClinicId(): Promise<string | null> {
-  const supabase = createClient()
+  const supabase = requireClient()
   const { data: { user } } = await supabase.auth.getUser()
   
   if (!user) return null

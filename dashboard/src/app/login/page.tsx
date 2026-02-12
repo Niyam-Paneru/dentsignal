@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Loader2, AlertCircle, ArrowLeft, CheckCircle } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { requireClient } from '@/lib/supabase/client'
 import { Turnstile } from '@/components/turnstile'
 import { MarketingHeader } from '@/components/landing/marketing-header'
 import { MarketingFooter } from '@/components/landing/marketing-footer'
@@ -38,7 +38,7 @@ function LoginForm() {
   const RATE_LIMIT_WINDOW = 15 * 60 * 1000 // 15 minutes
   
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = requireClient()
   
   // Check rate limiting
   const isRateLimited = () => {

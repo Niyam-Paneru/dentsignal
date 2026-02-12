@@ -27,12 +27,14 @@ try:
     from dental_agent.celery_config import celery_app
     from dental_agent.db import get_session, Lead, Call, CallResult, CallStatus, CallResultType
     from dental_agent.twilio_service import make_call, verify_twilio_credentials
-    from dental_agent.utils import mask_phone
+    from dental_agent.utils import mask_phone, check_lead_consent
+    from dental_agent.dnc_service import is_dnc
 except ImportError:
     from celery_config import celery_app
     from db import get_session, Lead, Call, CallResult, CallStatus, CallResultType
     from twilio_service import make_call, verify_twilio_credentials
-    from utils import mask_phone
+    from utils import mask_phone, check_lead_consent
+    from dnc_service import is_dnc
 
 logger = logging.getLogger(__name__)
 
@@ -269,15 +271,21 @@ def start_call(self, lead_id: int, call_id: Optional[int] = None) -> dict:
         logger.error(f"Lead {lead_id} not found")
         return {"error": "Lead not found", "lead_id": lead_id}
     
-    # TCPA COMPLIANCE: Check consent for PSTN mode
-    telephony_mode = os.getenv("TELEPHONY_MODE", "SIMULATED")
-    if telephony_mode == "TWILIO" and not lead.get("consent", False):
-        logger.error(f"TCPA BLOCK: Lead {lead_id} does not have consent for PSTN call")
+    # TCPA COMPLIANCE: Centralized consent check (AG-4)
+    allowed, reason = check_lead_consent(lead)
+    if not allowed:
+        logger.error(f"TCPA BLOCK: Lead {lead_id} — {reason}")
         return {
-            "error": "TCPA compliance: consent required for PSTN calls",
+            "error": reason,
             "lead_id": lead_id,
             "consent": False,
         }
+    
+    # DNC compliance: last-line defense (AG-9)
+    with get_session() as session:
+        if is_dnc(session, lead["phone"]):
+            logger.error(f"DNC BLOCK: Lead {lead_id} phone is on Do-Not-Call list")
+            return {"error": "Phone number is on Do-Not-Call list", "lead_id": lead_id, "dnc": True}
     
     # Get or create call record
     if not call_id:

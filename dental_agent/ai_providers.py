@@ -1,7 +1,7 @@
 """
 ai_providers.py - Multi-Provider AI Architecture
 
-HIPAA-Compliant AI Provider Routing:
+HIPAA-Ready AI Provider Routing:
 - Azure OpenAI: Voice + all PHI analysis (HIPAA BAA covered)
 - Gemini: Embeddings & semantic search (FREE, no PHI)
 

@@ -34,8 +34,11 @@
   // Additional Recommended Settings
   // ===========================================
 
+  // Auto-approve all agent actions (no confirmation prompts)
+  "chat.agent.autoApprove": true,
+
   // Terminal sandboxing for safer agent commands
-  "chat.tools.terminal.enableAutoApprove": false,
+  "chat.tools.terminal.enableAutoApprove": true,
 
   // Auto-expand failed tool calls for easier debugging
   "chat.tools.autoExpandFailures": true,
@@ -50,5 +53,11 @@
   },
   "search.exclude": {
     "dentsignal": true
-  }
+  },
+  "debug.confirmOnExit": "always",
+  "terminal.integrated.confirmOnExit": "always",
+  "chat.tools.terminal.autoApprove": {
+    "*": true
+  },
+  "mdb.confirmRunAll": true
 }

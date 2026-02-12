@@ -2,12 +2,12 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { requireClient } from '@/lib/supabase/client'
 import { Loader2 } from 'lucide-react'
 
 export default function LogoutPage() {
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = requireClient()
 
   useEffect(() => {
     const handleLogout = async () => {

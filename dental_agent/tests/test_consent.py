@@ -16,8 +16,10 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Set environment BEFORE any imports happen
+# JWT_SECRET must be 32+ chars with upper, lower, digit, and special char
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
-os.environ["JWT_SECRET"] = "test-secret"
+os.environ["JWT_SECRET"] = "DentSignal_Pytest2026!ValidKey@XyZ99"
+os.environ["ENABLE_DEMO_USER"] = "1"
 
 
 # -----------------------------------------------------------------------------

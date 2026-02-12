@@ -40,6 +40,7 @@ try:
     from dental_agent.deepgram_service import detect_intent, process_caller_response
     from dental_agent.db import get_session, Call, Lead, CallResult, CallStatus, CallResultType, record_usage, UsageType
     from dental_agent.tasks import retry_call, mark_call_completed
+    from dental_agent.auth import require_auth
 except ImportError:
     from twilio_service import (
         generate_greeting_twiml,
@@ -53,6 +54,7 @@ except ImportError:
     from deepgram_service import detect_intent, process_caller_response
     from db import get_session, Call, Lead, CallResult, CallStatus, CallResultType, record_usage, UsageType
     from tasks import retry_call, mark_call_completed
+    from auth import require_auth
 
 logger = logging.getLogger(__name__)
 
@@ -317,6 +319,7 @@ async def status_webhook(
     CallDuration: Optional[str] = Form(None),
     From: Optional[str] = Form(None),
     To: Optional[str] = Form(None),
+    _twilio_auth=Depends(require_twilio_auth),
 ):
     """
     Handle Twilio call status callbacks.
@@ -383,6 +386,7 @@ async def recording_webhook(
     RecordingSid: str = Form(...),
     RecordingUrl: str = Form(...),
     RecordingDuration: Optional[str] = Form(None),
+    _twilio_auth=Depends(require_twilio_auth),
 ):
     """
     Handle recording completion callback.
@@ -405,7 +409,7 @@ async def recording_webhook(
 
 
 @router.get("/verify")
-async def verify_credentials():
+async def verify_credentials(user: dict = Depends(require_auth)):
     """Verify Twilio credentials are working."""
     return verify_twilio_credentials()
 

@@ -13,7 +13,7 @@ import logging
 from typing import List, Optional
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, Form, Request
+from fastapi import APIRouter, HTTPException, Form, Request, Depends
 from pydantic import BaseModel, Field
 
 try:
@@ -24,6 +24,8 @@ try:
         get_lead_id_from_call_sid,
         get_call_attempt,
     )
+    from dental_agent.auth import require_auth
+    from dental_agent.routes_twilio import require_twilio_auth
 except ImportError:
     from tasks import (
         start_call,
@@ -32,6 +34,8 @@ except ImportError:
         get_lead_id_from_call_sid,
         get_call_attempt,
     )
+    from auth import require_auth
+    from routes_twilio import require_twilio_auth
 
 logger = logging.getLogger(__name__)
 
@@ -124,7 +128,7 @@ def save_batch(leads: List[LeadInput], client_id: int) -> tuple:
 # =============================================================================
 
 @router.post("/batches", response_model=BatchCreateResponse)
-async def create_batch(request: BatchCreateRequest):
+async def create_batch(request: BatchCreateRequest, user: dict = Depends(require_auth)):
     """
     Create a batch of leads and enqueue calls for each.
     
@@ -158,7 +162,7 @@ async def create_batch(request: BatchCreateRequest):
 
 
 @router.post("/calls/{call_id}/result", response_model=CallResultResponse)
-async def update_call_result(call_id: int, request: CallResultRequest):
+async def update_call_result(call_id: int, request: CallResultRequest, user: dict = Depends(require_auth)):
     """
     Process a call result and take appropriate action.
     
@@ -200,6 +204,7 @@ async def twilio_status_webhook(
     To: str = Form(None),
     Direction: str = Form(None),
     CallDuration: str = Form(None),
+    _twilio_auth=Depends(require_twilio_auth),
 ):
     """
     Handle Twilio call status webhooks.

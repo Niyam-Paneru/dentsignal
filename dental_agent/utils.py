@@ -5,10 +5,12 @@ Provides:
 - Phone number validation and normalization (E.164)
 - PII masking for logs
 - Rotating file logger
-- Input sanitization
+- Input sanitization and XSS prevention
 - Standardized error responses
+- TCPA consent enforcement
 """
 
+import html as _html_module
 import re
 import logging
 import os
@@ -380,6 +382,107 @@ def sanitize_filename(filename: str) -> str:
 
 
 # -----------------------------------------------------------------------------
+# XSS / HTML Sanitization (AG-5)
+# -----------------------------------------------------------------------------
+
+# Regex to match HTML/XML tags
+_HTML_TAG_RE = re.compile(r'<[^>]+?>')
+
+# Patterns that indicate XSS even without tags (e.g., in attributes, data URIs)
+_XSS_PAYLOAD_PATTERNS = [
+    re.compile(r'javascript\s*:', re.IGNORECASE),
+    re.compile(r'vbscript\s*:', re.IGNORECASE),
+    re.compile(r'data\s*:\s*text/html', re.IGNORECASE),
+    re.compile(r'expression\s*\(', re.IGNORECASE),      # CSS expression()
+]
+
+
+def sanitize_html(value: str, max_length: int = 50_000) -> str:
+    """
+    Sanitize text to prevent stored XSS before database writes.
+
+    Strategy: **strip** HTML tags (not escape) so the remaining text stays
+    readable for AI analysis (transcripts, summaries) and dashboard display.
+
+    Steps:
+        1. Truncate to *max_length*
+        2. Remove null bytes
+        3. Strip HTML tags (keeps inner text)
+        4. Remove dangerous URI schemes (``javascript:``, ``vbscript:``, etc.)
+        5. Decode HTML entities then re-strip (catch obfuscation like
+           ``&#106;avascript:``)
+        6. Remove control characters except ``\\n``, ``\\t``, ``\\r``
+
+    Args:
+        value: Input string.  ``None`` / empty passes through unchanged.
+        max_length: Hard ceiling on length (default 50 KB for transcripts).
+
+    Returns:
+        Sanitized plain-text string.
+    """
+    if not value or not isinstance(value, str):
+        return value  # type: ignore[return-value]  — preserve None/empty
+
+    # 1. Truncate
+    if len(value) > max_length:
+        value = value[:max_length]
+
+    # 2. Null bytes
+    value = value.replace('\x00', '')
+
+    # 3. Strip HTML tags
+    value = _HTML_TAG_RE.sub('', value)
+
+    # 4. Remove dangerous URI schemes / patterns
+    for pattern in _XSS_PAYLOAD_PATTERNS:
+        value = pattern.sub('', value)
+
+    # 5. Decode entities then re-strip (catches &#60;script&#62; etc.)
+    decoded = _html_module.unescape(value)
+    if decoded != value:
+        decoded = _HTML_TAG_RE.sub('', decoded)
+        for pattern in _XSS_PAYLOAD_PATTERNS:
+            decoded = pattern.sub('', decoded)
+        value = decoded
+
+    # 6. Strip control chars (keep newline/tab/cr)
+    value = ''.join(ch for ch in value if ord(ch) >= 32 or ch in '\n\t\r')
+
+    return value.strip()
+
+
+# Text field names that should be sanitized before DB writes
+TEXT_FIELDS_INBOUND = [
+    "transcript", "summary", "caller_name", "reason_for_call",
+]
+TEXT_FIELDS_CALL_RESULT = ["transcript", "notes"]
+TEXT_FIELDS_CLINIC = [
+    "name", "agent_name", "custom_instructions", "address",
+    "hours", "services", "insurance_accepted", "sms_templates",
+]
+
+
+def sanitize_text_fields(data: dict, fields: list[str], max_length: int = 50_000) -> dict:
+    """
+    Sanitize specific string fields in a dictionary via :func:`sanitize_html`.
+
+    Non-string values and missing keys are left untouched.
+
+    Args:
+        data: Mutable dict whose fields will be sanitized **in-place**.
+        fields: Field names to process.
+        max_length: Per-field length cap.
+
+    Returns:
+        The same *data* dict (mutated).
+    """
+    for field in fields:
+        if field in data and isinstance(data[field], str):
+            data[field] = sanitize_html(data[field], max_length)
+    return data
+
+
+# -----------------------------------------------------------------------------
 # Standardized Error Responses
 # -----------------------------------------------------------------------------
 
@@ -691,4 +794,84 @@ async def notify_error(error: str, context: str = None):
     if context:
         msg += f"\n• Context: {context}"
     await send_slack_notification(msg, emoji="🚨", title="Error Alert")
+
+
+# -----------------------------------------------------------------------------
+# TCPA Consent Enforcement (AG-4)
+# -----------------------------------------------------------------------------
+
+def requires_consent(telephony_mode: str = None) -> bool:
+    """
+    Check whether TCPA consent is required for the current telephony mode.
+
+    In TWILIO (PSTN) mode consent is **always** mandatory — no override flag
+    can bypass this.  In SIMULATED mode consent is optional (useful for tests
+    and demo workflows).
+
+    Args:
+        telephony_mode: "TWILIO" or "SIMULATED".  Falls back to the
+            ``TELEPHONY_MODE`` env var, defaulting to ``"SIMULATED"``.
+
+    Returns:
+        ``True`` when consent must be present on every lead.
+    """
+    if telephony_mode is None:
+        telephony_mode = os.getenv("TELEPHONY_MODE", "SIMULATED")
+    return telephony_mode.upper() == "TWILIO"
+
+
+def check_lead_consent(lead: dict, telephony_mode: str = None) -> tuple[bool, str]:
+    """
+    Validate a single lead's consent status.
+
+    Args:
+        lead: Lead dict (must contain a ``"consent"`` key).
+        telephony_mode: Override for ``TELEPHONY_MODE`` env var.
+
+    Returns:
+        ``(allowed, reason)`` — *allowed* is ``True`` when the lead may be
+        called; *reason* is a human-readable explanation when denied.
+    """
+    if not requires_consent(telephony_mode):
+        return True, ""
+
+    if lead.get("consent", False):
+        return True, ""
+
+    return False, "TCPA compliance: consent required for PSTN calls"
+
+
+def filter_leads_by_consent(
+    leads: list[dict],
+    telephony_mode: str = None,
+    logger_instance: logging.Logger = None,
+) -> tuple[list[dict], int]:
+    """
+    Filter a list of lead dicts, removing those without consent when required.
+
+    Args:
+        leads: List of lead dicts (each must have ``"consent"`` key).
+        telephony_mode: Override for ``TELEPHONY_MODE`` env var.
+        logger_instance: Optional logger for skip warnings.
+
+    Returns:
+        ``(allowed_leads, skipped_count)``
+    """
+    if not requires_consent(telephony_mode):
+        return leads, 0
+
+    allowed: list[dict] = []
+    skipped = 0
+    for ld in leads:
+        ok, _reason = check_lead_consent(ld, telephony_mode)
+        if ok:
+            allowed.append(ld)
+        else:
+            skipped += 1
+            if logger_instance:
+                phone = ld.get("phone", "")
+                logger_instance.warning(
+                    f"Skipping lead without consent: {mask_phone(phone)}"
+                )
+    return allowed, skipped
 

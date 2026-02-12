@@ -13,7 +13,7 @@ import logging
 from typing import Optional
 
 import jwt
-from fastapi import HTTPException, status
+from fastapi import Header, HTTPException, status
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +85,7 @@ JWT_ALGORITHM = "HS256"
 JWT_EXPIRY_HOURS = 1
 
 
-def get_current_user(authorization: str = None) -> Optional[dict]:
+def get_current_user(authorization: str = Header(None)) -> Optional[dict]:
     """
     Decode JWT token from Authorization header.
     For demo: returns decoded payload or raises 401.
@@ -109,9 +109,10 @@ def get_current_user(authorization: str = None) -> Optional[dict]:
         raise HTTPException(status_code=401, detail="Invalid authorization header format")
 
 
-def require_auth(authorization: str = None) -> dict:
+def require_auth(authorization: str = Header(None)) -> dict:
     """
-    Dependency to require valid JWT authentication.
+    FastAPI dependency to require valid JWT authentication.
+    Extracts Bearer token from Authorization header.
     Raises 401 if no valid token provided.
     """
     user = get_current_user(authorization)

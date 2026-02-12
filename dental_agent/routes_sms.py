@@ -13,7 +13,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import Optional, List
 
-from fastapi import APIRouter, HTTPException, Query, BackgroundTasks, Form, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks, Form, Request
 from pydantic import BaseModel, Field
 
 from twilio_service import (
@@ -30,6 +30,13 @@ try:
     from tasks_reminder import handle_patient_sms_response
 except ImportError:
     from dental_agent.tasks_reminder import handle_patient_sms_response
+
+try:
+    from dental_agent.auth import require_auth
+    from dental_agent.routes_twilio import require_twilio_auth
+except ImportError:
+    from auth import require_auth
+    from routes_twilio import require_twilio_auth
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +111,7 @@ class SMSResponse(BaseModel):
 # =============================================================================
 
 @router.post("/send", response_model=SMSResponse)
-async def send_generic_sms(request: SMSRequest):
+async def send_generic_sms(request: SMSRequest, user: dict = Depends(require_auth)):
     """
     Send a custom SMS message.
     
@@ -116,7 +123,7 @@ async def send_generic_sms(request: SMSRequest):
 
 
 @router.post("/confirmation", response_model=SMSResponse)
-async def send_confirmation_sms(request: AppointmentConfirmationRequest):
+async def send_confirmation_sms(request: AppointmentConfirmationRequest, user: dict = Depends(require_auth)):
     """
     Send appointment confirmation SMS.
     
@@ -136,7 +143,7 @@ async def send_confirmation_sms(request: AppointmentConfirmationRequest):
 
 
 @router.post("/reminder", response_model=SMSResponse)
-async def send_reminder_sms(request: AppointmentReminderRequest):
+async def send_reminder_sms(request: AppointmentReminderRequest, user: dict = Depends(require_auth)):
     """
     Send appointment reminder SMS.
     
@@ -158,7 +165,7 @@ async def send_reminder_sms(request: AppointmentReminderRequest):
 
 
 @router.post("/followup", response_model=SMSResponse)
-async def send_followup_sms(request: PostCallFollowupRequest):
+async def send_followup_sms(request: PostCallFollowupRequest, user: dict = Depends(require_auth)):
     """
     Send post-call follow-up SMS.
     
@@ -179,7 +186,7 @@ async def send_followup_sms(request: PostCallFollowupRequest):
 
 
 @router.post("/recall", response_model=SMSResponse)
-async def send_recall_sms(request: RecallReminderRequest):
+async def send_recall_sms(request: RecallReminderRequest, user: dict = Depends(require_auth)):
     """
     Send patient recall reminder.
     
@@ -200,7 +207,7 @@ async def send_recall_sms(request: RecallReminderRequest):
 
 
 @router.post("/review-request", response_model=SMSResponse)
-async def send_review_sms(request: ReviewRequestPayload):
+async def send_review_sms(request: ReviewRequestPayload, user: dict = Depends(require_auth)):
     """
     Send review request SMS.
     
@@ -234,7 +241,7 @@ class BulkRecallRequest(BaseModel):
 
 
 @router.post("/bulk/recall", response_model=dict)
-async def send_bulk_recall(request: BulkRecallRequest, background_tasks: BackgroundTasks):
+async def send_bulk_recall(request: BulkRecallRequest, background_tasks: BackgroundTasks, user: dict = Depends(require_auth)):
     """
     Send recall reminders to multiple patients.
     
@@ -337,7 +344,7 @@ Thanks so much!""",
 
 
 @router.get("/templates")
-async def get_sms_templates():
+async def get_sms_templates(user: dict = Depends(require_auth)):
     """
     Get all available SMS templates.
     
@@ -361,6 +368,7 @@ async def inbound_sms_webhook(
     From: str = Form(None),
     To: str = Form(None),
     Body: str = Form(None),
+    _twilio_auth=Depends(require_twilio_auth),
 ):
     """
     Twilio webhook for incoming SMS messages.
@@ -423,7 +431,7 @@ class AppointmentConfirmationStatusRequest(BaseModel):
 
 
 @router.get("/appointments/{appointment_id}/confirmation-status")
-async def get_appointment_confirmation_status(appointment_id: int):
+async def get_appointment_confirmation_status(appointment_id: int, user: dict = Depends(require_auth)):
     """
     Get the confirmation status of an appointment.
     

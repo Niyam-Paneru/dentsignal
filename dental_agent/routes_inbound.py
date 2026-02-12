@@ -22,7 +22,7 @@ import os
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Request, Form, Query, HTTPException
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect, Request, Form, Query, HTTPException
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from sqlmodel import select
 from twilio.twiml.voice_response import VoiceResponse, Connect, Stream
@@ -32,7 +32,14 @@ from db import (
     record_usage, UsageType, get_clinic_by_twilio_number, is_using_postgres
 )
 from websocket_bridge import handle_voice_websocket
-from utils import notify_new_call, send_slack_notification_sync, send_slack_notification, mask_phone
+from utils import notify_new_call, send_slack_notification_sync, send_slack_notification, mask_phone, sanitize_html, sanitize_text_fields, TEXT_FIELDS_INBOUND
+
+try:
+    from dental_agent.auth import require_auth
+    from dental_agent.routes_twilio import require_twilio_auth
+except ImportError:
+    from auth import require_auth
+    from routes_twilio import require_twilio_auth
 
 logger = logging.getLogger(__name__)
 
@@ -102,6 +109,9 @@ def update_inbound_call(
     """
     Update an InboundCall record.
     
+    Text fields (transcript, summary, caller_name, reason_for_call) are
+    sanitized to prevent stored XSS before writing to the database.
+    
     Args:
         call_id: ID of the call to update
         **updates: Fields to update
@@ -109,6 +119,9 @@ def update_inbound_call(
     Returns:
         Updated InboundCall record
     """
+    # Sanitize text fields to prevent stored XSS (AG-5)
+    sanitize_text_fields(updates, TEXT_FIELDS_INBOUND)
+
     with get_session() as session:
         call = session.get(InboundCall, call_id)
         if call:
@@ -140,6 +153,7 @@ def get_clinic(clinic_id):
 @router.post("/voice", response_class=HTMLResponse)
 async def incoming_voice_webhook(
     request: Request,
+    _twilio_auth=Depends(require_twilio_auth),
     # Twilio sends these as form data
     CallSid: str = Form(...),
     From: str = Form(...),
@@ -276,17 +290,24 @@ async def voice_websocket(
     
     This handles the bidirectional audio stream between Twilio and
     our Deepgram Voice Agent integration.
+    
+    Security: Only Twilio connects here after receiving the URL in our TwiML.
+    We validate the call_id exists and reject unknown IDs.
     """
-    await websocket.accept()
-    
-    logger.info(f"WebSocket connected for call {call_id}")
-    
-    # Get the call and clinic
+    # Validate call exists before accepting the connection
     inbound_call = get_inbound_call(call_id)
     if not inbound_call:
-        logger.error(f"InboundCall {call_id} not found")
+        logger.warning(f"WebSocket rejected: InboundCall {call_id} not found")
         await websocket.close(code=4000, reason="Call not found")
         return
+    
+    # Reject if call is already completed (replay protection)
+    if inbound_call.status in (InboundCallStatus.COMPLETED, InboundCallStatus.FAILED):
+        logger.warning(f"WebSocket rejected: Call {call_id} already {inbound_call.status.value}")
+        await websocket.close(code=4002, reason="Call already ended")
+        return
+    
+    await websocket.accept()
     
     clinic = get_clinic(inbound_call.clinic_id)
     if not clinic:
@@ -350,6 +371,7 @@ async def voice_websocket(
 async def stream_failed_webhook(
     call_id: int,
     request: Request,
+    _twilio_auth=Depends(require_twilio_auth),
 ):
     """
     Handle stream failure - provides fallback TwiML.
@@ -409,6 +431,8 @@ async def stream_failed_webhook(
 @router.post("/voicemail/{call_id}")
 async def voicemail_webhook(
     call_id: int,
+    request: Request,
+    _twilio_auth=Depends(require_twilio_auth),
     RecordingUrl: str = Form(None),
     RecordingSid: str = Form(None),
     RecordingDuration: int = Form(None),
@@ -446,6 +470,8 @@ async def voicemail_webhook(
 @router.post("/status/{call_id}", response_class=PlainTextResponse)
 async def call_status_webhook(
     call_id: int,
+    request: Request,
+    _twilio_auth=Depends(require_twilio_auth),
     CallSid: str = Form(...),
     CallStatus: str = Form(...),
     CallDuration: Optional[int] = Form(None),
@@ -521,7 +547,7 @@ async def call_status_webhook(
 # -----------------------------------------------------------------------------
 
 @router.get("/calls/{call_id}")
-async def get_call_details(call_id: int):
+async def get_call_details(call_id: int, current_user: dict = Depends(require_auth)):
     """Get details of a specific inbound call."""
     call = get_inbound_call(call_id)
     if not call:
@@ -548,6 +574,7 @@ async def get_call_details(call_id: int):
 
 @router.get("/calls")
 async def list_inbound_calls(
+    current_user: dict = Depends(require_auth),
     clinic_id: Optional[int] = Query(None),
     status: Optional[str] = Query(None),
     limit: int = Query(50, le=100),
